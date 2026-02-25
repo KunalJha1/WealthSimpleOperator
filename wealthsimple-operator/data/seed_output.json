@@ -1,0 +1,6000 @@
+{
+  "clients": [
+    {
+      "id": 1,
+      "name": "Jordan Lee",
+      "email": "jordan.lee0@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 2,
+      "name": "Avery Patel",
+      "email": "avery.patel1@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 3,
+      "name": "Casey Patel",
+      "email": "casey.patel2@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 4,
+      "name": "Morgan Wilson",
+      "email": "morgan.wilson3@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 5,
+      "name": "Jamie Dubois",
+      "email": "jamie.dubois4@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 6,
+      "name": "Cameron Martinez",
+      "email": "cameron.martinez5@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 7,
+      "name": "Jamie Nguyen",
+      "email": "jamie.nguyen6@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 8,
+      "name": "Morgan Martinez",
+      "email": "morgan.martinez7@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 9,
+      "name": "Cameron Brown",
+      "email": "cameron.brown8@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 10,
+      "name": "Riley Garcia",
+      "email": "riley.garcia9@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 11,
+      "name": "Casey Kim",
+      "email": "casey.kim10@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 12,
+      "name": "Morgan Garcia",
+      "email": "morgan.garcia11@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 13,
+      "name": "Riley Wilson",
+      "email": "riley.wilson12@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 14,
+      "name": "Avery Kim",
+      "email": "avery.kim13@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 15,
+      "name": "Cameron Patel",
+      "email": "cameron.patel14@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 16,
+      "name": "Quinn Brown",
+      "email": "quinn.brown15@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 17,
+      "name": "Cameron Lee",
+      "email": "cameron.lee16@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 18,
+      "name": "Avery Nguyen",
+      "email": "avery.nguyen17@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 19,
+      "name": "Avery Kim",
+      "email": "avery.kim18@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 20,
+      "name": "Casey Singh",
+      "email": "casey.singh19@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 21,
+      "name": "Avery Singh",
+      "email": "avery.singh20@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 22,
+      "name": "Morgan Singh",
+      "email": "morgan.singh21@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 23,
+      "name": "Morgan Patel",
+      "email": "morgan.patel22@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 24,
+      "name": "Alex Wilson",
+      "email": "alex.wilson23@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 25,
+      "name": "Morgan Nguyen",
+      "email": "morgan.nguyen24@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 26,
+      "name": "Taylor Kim",
+      "email": "taylor.kim25@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 27,
+      "name": "Cameron Lee",
+      "email": "cameron.lee26@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 28,
+      "name": "Taylor Kim",
+      "email": "taylor.kim27@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 29,
+      "name": "Quinn Brown",
+      "email": "quinn.brown28@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 30,
+      "name": "Jamie Wilson",
+      "email": "jamie.wilson29@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 31,
+      "name": "Quinn Kim",
+      "email": "quinn.kim30@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 32,
+      "name": "Taylor Nguyen",
+      "email": "taylor.nguyen31@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 33,
+      "name": "Avery Kim",
+      "email": "avery.kim32@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 34,
+      "name": "Jordan Lee",
+      "email": "jordan.lee33@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 35,
+      "name": "Casey Dubois",
+      "email": "casey.dubois34@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 36,
+      "name": "Jordan Garcia",
+      "email": "jordan.garcia35@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 37,
+      "name": "Morgan Patel",
+      "email": "morgan.patel36@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 38,
+      "name": "Jordan Brown",
+      "email": "jordan.brown37@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 39,
+      "name": "Riley Dubois",
+      "email": "riley.dubois38@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 40,
+      "name": "Quinn Patel",
+      "email": "quinn.patel39@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 41,
+      "name": "Casey Kim",
+      "email": "casey.kim40@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 42,
+      "name": "Cameron Lee",
+      "email": "cameron.lee41@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 43,
+      "name": "Quinn Patel",
+      "email": "quinn.patel42@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 44,
+      "name": "Taylor Dubois",
+      "email": "taylor.dubois43@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 45,
+      "name": "Quinn Brown",
+      "email": "quinn.brown44@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 46,
+      "name": "Riley Kim",
+      "email": "riley.kim45@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 47,
+      "name": "Taylor Garcia",
+      "email": "taylor.garcia46@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 48,
+      "name": "Cameron Kim",
+      "email": "cameron.kim47@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 49,
+      "name": "Taylor Kim",
+      "email": "taylor.kim48@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 50,
+      "name": "Casey Patel",
+      "email": "casey.patel49@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 51,
+      "name": "Taylor Brown",
+      "email": "taylor.brown50@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 52,
+      "name": "Jordan Singh",
+      "email": "jordan.singh51@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 53,
+      "name": "Jamie Nguyen",
+      "email": "jamie.nguyen52@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 54,
+      "name": "Taylor Brown",
+      "email": "taylor.brown53@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 55,
+      "name": "Taylor Singh",
+      "email": "taylor.singh54@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 56,
+      "name": "Cameron Kim",
+      "email": "cameron.kim55@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 57,
+      "name": "Quinn Garcia",
+      "email": "quinn.garcia56@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 58,
+      "name": "Casey Wilson",
+      "email": "casey.wilson57@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 59,
+      "name": "Morgan Dubois",
+      "email": "morgan.dubois58@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 60,
+      "name": "Quinn Lee",
+      "email": "quinn.lee59@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 61,
+      "name": "Cameron Patel",
+      "email": "cameron.patel60@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 62,
+      "name": "Morgan Brown",
+      "email": "morgan.brown61@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 63,
+      "name": "Morgan Lee",
+      "email": "morgan.lee62@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 64,
+      "name": "Morgan Patel",
+      "email": "morgan.patel63@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 65,
+      "name": "Casey Nguyen",
+      "email": "casey.nguyen64@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 66,
+      "name": "Quinn Patel",
+      "email": "quinn.patel65@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 67,
+      "name": "Riley Patel",
+      "email": "riley.patel66@example.internal",
+      "segment": "Mass",
+      "risk_profile": "Growth"
+    },
+    {
+      "id": 68,
+      "name": "Jordan Patel",
+      "email": "jordan.patel67@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Conservative"
+    },
+    {
+      "id": 69,
+      "name": "Jamie Garcia",
+      "email": "jamie.garcia68@example.internal",
+      "segment": "Premium",
+      "risk_profile": "Balanced"
+    },
+    {
+      "id": 70,
+      "name": "Avery Nguyen",
+      "email": "avery.nguyen69@example.internal",
+      "segment": "HNW",
+      "risk_profile": "Balanced"
+    }
+  ],
+  "portfolios": [
+    {
+      "id": 1,
+      "client_id": 1,
+      "name": "HNW Portfolio 1",
+      "total_value": 563575.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 2,
+      "client_id": 2,
+      "name": "Premium Portfolio 2",
+      "total_value": 1316105.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 3,
+      "client_id": 3,
+      "name": "HNW Portfolio 3",
+      "total_value": 408903.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 4,
+      "client_id": 4,
+      "name": "HNW Portfolio 4",
+      "total_value": 1616601.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 5,
+      "client_id": 5,
+      "name": "Mass Portfolio 5",
+      "total_value": 834154.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 6,
+      "client_id": 6,
+      "name": "Mass Portfolio 6",
+      "total_value": 1633905.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 7,
+      "client_id": 7,
+      "name": "HNW Portfolio 7",
+      "total_value": 1258403.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 8,
+      "client_id": 8,
+      "name": "Mass Portfolio 8",
+      "total_value": 844764.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 9,
+      "client_id": 9,
+      "name": "HNW Portfolio 9",
+      "total_value": 380160.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 10,
+      "client_id": 10,
+      "name": "Premium Portfolio 10",
+      "total_value": 324471.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 11,
+      "client_id": 11,
+      "name": "HNW Portfolio 11",
+      "total_value": 1554941.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 12,
+      "client_id": 12,
+      "name": "HNW Portfolio 12",
+      "total_value": 791717.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 13,
+      "client_id": 13,
+      "name": "Premium Portfolio 13",
+      "total_value": 1819285.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 14,
+      "client_id": 14,
+      "name": "HNW Portfolio 14",
+      "total_value": 452317.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 15,
+      "client_id": 15,
+      "name": "Premium Portfolio 15",
+      "total_value": 1908363.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 16,
+      "client_id": 16,
+      "name": "Premium Portfolio 16",
+      "total_value": 1811320.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 17,
+      "client_id": 17,
+      "name": "HNW Portfolio 17",
+      "total_value": 1050299.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 18,
+      "client_id": 18,
+      "name": "Premium Portfolio 18",
+      "total_value": 1354967.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 19,
+      "client_id": 19,
+      "name": "Premium Portfolio 19",
+      "total_value": 1800935.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 20,
+      "client_id": 20,
+      "name": "Mass Portfolio 20",
+      "total_value": 1323490.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 21,
+      "client_id": 21,
+      "name": "Mass Portfolio 21",
+      "total_value": 1407996.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 22,
+      "client_id": 22,
+      "name": "Premium Portfolio 22",
+      "total_value": 636486.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 23,
+      "client_id": 23,
+      "name": "HNW Portfolio 23",
+      "total_value": 711752.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 24,
+      "client_id": 24,
+      "name": "Premium Portfolio 24",
+      "total_value": 314827.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 25,
+      "client_id": 25,
+      "name": "HNW Portfolio 25",
+      "total_value": 378272.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 26,
+      "client_id": 26,
+      "name": "Mass Portfolio 26",
+      "total_value": 175070.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 27,
+      "client_id": 27,
+      "name": "Mass Portfolio 27",
+      "total_value": 1138346.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 28,
+      "client_id": 28,
+      "name": "Premium Portfolio 28",
+      "total_value": 1066514.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 29,
+      "client_id": 29,
+      "name": "Mass Portfolio 29",
+      "total_value": 1206086.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 30,
+      "client_id": 30,
+      "name": "Premium Portfolio 30",
+      "total_value": 724816.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 31,
+      "client_id": 31,
+      "name": "Premium Portfolio 31",
+      "total_value": 1502706.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 32,
+      "client_id": 32,
+      "name": "Mass Portfolio 32",
+      "total_value": 1876283.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 33,
+      "client_id": 33,
+      "name": "Mass Portfolio 33",
+      "total_value": 1864177.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 34,
+      "client_id": 34,
+      "name": "Premium Portfolio 34",
+      "total_value": 119970.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 35,
+      "client_id": 35,
+      "name": "Premium Portfolio 35",
+      "total_value": 829036.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 36,
+      "client_id": 36,
+      "name": "HNW Portfolio 36",
+      "total_value": 865049.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 37,
+      "client_id": 37,
+      "name": "HNW Portfolio 37",
+      "total_value": 1279734.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 38,
+      "client_id": 38,
+      "name": "Premium Portfolio 38",
+      "total_value": 1126338.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 39,
+      "client_id": 39,
+      "name": "Mass Portfolio 39",
+      "total_value": 314642.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 40,
+      "client_id": 40,
+      "name": "Mass Portfolio 40",
+      "total_value": 245517.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 41,
+      "client_id": 41,
+      "name": "Premium Portfolio 41",
+      "total_value": 62804.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 42,
+      "client_id": 42,
+      "name": "HNW Portfolio 42",
+      "total_value": 620641.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 43,
+      "client_id": 43,
+      "name": "Premium Portfolio 43",
+      "total_value": 950274.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 44,
+      "client_id": 44,
+      "name": "Mass Portfolio 44",
+      "total_value": 208027.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 45,
+      "client_id": 45,
+      "name": "Mass Portfolio 45",
+      "total_value": 823298.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 46,
+      "client_id": 46,
+      "name": "Premium Portfolio 46",
+      "total_value": 1674170.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 47,
+      "client_id": 47,
+      "name": "Premium Portfolio 47",
+      "total_value": 452664.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 48,
+      "client_id": 48,
+      "name": "HNW Portfolio 48",
+      "total_value": 540739.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 49,
+      "client_id": 49,
+      "name": "Premium Portfolio 49",
+      "total_value": 359012.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 50,
+      "client_id": 50,
+      "name": "Mass Portfolio 50",
+      "total_value": 930437.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 51,
+      "client_id": 51,
+      "name": "HNW Portfolio 51",
+      "total_value": 1374846.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 52,
+      "client_id": 52,
+      "name": "Premium Portfolio 52",
+      "total_value": 1608829.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 53,
+      "client_id": 53,
+      "name": "Mass Portfolio 53",
+      "total_value": 1829788.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 54,
+      "client_id": 54,
+      "name": "Mass Portfolio 54",
+      "total_value": 1823186.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 55,
+      "client_id": 55,
+      "name": "HNW Portfolio 55",
+      "total_value": 993664.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 56,
+      "client_id": 56,
+      "name": "HNW Portfolio 56",
+      "total_value": 1658429.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 57,
+      "client_id": 57,
+      "name": "Mass Portfolio 57",
+      "total_value": 156126.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 58,
+      "client_id": 58,
+      "name": "Mass Portfolio 58",
+      "total_value": 953721.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 59,
+      "client_id": 59,
+      "name": "HNW Portfolio 59",
+      "total_value": 1098739.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 60,
+      "client_id": 60,
+      "name": "Premium Portfolio 60",
+      "total_value": 1463074.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 61,
+      "client_id": 61,
+      "name": "Mass Portfolio 61",
+      "total_value": 974924.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 62,
+      "client_id": 62,
+      "name": "Premium Portfolio 62",
+      "total_value": 781493.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 63,
+      "client_id": 63,
+      "name": "Mass Portfolio 63",
+      "total_value": 742675.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 64,
+      "client_id": 64,
+      "name": "Premium Portfolio 64",
+      "total_value": 1583268.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 65,
+      "client_id": 65,
+      "name": "Premium Portfolio 65",
+      "total_value": 1103861.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 66,
+      "client_id": 66,
+      "name": "HNW Portfolio 66",
+      "total_value": 1553485.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 67,
+      "client_id": 67,
+      "name": "Mass Portfolio 67",
+      "total_value": 874303.0,
+      "target_equity_pct": 80.0,
+      "target_fixed_income_pct": 15.0,
+      "target_cash_pct": 5.0
+    },
+    {
+      "id": 68,
+      "client_id": 68,
+      "name": "HNW Portfolio 68",
+      "total_value": 986254.0,
+      "target_equity_pct": 40.0,
+      "target_fixed_income_pct": 50.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 69,
+      "client_id": 69,
+      "name": "Premium Portfolio 69",
+      "total_value": 627039.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    },
+    {
+      "id": 70,
+      "client_id": 70,
+      "name": "HNW Portfolio 70",
+      "total_value": 555346.0,
+      "target_equity_pct": 60.0,
+      "target_fixed_income_pct": 30.0,
+      "target_cash_pct": 10.0
+    }
+  ],
+  "positions": [
+    {
+      "id": 1,
+      "portfolio_id": 1,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.05634029204188394,
+      "value": 31751.98
+    },
+    {
+      "id": 2,
+      "portfolio_id": 1,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.041383788762110844,
+      "value": 23322.87
+    },
+    {
+      "id": 3,
+      "portfolio_id": 1,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.2990544397615949,
+      "value": 168539.61
+    },
+    {
+      "id": 4,
+      "portfolio_id": 1,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.22019898178232822,
+      "value": 124098.64
+    },
+    {
+      "id": 5,
+      "portfolio_id": 1,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.23841919506444367,
+      "value": 134367.1
+    },
+    {
+      "id": 6,
+      "portfolio_id": 1,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.01283267899132254,
+      "value": 7232.18
+    },
+    {
+      "id": 7,
+      "portfolio_id": 1,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.03783069759262818,
+      "value": 21320.44
+    },
+    {
+      "id": 8,
+      "portfolio_id": 1,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.0939399260036878,
+      "value": 52942.19
+    },
+    {
+      "id": 9,
+      "portfolio_id": 2,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.128392555107912,
+      "value": 168978.08
+    },
+    {
+      "id": 10,
+      "portfolio_id": 2,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.11608084085196062,
+      "value": 152774.58
+    },
+    {
+      "id": 11,
+      "portfolio_id": 2,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.08529957017018487,
+      "value": 112263.19
+    },
+    {
+      "id": 12,
+      "portfolio_id": 2,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.1547967324279645,
+      "value": 203728.75
+    },
+    {
+      "id": 13,
+      "portfolio_id": 2,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06021471121163532,
+      "value": 79248.88
+    },
+    {
+      "id": 14,
+      "portfolio_id": 2,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.08781492300475968,
+      "value": 115573.66
+    },
+    {
+      "id": 15,
+      "portfolio_id": 2,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.13193613405444568,
+      "value": 173641.81
+    },
+    {
+      "id": 16,
+      "portfolio_id": 2,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.09838997594346728,
+      "value": 129491.54
+    },
+    {
+      "id": 17,
+      "portfolio_id": 2,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.13707455722767,
+      "value": 180404.51
+    },
+    {
+      "id": 18,
+      "portfolio_id": 3,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.032467532050505274,
+      "value": 13276.07
+    },
+    {
+      "id": 19,
+      "portfolio_id": 3,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.0753965342472364,
+      "value": 30829.87
+    },
+    {
+      "id": 20,
+      "portfolio_id": 3,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.19661499871798452,
+      "value": 80396.46
+    },
+    {
+      "id": 21,
+      "portfolio_id": 3,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.12716582370923304,
+      "value": 51998.49
+    },
+    {
+      "id": 22,
+      "portfolio_id": 3,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.11066406173011042,
+      "value": 45250.87
+    },
+    {
+      "id": 23,
+      "portfolio_id": 3,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13603057471467622,
+      "value": 55623.31
+    },
+    {
+      "id": 24,
+      "portfolio_id": 3,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1674718733023919,
+      "value": 68479.75
+    },
+    {
+      "id": 25,
+      "portfolio_id": 3,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.15418860152786218,
+      "value": 63048.18
+    },
+    {
+      "id": 26,
+      "portfolio_id": 4,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.17559719209956554,
+      "value": 283870.6
+    },
+    {
+      "id": 27,
+      "portfolio_id": 4,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.07811519232434093,
+      "value": 126281.1
+    },
+    {
+      "id": 28,
+      "portfolio_id": 4,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.042894996530535946,
+      "value": 69344.09
+    },
+    {
+      "id": 29,
+      "portfolio_id": 4,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.19509950783546662,
+      "value": 315398.06
+    },
+    {
+      "id": 30,
+      "portfolio_id": 4,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.09965371578800217,
+      "value": 161100.3
+    },
+    {
+      "id": 31,
+      "portfolio_id": 4,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.017780163331421937,
+      "value": 28743.43
+    },
+    {
+      "id": 32,
+      "portfolio_id": 4,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.00921507279174627,
+      "value": 14897.1
+    },
+    {
+      "id": 33,
+      "portfolio_id": 4,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.021445298128823367,
+      "value": 34668.49
+    },
+    {
+      "id": 34,
+      "portfolio_id": 4,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.12271659046488749,
+      "value": 198383.76
+    },
+    {
+      "id": 35,
+      "portfolio_id": 4,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.1549157577094323,
+      "value": 250436.97
+    },
+    {
+      "id": 36,
+      "portfolio_id": 4,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.08256651299577748,
+      "value": 133477.11
+    },
+    {
+      "id": 37,
+      "portfolio_id": 5,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.1727858253017584,
+      "value": 144129.99
+    },
+    {
+      "id": 38,
+      "portfolio_id": 5,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.24942686163039204,
+      "value": 208060.41
+    },
+    {
+      "id": 39,
+      "portfolio_id": 5,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1698946229551012,
+      "value": 141718.28
+    },
+    {
+      "id": 40,
+      "portfolio_id": 5,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.00018320242155443615,
+      "value": 152.82
+    },
+    {
+      "id": 41,
+      "portfolio_id": 5,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.1038408405007778,
+      "value": 86619.25
+    },
+    {
+      "id": 42,
+      "portfolio_id": 5,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.006239221066082976,
+      "value": 5204.47
+    },
+    {
+      "id": 43,
+      "portfolio_id": 5,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.29762942612433313,
+      "value": 248268.78
+    },
+    {
+      "id": 44,
+      "portfolio_id": 6,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.18663192522499922,
+      "value": 304938.84
+    },
+    {
+      "id": 45,
+      "portfolio_id": 6,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.10444604584255801,
+      "value": 170654.92
+    },
+    {
+      "id": 46,
+      "portfolio_id": 6,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1758305786319199,
+      "value": 287290.46
+    },
+    {
+      "id": 47,
+      "portfolio_id": 6,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.09775199903852025,
+      "value": 159717.48
+    },
+    {
+      "id": 48,
+      "portfolio_id": 6,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.23549610838563395,
+      "value": 384778.27
+    },
+    {
+      "id": 49,
+      "portfolio_id": 6,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.11818759966375646,
+      "value": 193107.31
+    },
+    {
+      "id": 50,
+      "portfolio_id": 6,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.06489539043674321,
+      "value": 106032.9
+    },
+    {
+      "id": 51,
+      "portfolio_id": 6,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.016760352775869052,
+      "value": 27384.82
+    },
+    {
+      "id": 52,
+      "portfolio_id": 7,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.049389739783202165,
+      "value": 62152.2
+    },
+    {
+      "id": 53,
+      "portfolio_id": 7,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.09613282169880222,
+      "value": 120973.83
+    },
+    {
+      "id": 54,
+      "portfolio_id": 7,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.08273585895765062,
+      "value": 104115.05
+    },
+    {
+      "id": 55,
+      "portfolio_id": 7,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.019171931737359156,
+      "value": 24126.02
+    },
+    {
+      "id": 56,
+      "portfolio_id": 7,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1339397361026224,
+      "value": 168550.17
+    },
+    {
+      "id": 57,
+      "portfolio_id": 7,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.0720117827147313,
+      "value": 90619.84
+    },
+    {
+      "id": 58,
+      "portfolio_id": 7,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.08355746854654822,
+      "value": 105148.97
+    },
+    {
+      "id": 59,
+      "portfolio_id": 7,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.17557677526093962,
+      "value": 220946.34
+    },
+    {
+      "id": 60,
+      "portfolio_id": 7,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.011010416475372728,
+      "value": 13855.54
+    },
+    {
+      "id": 61,
+      "portfolio_id": 7,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.13281630773732853,
+      "value": 167136.44
+    },
+    {
+      "id": 62,
+      "portfolio_id": 7,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.13133749772213507,
+      "value": 165275.5
+    },
+    {
+      "id": 63,
+      "portfolio_id": 7,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.012319663263307964,
+      "value": 15503.1
+    },
+    {
+      "id": 64,
+      "portfolio_id": 8,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.3382920413087365,
+      "value": 285776.94
+    },
+    {
+      "id": 65,
+      "portfolio_id": 8,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.09105376905602368,
+      "value": 76918.95
+    },
+    {
+      "id": 66,
+      "portfolio_id": 8,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.2691996993002217,
+      "value": 227410.21
+    },
+    {
+      "id": 67,
+      "portfolio_id": 8,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1562207731834036,
+      "value": 131969.69
+    },
+    {
+      "id": 68,
+      "portfolio_id": 8,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.14523371715161443,
+      "value": 122688.22
+    },
+    {
+      "id": 69,
+      "portfolio_id": 9,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.38477899243818897,
+      "value": 146277.58
+    },
+    {
+      "id": 70,
+      "portfolio_id": 9,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.03208356134066223,
+      "value": 12196.89
+    },
+    {
+      "id": 71,
+      "portfolio_id": 9,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07442039059386356,
+      "value": 28291.66
+    },
+    {
+      "id": 72,
+      "portfolio_id": 9,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.23830353471009727,
+      "value": 90593.47
+    },
+    {
+      "id": 73,
+      "portfolio_id": 9,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.27041352091718796,
+      "value": 102800.4
+    },
+    {
+      "id": 74,
+      "portfolio_id": 10,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.09813906035769032,
+      "value": 31843.28
+    },
+    {
+      "id": 75,
+      "portfolio_id": 10,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.19940526296757535,
+      "value": 64701.23
+    },
+    {
+      "id": 76,
+      "portfolio_id": 10,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.2008467812612101,
+      "value": 65168.96
+    },
+    {
+      "id": 77,
+      "portfolio_id": 10,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.001999477369037623,
+      "value": 648.77
+    },
+    {
+      "id": 78,
+      "portfolio_id": 10,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.13332613626574394,
+      "value": 43260.46
+    },
+    {
+      "id": 79,
+      "portfolio_id": 10,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.12084142166668682,
+      "value": 39209.54
+    },
+    {
+      "id": 80,
+      "portfolio_id": 10,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.021460057948516197,
+      "value": 6963.17
+    },
+    {
+      "id": 81,
+      "portfolio_id": 10,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.11539829309233031,
+      "value": 37443.4
+    },
+    {
+      "id": 82,
+      "portfolio_id": 10,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.10858350907120932,
+      "value": 35232.2
+    },
+    {
+      "id": 83,
+      "portfolio_id": 11,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.04920315530236496,
+      "value": 76508.0
+    },
+    {
+      "id": 84,
+      "portfolio_id": 11,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.15327564216312925,
+      "value": 238334.58
+    },
+    {
+      "id": 85,
+      "portfolio_id": 11,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06379672089361792,
+      "value": 99200.14
+    },
+    {
+      "id": 86,
+      "portfolio_id": 11,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.11806299560967533,
+      "value": 183580.99
+    },
+    {
+      "id": 87,
+      "portfolio_id": 11,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.21879174858570868,
+      "value": 340208.26
+    },
+    {
+      "id": 88,
+      "portfolio_id": 11,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.20447702345008292,
+      "value": 317949.71
+    },
+    {
+      "id": 89,
+      "portfolio_id": 11,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.022305676775024815,
+      "value": 34684.01
+    },
+    {
+      "id": 90,
+      "portfolio_id": 11,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.10236512595142948,
+      "value": 159171.73
+    },
+    {
+      "id": 91,
+      "portfolio_id": 11,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.06686502819499242,
+      "value": 103971.17
+    },
+    {
+      "id": 92,
+      "portfolio_id": 11,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.0008568830739742987,
+      "value": 1332.4
+    },
+    {
+      "id": 93,
+      "portfolio_id": 12,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.15399588951808021,
+      "value": 121921.16
+    },
+    {
+      "id": 94,
+      "portfolio_id": 12,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.11851723514204765,
+      "value": 93832.11
+    },
+    {
+      "id": 95,
+      "portfolio_id": 12,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.14639392426689013,
+      "value": 115902.56
+    },
+    {
+      "id": 96,
+      "portfolio_id": 12,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.03743601363610903,
+      "value": 29638.73
+    },
+    {
+      "id": 97,
+      "portfolio_id": 12,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.02569691189714863,
+      "value": 20344.68
+    },
+    {
+      "id": 98,
+      "portfolio_id": 12,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12648863395119309,
+      "value": 100143.2
+    },
+    {
+      "id": 99,
+      "portfolio_id": 12,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.027997844223392993,
+      "value": 22166.37
+    },
+    {
+      "id": 100,
+      "portfolio_id": 12,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.0651974026350128,
+      "value": 51617.89
+    },
+    {
+      "id": 101,
+      "portfolio_id": 12,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.028362861819361432,
+      "value": 22455.36
+    },
+    {
+      "id": 102,
+      "portfolio_id": 12,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.14619206301413265,
+      "value": 115742.74
+    },
+    {
+      "id": 103,
+      "portfolio_id": 12,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.12372121989663114,
+      "value": 97952.19
+    },
+    {
+      "id": 104,
+      "portfolio_id": 13,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1872207374149612,
+      "value": 340607.88
+    },
+    {
+      "id": 105,
+      "portfolio_id": 13,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.022991390469175945,
+      "value": 41827.89
+    },
+    {
+      "id": 106,
+      "portfolio_id": 13,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.19343263823734635,
+      "value": 351909.1
+    },
+    {
+      "id": 107,
+      "portfolio_id": 13,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.03559441677405326,
+      "value": 64756.39
+    },
+    {
+      "id": 108,
+      "portfolio_id": 13,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.19186462784231686,
+      "value": 349056.44
+    },
+    {
+      "id": 109,
+      "portfolio_id": 13,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.05291614440761457,
+      "value": 96269.55
+    },
+    {
+      "id": 110,
+      "portfolio_id": 13,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.02160817961285245,
+      "value": 39311.44
+    },
+    {
+      "id": 111,
+      "portfolio_id": 13,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.08662279613874947,
+      "value": 157591.55
+    },
+    {
+      "id": 112,
+      "portfolio_id": 13,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.14522290233142907,
+      "value": 264201.85
+    },
+    {
+      "id": 113,
+      "portfolio_id": 13,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06252616677150087,
+      "value": 113752.92
+    },
+    {
+      "id": 114,
+      "portfolio_id": 14,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.11703165754759057,
+      "value": 52935.41
+    },
+    {
+      "id": 115,
+      "portfolio_id": 14,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06673189356630735,
+      "value": 30183.97
+    },
+    {
+      "id": 116,
+      "portfolio_id": 14,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.13167626990026668,
+      "value": 59559.42
+    },
+    {
+      "id": 117,
+      "portfolio_id": 14,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.030629879482739226,
+      "value": 13854.42
+    },
+    {
+      "id": 118,
+      "portfolio_id": 14,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10016601442052749,
+      "value": 45306.79
+    },
+    {
+      "id": 119,
+      "portfolio_id": 14,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.0714717196193156,
+      "value": 32327.87
+    },
+    {
+      "id": 120,
+      "portfolio_id": 14,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.146740741922965,
+      "value": 66373.33
+    },
+    {
+      "id": 121,
+      "portfolio_id": 14,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.0534838543313539,
+      "value": 24191.66
+    },
+    {
+      "id": 122,
+      "portfolio_id": 14,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.03699344130966436,
+      "value": 16732.76
+    },
+    {
+      "id": 123,
+      "portfolio_id": 14,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.13829837164784992,
+      "value": 62554.7
+    },
+    {
+      "id": 124,
+      "portfolio_id": 14,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.10677615625141981,
+      "value": 48296.67
+    },
+    {
+      "id": 125,
+      "portfolio_id": 15,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.14436976333162685,
+      "value": 275509.91
+    },
+    {
+      "id": 126,
+      "portfolio_id": 15,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.07717017562969682,
+      "value": 147268.71
+    },
+    {
+      "id": 127,
+      "portfolio_id": 15,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08032034147255354,
+      "value": 153280.37
+    },
+    {
+      "id": 128,
+      "portfolio_id": 15,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.029658190720777546,
+      "value": 56598.59
+    },
+    {
+      "id": 129,
+      "portfolio_id": 15,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13819509918003636,
+      "value": 263726.41
+    },
+    {
+      "id": 130,
+      "portfolio_id": 15,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.17940254836176844,
+      "value": 342365.19
+    },
+    {
+      "id": 131,
+      "portfolio_id": 15,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.17292727376989656,
+      "value": 330008.01
+    },
+    {
+      "id": 132,
+      "portfolio_id": 15,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.17795660753364395,
+      "value": 339605.81
+    },
+    {
+      "id": 133,
+      "portfolio_id": 16,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.20791804658684915,
+      "value": 376606.12
+    },
+    {
+      "id": 134,
+      "portfolio_id": 16,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.14153264820379668,
+      "value": 256360.92
+    },
+    {
+      "id": 135,
+      "portfolio_id": 16,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.17016189889347375,
+      "value": 308217.65
+    },
+    {
+      "id": 136,
+      "portfolio_id": 16,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.07455307463358929,
+      "value": 135039.48
+    },
+    {
+      "id": 137,
+      "portfolio_id": 16,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.021036693270033133,
+      "value": 38104.18
+    },
+    {
+      "id": 138,
+      "portfolio_id": 16,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.0775750553959631,
+      "value": 140513.25
+    },
+    {
+      "id": 139,
+      "portfolio_id": 16,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.07377052075598889,
+      "value": 133622.02
+    },
+    {
+      "id": 140,
+      "portfolio_id": 16,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.08680099390200946,
+      "value": 157224.38
+    },
+    {
+      "id": 141,
+      "portfolio_id": 16,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.14665106835829653,
+      "value": 265632.01
+    },
+    {
+      "id": 142,
+      "portfolio_id": 17,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.2806855396426567,
+      "value": 294803.74
+    },
+    {
+      "id": 143,
+      "portfolio_id": 17,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.08890691613585212,
+      "value": 93378.85
+    },
+    {
+      "id": 144,
+      "portfolio_id": 17,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11611199303861025,
+      "value": 121952.31
+    },
+    {
+      "id": 145,
+      "portfolio_id": 17,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.26547133607781376,
+      "value": 278824.28
+    },
+    {
+      "id": 146,
+      "portfolio_id": 17,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.24882421510506714,
+      "value": 261339.82
+    },
+    {
+      "id": 147,
+      "portfolio_id": 18,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.3391172200232584,
+      "value": 459492.64
+    },
+    {
+      "id": 148,
+      "portfolio_id": 18,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.2213194892158191,
+      "value": 299880.6
+    },
+    {
+      "id": 149,
+      "portfolio_id": 18,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.24790768459291898,
+      "value": 335906.73
+    },
+    {
+      "id": 150,
+      "portfolio_id": 18,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.03138948507514455,
+      "value": 42531.72
+    },
+    {
+      "id": 151,
+      "portfolio_id": 18,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.16026612109285876,
+      "value": 217155.31
+    },
+    {
+      "id": 152,
+      "portfolio_id": 19,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.18691326108291612,
+      "value": 336618.63
+    },
+    {
+      "id": 153,
+      "portfolio_id": 19,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.2976834621340623,
+      "value": 536108.57
+    },
+    {
+      "id": 154,
+      "portfolio_id": 19,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.020700296365294517,
+      "value": 37279.89
+    },
+    {
+      "id": 155,
+      "portfolio_id": 19,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.3783198548097466,
+      "value": 681329.47
+    },
+    {
+      "id": 156,
+      "portfolio_id": 19,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08911224114711165,
+      "value": 160485.35
+    },
+    {
+      "id": 157,
+      "portfolio_id": 19,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.027270884460868797,
+      "value": 49113.09
+    },
+    {
+      "id": 158,
+      "portfolio_id": 20,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.23315347402921716,
+      "value": 308576.29
+    },
+    {
+      "id": 159,
+      "portfolio_id": 20,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.049090982107622055,
+      "value": 64971.42
+    },
+    {
+      "id": 160,
+      "portfolio_id": 20,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.09323805757257658,
+      "value": 123399.64
+    },
+    {
+      "id": 161,
+      "portfolio_id": 20,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.17346845364463775,
+      "value": 229583.76
+    },
+    {
+      "id": 162,
+      "portfolio_id": 20,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.2784462966825477,
+      "value": 368520.89
+    },
+    {
+      "id": 163,
+      "portfolio_id": 20,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.17260273596339865,
+      "value": 228438.0
+    },
+    {
+      "id": 164,
+      "portfolio_id": 21,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.0032269198612322556,
+      "value": 4543.49
+    },
+    {
+      "id": 165,
+      "portfolio_id": 21,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.10713561536481422,
+      "value": 150846.52
+    },
+    {
+      "id": 166,
+      "portfolio_id": 21,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12502551717357097,
+      "value": 176035.43
+    },
+    {
+      "id": 167,
+      "portfolio_id": 21,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.11056976527380769,
+      "value": 155681.79
+    },
+    {
+      "id": 168,
+      "portfolio_id": 21,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.09237574322148401,
+      "value": 130064.68
+    },
+    {
+      "id": 169,
+      "portfolio_id": 21,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.2273954296573149,
+      "value": 320171.86
+    },
+    {
+      "id": 170,
+      "portfolio_id": 21,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11725611949895837,
+      "value": 165096.15
+    },
+    {
+      "id": 171,
+      "portfolio_id": 21,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.03902025909684058,
+      "value": 54940.37
+    },
+    {
+      "id": 172,
+      "portfolio_id": 21,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.044923578251521205,
+      "value": 63252.22
+    },
+    {
+      "id": 173,
+      "portfolio_id": 21,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.13307105260045574,
+      "value": 187363.51
+    },
+    {
+      "id": 174,
+      "portfolio_id": 22,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.14270465161242835,
+      "value": 90829.51
+    },
+    {
+      "id": 175,
+      "portfolio_id": 22,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.13264897824175229,
+      "value": 84429.22
+    },
+    {
+      "id": 176,
+      "portfolio_id": 22,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.04905556043214153,
+      "value": 31223.18
+    },
+    {
+      "id": 177,
+      "portfolio_id": 22,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.06197046974995147,
+      "value": 39443.34
+    },
+    {
+      "id": 178,
+      "portfolio_id": 22,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.1043543004889795,
+      "value": 66420.05
+    },
+    {
+      "id": 179,
+      "portfolio_id": 22,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.1425467916491094,
+      "value": 90729.04
+    },
+    {
+      "id": 180,
+      "portfolio_id": 22,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.06170546456481443,
+      "value": 39274.66
+    },
+    {
+      "id": 181,
+      "portfolio_id": 22,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12224145064709767,
+      "value": 77804.97
+    },
+    {
+      "id": 182,
+      "portfolio_id": 22,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.18277233261372539,
+      "value": 116332.03
+    },
+    {
+      "id": 183,
+      "portfolio_id": 23,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.2068979563197869,
+      "value": 147260.03
+    },
+    {
+      "id": 184,
+      "portfolio_id": 23,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.2648265430162065,
+      "value": 188490.82
+    },
+    {
+      "id": 185,
+      "portfolio_id": 23,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.19221573394075722,
+      "value": 136809.93
+    },
+    {
+      "id": 186,
+      "portfolio_id": 23,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.05334559972932273,
+      "value": 37968.84
+    },
+    {
+      "id": 187,
+      "portfolio_id": 23,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.20570694397660005,
+      "value": 146412.33
+    },
+    {
+      "id": 188,
+      "portfolio_id": 23,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.07700722301732656,
+      "value": 54810.04
+    },
+    {
+      "id": 189,
+      "portfolio_id": 24,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.022564043868840696,
+      "value": 7103.77
+    },
+    {
+      "id": 190,
+      "portfolio_id": 24,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.0026977624353403855,
+      "value": 849.33
+    },
+    {
+      "id": 191,
+      "portfolio_id": 24,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.06254013277478486,
+      "value": 19689.32
+    },
+    {
+      "id": 192,
+      "portfolio_id": 24,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.10529268134963042,
+      "value": 33148.98
+    },
+    {
+      "id": 193,
+      "portfolio_id": 24,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.07493790772459659,
+      "value": 23592.48
+    },
+    {
+      "id": 194,
+      "portfolio_id": 24,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.21236018036465898,
+      "value": 66856.72
+    },
+    {
+      "id": 195,
+      "portfolio_id": 24,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.05553235362542115,
+      "value": 17483.08
+    },
+    {
+      "id": 196,
+      "portfolio_id": 24,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1895350501300557,
+      "value": 59670.75
+    },
+    {
+      "id": 197,
+      "portfolio_id": 24,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.025093345337315262,
+      "value": 7900.06
+    },
+    {
+      "id": 198,
+      "portfolio_id": 24,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.014372219098678305,
+      "value": 4524.76
+    },
+    {
+      "id": 199,
+      "portfolio_id": 24,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.1081591332503688,
+      "value": 34051.42
+    },
+    {
+      "id": 200,
+      "portfolio_id": 24,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.1269151900403089,
+      "value": 39956.33
+    },
+    {
+      "id": 201,
+      "portfolio_id": 25,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.21631328401688052,
+      "value": 81825.26
+    },
+    {
+      "id": 202,
+      "portfolio_id": 25,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.3650274658127126,
+      "value": 138079.67
+    },
+    {
+      "id": 203,
+      "portfolio_id": 25,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.2488223722489875,
+      "value": 94122.54
+    },
+    {
+      "id": 204,
+      "portfolio_id": 25,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.017283061439218827,
+      "value": 6537.7
+    },
+    {
+      "id": 205,
+      "portfolio_id": 25,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.1525538164822005,
+      "value": 57706.84
+    },
+    {
+      "id": 206,
+      "portfolio_id": 26,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.18242112821937775,
+      "value": 31936.47
+    },
+    {
+      "id": 207,
+      "portfolio_id": 26,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13694763127700738,
+      "value": 23975.42
+    },
+    {
+      "id": 208,
+      "portfolio_id": 26,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.18969647587314975,
+      "value": 33210.16
+    },
+    {
+      "id": 209,
+      "portfolio_id": 26,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.21200974529634203,
+      "value": 37116.55
+    },
+    {
+      "id": 210,
+      "portfolio_id": 26,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.10106987179289216,
+      "value": 17694.3
+    },
+    {
+      "id": 211,
+      "portfolio_id": 26,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.10786945635623195,
+      "value": 18884.71
+    },
+    {
+      "id": 212,
+      "portfolio_id": 26,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06998569118499905,
+      "value": 12252.39
+    },
+    {
+      "id": 213,
+      "portfolio_id": 27,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.1493615311598627,
+      "value": 170025.1
+    },
+    {
+      "id": 214,
+      "portfolio_id": 27,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.029590985864226822,
+      "value": 33684.78
+    },
+    {
+      "id": 215,
+      "portfolio_id": 27,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.0954353520996827,
+      "value": 108638.45
+    },
+    {
+      "id": 216,
+      "portfolio_id": 27,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.10349878186985921,
+      "value": 117817.42
+    },
+    {
+      "id": 217,
+      "portfolio_id": 27,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.08017367145276762,
+      "value": 91265.38
+    },
+    {
+      "id": 218,
+      "portfolio_id": 27,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.014876662302783932,
+      "value": 16934.79
+    },
+    {
+      "id": 219,
+      "portfolio_id": 27,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.056733478864483974,
+      "value": 64582.33
+    },
+    {
+      "id": 220,
+      "portfolio_id": 27,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.05434442839298945,
+      "value": 61862.76
+    },
+    {
+      "id": 221,
+      "portfolio_id": 27,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.10926224245798494,
+      "value": 124378.24
+    },
+    {
+      "id": 222,
+      "portfolio_id": 27,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13984950758778053,
+      "value": 159197.13
+    },
+    {
+      "id": 223,
+      "portfolio_id": 27,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.05377299797952785,
+      "value": 61212.28
+    },
+    {
+      "id": 224,
+      "portfolio_id": 27,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.1131003599680504,
+      "value": 128747.34
+    },
+    {
+      "id": 225,
+      "portfolio_id": 28,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.011582929403650242,
+      "value": 12353.36
+    },
+    {
+      "id": 226,
+      "portfolio_id": 28,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.252776047615438,
+      "value": 269589.19
+    },
+    {
+      "id": 227,
+      "portfolio_id": 28,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.3206987652288347,
+      "value": 342029.72
+    },
+    {
+      "id": 228,
+      "portfolio_id": 28,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.2847773860431396,
+      "value": 303719.07
+    },
+    {
+      "id": 229,
+      "portfolio_id": 28,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.12467843542381812,
+      "value": 132971.3
+    },
+    {
+      "id": 230,
+      "portfolio_id": 28,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.005486436285119317,
+      "value": 5851.36
+    },
+    {
+      "id": 231,
+      "portfolio_id": 29,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08296797990276615,
+      "value": 100066.52
+    },
+    {
+      "id": 232,
+      "portfolio_id": 29,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.19939605589122802,
+      "value": 240488.79
+    },
+    {
+      "id": 233,
+      "portfolio_id": 29,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.10993028583728344,
+      "value": 132585.38
+    },
+    {
+      "id": 234,
+      "portfolio_id": 29,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.19019442979001666,
+      "value": 229390.84
+    },
+    {
+      "id": 235,
+      "portfolio_id": 29,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1868852535166111,
+      "value": 225399.69
+    },
+    {
+      "id": 236,
+      "portfolio_id": 29,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.05975110711548015,
+      "value": 72064.97
+    },
+    {
+      "id": 237,
+      "portfolio_id": 29,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.17087488794661454,
+      "value": 206089.81
+    },
+    {
+      "id": 238,
+      "portfolio_id": 30,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.21442750124968865,
+      "value": 155420.48
+    },
+    {
+      "id": 239,
+      "portfolio_id": 30,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.05221023717810272,
+      "value": 37842.82
+    },
+    {
+      "id": 240,
+      "portfolio_id": 30,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.08372920706143218,
+      "value": 60688.27
+    },
+    {
+      "id": 241,
+      "portfolio_id": 30,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.1871507659500605,
+      "value": 135649.87
+    },
+    {
+      "id": 242,
+      "portfolio_id": 30,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08980807058051697,
+      "value": 65094.33
+    },
+    {
+      "id": 243,
+      "portfolio_id": 30,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06956313165731819,
+      "value": 50420.47
+    },
+    {
+      "id": 244,
+      "portfolio_id": 30,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.10340715619010221,
+      "value": 74951.16
+    },
+    {
+      "id": 245,
+      "portfolio_id": 30,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.19970393013277862,
+      "value": 144748.6
+    },
+    {
+      "id": 246,
+      "portfolio_id": 31,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.10209886986255827,
+      "value": 153424.58
+    },
+    {
+      "id": 247,
+      "portfolio_id": 31,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.13382482104077453,
+      "value": 201099.36
+    },
+    {
+      "id": 248,
+      "portfolio_id": 31,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1339153260363446,
+      "value": 201235.36
+    },
+    {
+      "id": 249,
+      "portfolio_id": 31,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13501526188244578,
+      "value": 202888.24
+    },
+    {
+      "id": 250,
+      "portfolio_id": 31,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.05970505029259142,
+      "value": 89719.14
+    },
+    {
+      "id": 251,
+      "portfolio_id": 31,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.04975211203869379,
+      "value": 74762.8
+    },
+    {
+      "id": 252,
+      "portfolio_id": 31,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.11292104958152194,
+      "value": 169687.14
+    },
+    {
+      "id": 253,
+      "portfolio_id": 31,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.1193131630801053,
+      "value": 179292.61
+    },
+    {
+      "id": 254,
+      "portfolio_id": 31,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13706416806462549,
+      "value": 205967.15
+    },
+    {
+      "id": 255,
+      "portfolio_id": 31,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.005640275149090377,
+      "value": 8475.68
+    },
+    {
+      "id": 256,
+      "portfolio_id": 31,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.010749902971248684,
+      "value": 16153.94
+    },
+    {
+      "id": 257,
+      "portfolio_id": 32,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.11737401902581099,
+      "value": 220226.88
+    },
+    {
+      "id": 258,
+      "portfolio_id": 32,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.04561350270455954,
+      "value": 85583.84
+    },
+    {
+      "id": 259,
+      "portfolio_id": 32,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.1728911048348746,
+      "value": 324392.64
+    },
+    {
+      "id": 260,
+      "portfolio_id": 32,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.027106698319313626,
+      "value": 50859.84
+    },
+    {
+      "id": 261,
+      "portfolio_id": 32,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08734244487731631,
+      "value": 163879.14
+    },
+    {
+      "id": 262,
+      "portfolio_id": 32,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.04810366678034717,
+      "value": 90256.09
+    },
+    {
+      "id": 263,
+      "portfolio_id": 32,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.04835923912649665,
+      "value": 90735.62
+    },
+    {
+      "id": 264,
+      "portfolio_id": 32,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.0017798867896643773,
+      "value": 3339.57
+    },
+    {
+      "id": 265,
+      "portfolio_id": 32,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.1523986411726071,
+      "value": 285942.98
+    },
+    {
+      "id": 266,
+      "portfolio_id": 32,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.1706903376191438,
+      "value": 320263.38
+    },
+    {
+      "id": 267,
+      "portfolio_id": 32,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.12834045874986597,
+      "value": 240803.02
+    },
+    {
+      "id": 268,
+      "portfolio_id": 33,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.21851464984341837,
+      "value": 407349.98
+    },
+    {
+      "id": 269,
+      "portfolio_id": 33,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.17881396965946314,
+      "value": 333340.89
+    },
+    {
+      "id": 270,
+      "portfolio_id": 33,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.19985077127641587,
+      "value": 372557.21
+    },
+    {
+      "id": 271,
+      "portfolio_id": 33,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.21667124330456464,
+      "value": 403913.55
+    },
+    {
+      "id": 272,
+      "portfolio_id": 33,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.18614936591613795,
+      "value": 347015.37
+    },
+    {
+      "id": 273,
+      "portfolio_id": 34,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.14281249711863575,
+      "value": 17133.22
+    },
+    {
+      "id": 274,
+      "portfolio_id": 34,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.017576296551994337,
+      "value": 2108.63
+    },
+    {
+      "id": 275,
+      "portfolio_id": 34,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.05754748194532816,
+      "value": 6903.97
+    },
+    {
+      "id": 276,
+      "portfolio_id": 34,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.14576115939659762,
+      "value": 17486.97
+    },
+    {
+      "id": 277,
+      "portfolio_id": 34,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.03425037550168326,
+      "value": 4109.02
+    },
+    {
+      "id": 278,
+      "portfolio_id": 34,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.025771583258896242,
+      "value": 3091.82
+    },
+    {
+      "id": 279,
+      "portfolio_id": 34,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1051862382371115,
+      "value": 12619.19
+    },
+    {
+      "id": 280,
+      "portfolio_id": 34,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1894435755365525,
+      "value": 22727.55
+    },
+    {
+      "id": 281,
+      "portfolio_id": 34,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10351791074375329,
+      "value": 12419.04
+    },
+    {
+      "id": 282,
+      "portfolio_id": 34,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.17813288170944733,
+      "value": 21370.6
+    },
+    {
+      "id": 283,
+      "portfolio_id": 35,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.18503283225645778,
+      "value": 153398.88
+    },
+    {
+      "id": 284,
+      "portfolio_id": 35,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.12927382124030065,
+      "value": 107172.65
+    },
+    {
+      "id": 285,
+      "portfolio_id": 35,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.16987300200580763,
+      "value": 140830.83
+    },
+    {
+      "id": 286,
+      "portfolio_id": 35,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.258606702840215,
+      "value": 214394.27
+    },
+    {
+      "id": 287,
+      "portfolio_id": 35,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.08993574938871542,
+      "value": 74559.97
+    },
+    {
+      "id": 288,
+      "portfolio_id": 35,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.16727789226850356,
+      "value": 138679.39
+    },
+    {
+      "id": 289,
+      "portfolio_id": 36,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.04592020809611336,
+      "value": 39723.23
+    },
+    {
+      "id": 290,
+      "portfolio_id": 36,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11750514641226562,
+      "value": 101647.71
+    },
+    {
+      "id": 291,
+      "portfolio_id": 36,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.08620403544520855,
+      "value": 74570.71
+    },
+    {
+      "id": 292,
+      "portfolio_id": 36,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06685978943134473,
+      "value": 57836.99
+    },
+    {
+      "id": 293,
+      "portfolio_id": 36,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.07269529317827535,
+      "value": 62884.99
+    },
+    {
+      "id": 294,
+      "portfolio_id": 36,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.089931397822684,
+      "value": 77795.07
+    },
+    {
+      "id": 295,
+      "portfolio_id": 36,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.10958793328686674,
+      "value": 94798.93
+    },
+    {
+      "id": 296,
+      "portfolio_id": 36,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08105988241398554,
+      "value": 70120.77
+    },
+    {
+      "id": 297,
+      "portfolio_id": 36,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.10318644644497828,
+      "value": 89261.33
+    },
+    {
+      "id": 298,
+      "portfolio_id": 36,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07619946175245214,
+      "value": 65916.27
+    },
+    {
+      "id": 299,
+      "portfolio_id": 36,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.11622688350865715,
+      "value": 100541.95
+    },
+    {
+      "id": 300,
+      "portfolio_id": 36,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.03462352220716848,
+      "value": 29951.04
+    },
+    {
+      "id": 301,
+      "portfolio_id": 37,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.14907801251728012,
+      "value": 190780.2
+    },
+    {
+      "id": 302,
+      "portfolio_id": 37,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.042721668572496346,
+      "value": 54672.37
+    },
+    {
+      "id": 303,
+      "portfolio_id": 37,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.14198500124284869,
+      "value": 181703.03
+    },
+    {
+      "id": 304,
+      "portfolio_id": 37,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.14460243821966484,
+      "value": 185052.66
+    },
+    {
+      "id": 305,
+      "portfolio_id": 37,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.10927671348808737,
+      "value": 139845.13
+    },
+    {
+      "id": 306,
+      "portfolio_id": 37,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.05083996236271736,
+      "value": 65061.63
+    },
+    {
+      "id": 307,
+      "portfolio_id": 37,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.1804273049398126,
+      "value": 230898.96
+    },
+    {
+      "id": 308,
+      "portfolio_id": 37,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.18106889865709272,
+      "value": 231720.03
+    },
+    {
+      "id": 309,
+      "portfolio_id": 38,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.12613307681403063,
+      "value": 142068.48
+    },
+    {
+      "id": 310,
+      "portfolio_id": 38,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06182393222204861,
+      "value": 69634.64
+    },
+    {
+      "id": 311,
+      "portfolio_id": 38,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.17164687504314127,
+      "value": 193332.4
+    },
+    {
+      "id": 312,
+      "portfolio_id": 38,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.20293870998767444,
+      "value": 228577.58
+    },
+    {
+      "id": 313,
+      "portfolio_id": 38,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.2535890974022724,
+      "value": 285627.04
+    },
+    {
+      "id": 314,
+      "portfolio_id": 38,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.18386830853083272,
+      "value": 207097.86
+    },
+    {
+      "id": 315,
+      "portfolio_id": 39,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.1267939243693329,
+      "value": 39894.69
+    },
+    {
+      "id": 316,
+      "portfolio_id": 39,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11888291891243681,
+      "value": 37405.56
+    },
+    {
+      "id": 317,
+      "portfolio_id": 39,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.14463257659221426,
+      "value": 45507.48
+    },
+    {
+      "id": 318,
+      "portfolio_id": 39,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.0773586580195811,
+      "value": 24340.28
+    },
+    {
+      "id": 319,
+      "portfolio_id": 39,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12132554093203018,
+      "value": 38174.11
+    },
+    {
+      "id": 320,
+      "portfolio_id": 39,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.059891389940476575,
+      "value": 18844.35
+    },
+    {
+      "id": 321,
+      "portfolio_id": 39,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.10267340782589021,
+      "value": 32305.37
+    },
+    {
+      "id": 322,
+      "portfolio_id": 39,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.08737006616324185,
+      "value": 27490.29
+    },
+    {
+      "id": 323,
+      "portfolio_id": 39,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.16107151724479618,
+      "value": 50679.86
+    },
+    {
+      "id": 324,
+      "portfolio_id": 40,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.01732827232592235,
+      "value": 4254.39
+    },
+    {
+      "id": 325,
+      "portfolio_id": 40,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.13257529625509512,
+      "value": 32549.49
+    },
+    {
+      "id": 326,
+      "portfolio_id": 40,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.1456701900207719,
+      "value": 35764.51
+    },
+    {
+      "id": 327,
+      "portfolio_id": 40,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.09983948918613,
+      "value": 24512.29
+    },
+    {
+      "id": 328,
+      "portfolio_id": 40,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.10523985274216749,
+      "value": 25838.17
+    },
+    {
+      "id": 329,
+      "portfolio_id": 40,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10077543105286957,
+      "value": 24742.08
+    },
+    {
+      "id": 330,
+      "portfolio_id": 40,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.05915423707620755,
+      "value": 14523.37
+    },
+    {
+      "id": 331,
+      "portfolio_id": 40,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.021934131885758015,
+      "value": 5385.2
+    },
+    {
+      "id": 332,
+      "portfolio_id": 40,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.06345238774786824,
+      "value": 15578.64
+    },
+    {
+      "id": 333,
+      "portfolio_id": 40,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1193938742634552,
+      "value": 29313.23
+    },
+    {
+      "id": 334,
+      "portfolio_id": 40,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.1346368374437547,
+      "value": 33055.63
+    },
+    {
+      "id": 335,
+      "portfolio_id": 41,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.25668876818480924,
+      "value": 16121.08
+    },
+    {
+      "id": 336,
+      "portfolio_id": 41,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.16711633125437467,
+      "value": 10495.57
+    },
+    {
+      "id": 337,
+      "portfolio_id": 41,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.11826790457383866,
+      "value": 7427.7
+    },
+    {
+      "id": 338,
+      "portfolio_id": 41,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.0418659518761763,
+      "value": 2629.35
+    },
+    {
+      "id": 339,
+      "portfolio_id": 41,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.18684344409336057,
+      "value": 11734.52
+    },
+    {
+      "id": 340,
+      "portfolio_id": 41,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.00904663777442401,
+      "value": 568.17
+    },
+    {
+      "id": 341,
+      "portfolio_id": 41,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.2201709622430167,
+      "value": 13827.62
+    },
+    {
+      "id": 342,
+      "portfolio_id": 42,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12436843422629162,
+      "value": 77188.15
+    },
+    {
+      "id": 343,
+      "portfolio_id": 42,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.09124861026738683,
+      "value": 56632.63
+    },
+    {
+      "id": 344,
+      "portfolio_id": 42,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.08305352739722967,
+      "value": 51546.42
+    },
+    {
+      "id": 345,
+      "portfolio_id": 42,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.05132398677595399,
+      "value": 31853.77
+    },
+    {
+      "id": 346,
+      "portfolio_id": 42,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.14184258712778752,
+      "value": 88033.33
+    },
+    {
+      "id": 347,
+      "portfolio_id": 42,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.02138461677039976,
+      "value": 13272.17
+    },
+    {
+      "id": 348,
+      "portfolio_id": 42,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08077437687075827,
+      "value": 50131.89
+    },
+    {
+      "id": 349,
+      "portfolio_id": 42,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.05321779851632507,
+      "value": 33029.15
+    },
+    {
+      "id": 350,
+      "portfolio_id": 42,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12747747497670592,
+      "value": 79117.75
+    },
+    {
+      "id": 351,
+      "portfolio_id": 42,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.0914310558314377,
+      "value": 56745.86
+    },
+    {
+      "id": 352,
+      "portfolio_id": 42,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12534428437688064,
+      "value": 77793.8
+    },
+    {
+      "id": 353,
+      "portfolio_id": 42,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.008533246862842833,
+      "value": 5296.08
+    },
+    {
+      "id": 354,
+      "portfolio_id": 43,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.12465176813964109,
+      "value": 118453.33
+    },
+    {
+      "id": 355,
+      "portfolio_id": 43,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.07338459033203164,
+      "value": 69735.47
+    },
+    {
+      "id": 356,
+      "portfolio_id": 43,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.02023479289300325,
+      "value": 19228.6
+    },
+    {
+      "id": 357,
+      "portfolio_id": 43,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.0036642857855559144,
+      "value": 3482.08
+    },
+    {
+      "id": 358,
+      "portfolio_id": 43,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.05705847364998893,
+      "value": 54221.18
+    },
+    {
+      "id": 359,
+      "portfolio_id": 43,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1407841713585924,
+      "value": 133783.54
+    },
+    {
+      "id": 360,
+      "portfolio_id": 43,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.10859833653916999,
+      "value": 103198.18
+    },
+    {
+      "id": 361,
+      "portfolio_id": 43,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.14617851021662265,
+      "value": 138909.64
+    },
+    {
+      "id": 362,
+      "portfolio_id": 43,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.16159421231905913,
+      "value": 153558.78
+    },
+    {
+      "id": 363,
+      "portfolio_id": 43,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.015483525874971515,
+      "value": 14713.59
+    },
+    {
+      "id": 364,
+      "portfolio_id": 43,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.14836733289136358,
+      "value": 140989.62
+    },
+    {
+      "id": 365,
+      "portfolio_id": 44,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.2002897736203918,
+      "value": 41665.68
+    },
+    {
+      "id": 366,
+      "portfolio_id": 44,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.13221145434478565,
+      "value": 27503.55
+    },
+    {
+      "id": 367,
+      "portfolio_id": 44,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.09768298412130634,
+      "value": 20320.7
+    },
+    {
+      "id": 368,
+      "portfolio_id": 44,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11869166948095884,
+      "value": 24691.07
+    },
+    {
+      "id": 369,
+      "portfolio_id": 44,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.12200409060127666,
+      "value": 25380.14
+    },
+    {
+      "id": 370,
+      "portfolio_id": 44,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.14340922662709135,
+      "value": 29832.99
+    },
+    {
+      "id": 371,
+      "portfolio_id": 44,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.18571080120418945,
+      "value": 38632.86
+    },
+    {
+      "id": 372,
+      "portfolio_id": 45,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.013645741104682127,
+      "value": 11234.51
+    },
+    {
+      "id": 373,
+      "portfolio_id": 45,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.15369709807378937,
+      "value": 126538.51
+    },
+    {
+      "id": 374,
+      "portfolio_id": 45,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1521042569098934,
+      "value": 125227.13
+    },
+    {
+      "id": 375,
+      "portfolio_id": 45,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10937228912933815,
+      "value": 90045.99
+    },
+    {
+      "id": 376,
+      "portfolio_id": 45,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.09017627884476412,
+      "value": 74241.95
+    },
+    {
+      "id": 377,
+      "portfolio_id": 45,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.08228803752431518,
+      "value": 67747.58
+    },
+    {
+      "id": 378,
+      "portfolio_id": 45,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.09857890002334693,
+      "value": 81159.81
+    },
+    {
+      "id": 379,
+      "portfolio_id": 45,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.14081584363975064,
+      "value": 115933.4
+    },
+    {
+      "id": 380,
+      "portfolio_id": 45,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.15932155475012005,
+      "value": 131169.12
+    },
+    {
+      "id": 381,
+      "portfolio_id": 46,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.13472894382289577,
+      "value": 225559.16
+    },
+    {
+      "id": 382,
+      "portfolio_id": 46,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.010392067400889559,
+      "value": 17398.09
+    },
+    {
+      "id": 383,
+      "portfolio_id": 46,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.1252010122770076,
+      "value": 209607.78
+    },
+    {
+      "id": 384,
+      "portfolio_id": 46,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06641199659676271,
+      "value": 111184.97
+    },
+    {
+      "id": 385,
+      "portfolio_id": 46,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06542795163396974,
+      "value": 109537.51
+    },
+    {
+      "id": 386,
+      "portfolio_id": 46,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11072918942664797,
+      "value": 185379.49
+    },
+    {
+      "id": 387,
+      "portfolio_id": 46,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.0767146293836998,
+      "value": 128433.33
+    },
+    {
+      "id": 388,
+      "portfolio_id": 46,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.05000919126422635,
+      "value": 83723.89
+    },
+    {
+      "id": 389,
+      "portfolio_id": 46,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.1689954456001791,
+      "value": 282927.11
+    },
+    {
+      "id": 390,
+      "portfolio_id": 46,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.19138957259372139,
+      "value": 320418.68
+    },
+    {
+      "id": 391,
+      "portfolio_id": 47,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.21970409188268716,
+      "value": 99452.13
+    },
+    {
+      "id": 392,
+      "portfolio_id": 47,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.03404288439844333,
+      "value": 15409.99
+    },
+    {
+      "id": 393,
+      "portfolio_id": 47,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06498825443380493,
+      "value": 29417.84
+    },
+    {
+      "id": 394,
+      "portfolio_id": 47,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.17315727527699923,
+      "value": 78382.06
+    },
+    {
+      "id": 395,
+      "portfolio_id": 47,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.11154411507072474,
+      "value": 50492.01
+    },
+    {
+      "id": 396,
+      "portfolio_id": 47,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11859261686667623,
+      "value": 53682.61
+    },
+    {
+      "id": 397,
+      "portfolio_id": 47,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.16228690399283857,
+      "value": 73461.44
+    },
+    {
+      "id": 398,
+      "portfolio_id": 47,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.11568385807782576,
+      "value": 52365.92
+    },
+    {
+      "id": 399,
+      "portfolio_id": 48,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.05970466692202005,
+      "value": 32284.64
+    },
+    {
+      "id": 400,
+      "portfolio_id": 48,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.156005257491626,
+      "value": 84358.13
+    },
+    {
+      "id": 401,
+      "portfolio_id": 48,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.09048570397995642,
+      "value": 48929.15
+    },
+    {
+      "id": 402,
+      "portfolio_id": 48,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.16111579749820698,
+      "value": 87121.6
+    },
+    {
+      "id": 403,
+      "portfolio_id": 48,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07096639792052331,
+      "value": 38374.3
+    },
+    {
+      "id": 404,
+      "portfolio_id": 48,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.18272684169922665,
+      "value": 98807.53
+    },
+    {
+      "id": 405,
+      "portfolio_id": 48,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.18992486985046508,
+      "value": 102699.78
+    },
+    {
+      "id": 406,
+      "portfolio_id": 48,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.08907046463797563,
+      "value": 48163.87
+    },
+    {
+      "id": 407,
+      "portfolio_id": 49,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.016639959662604512,
+      "value": 5973.95
+    },
+    {
+      "id": 408,
+      "portfolio_id": 49,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.16519655443509915,
+      "value": 59307.55
+    },
+    {
+      "id": 409,
+      "portfolio_id": 49,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.1481777373214026,
+      "value": 53197.59
+    },
+    {
+      "id": 410,
+      "portfolio_id": 49,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.16050191706333933,
+      "value": 57622.11
+    },
+    {
+      "id": 411,
+      "portfolio_id": 49,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.16881924225737474,
+      "value": 60608.13
+    },
+    {
+      "id": 412,
+      "portfolio_id": 49,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.07527640459999428,
+      "value": 27025.13
+    },
+    {
+      "id": 413,
+      "portfolio_id": 49,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07193022818788992,
+      "value": 25823.82
+    },
+    {
+      "id": 414,
+      "portfolio_id": 49,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06784932800540587,
+      "value": 24358.72
+    },
+    {
+      "id": 415,
+      "portfolio_id": 49,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.07006366289319889,
+      "value": 25153.7
+    },
+    {
+      "id": 416,
+      "portfolio_id": 49,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.01480600077489516,
+      "value": 5315.53
+    },
+    {
+      "id": 417,
+      "portfolio_id": 49,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.04073896479879567,
+      "value": 14625.78
+    },
+    {
+      "id": 418,
+      "portfolio_id": 50,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.011930192736706395,
+      "value": 11100.29
+    },
+    {
+      "id": 419,
+      "portfolio_id": 50,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.15892849152636843,
+      "value": 147872.95
+    },
+    {
+      "id": 420,
+      "portfolio_id": 50,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.09494235705234123,
+      "value": 88337.88
+    },
+    {
+      "id": 421,
+      "portfolio_id": 50,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10182319785498686,
+      "value": 94740.07
+    },
+    {
+      "id": 422,
+      "portfolio_id": 50,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.12003958367420305,
+      "value": 111689.27
+    },
+    {
+      "id": 423,
+      "portfolio_id": 50,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10923003019011229,
+      "value": 101631.66
+    },
+    {
+      "id": 424,
+      "portfolio_id": 50,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.13648720221236965,
+      "value": 126992.74
+    },
+    {
+      "id": 425,
+      "portfolio_id": 50,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.055326995366344306,
+      "value": 51478.28
+    },
+    {
+      "id": 426,
+      "portfolio_id": 50,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.0002971449729843338,
+      "value": 276.47
+    },
+    {
+      "id": 427,
+      "portfolio_id": 50,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.06701726293234599,
+      "value": 62355.34
+    },
+    {
+      "id": 428,
+      "portfolio_id": 50,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.10839734027727785,
+      "value": 100856.9
+    },
+    {
+      "id": 429,
+      "portfolio_id": 50,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.0355802012039596,
+      "value": 33105.14
+    },
+    {
+      "id": 430,
+      "portfolio_id": 51,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.3067827415266853,
+      "value": 421779.03
+    },
+    {
+      "id": 431,
+      "portfolio_id": 51,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.023854850328688094,
+      "value": 32796.75
+    },
+    {
+      "id": 432,
+      "portfolio_id": 51,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.29343499568052617,
+      "value": 403427.93
+    },
+    {
+      "id": 433,
+      "portfolio_id": 51,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.17302353247688215,
+      "value": 237880.71
+    },
+    {
+      "id": 434,
+      "portfolio_id": 51,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.11093453312245108,
+      "value": 152517.9
+    },
+    {
+      "id": 435,
+      "portfolio_id": 51,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.01656074890094786,
+      "value": 22768.48
+    },
+    {
+      "id": 436,
+      "portfolio_id": 51,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.07540859796381932,
+      "value": 103675.21
+    },
+    {
+      "id": 437,
+      "portfolio_id": 52,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.11582162717003286,
+      "value": 186337.19
+    },
+    {
+      "id": 438,
+      "portfolio_id": 52,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.05005583428960071,
+      "value": 80531.28
+    },
+    {
+      "id": 439,
+      "portfolio_id": 52,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.126060276464158,
+      "value": 202809.43
+    },
+    {
+      "id": 440,
+      "portfolio_id": 52,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.06423949971762109,
+      "value": 103350.37
+    },
+    {
+      "id": 441,
+      "portfolio_id": 52,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06441041114274096,
+      "value": 103625.34
+    },
+    {
+      "id": 442,
+      "portfolio_id": 52,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.1196631516773235,
+      "value": 192517.55
+    },
+    {
+      "id": 443,
+      "portfolio_id": 52,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.0672265299025347,
+      "value": 108155.99
+    },
+    {
+      "id": 444,
+      "portfolio_id": 52,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.10371829440447825,
+      "value": 166865.0
+    },
+    {
+      "id": 445,
+      "portfolio_id": 52,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.09412945751232715,
+      "value": 151438.2
+    },
+    {
+      "id": 446,
+      "portfolio_id": 52,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.010218054039264913,
+      "value": 16439.1
+    },
+    {
+      "id": 447,
+      "portfolio_id": 52,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07799485462877519,
+      "value": 125480.38
+    },
+    {
+      "id": 448,
+      "portfolio_id": 52,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.10646200905114271,
+      "value": 171279.17
+    },
+    {
+      "id": 449,
+      "portfolio_id": 53,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.005668530057609656,
+      "value": 10372.21
+    },
+    {
+      "id": 450,
+      "portfolio_id": 53,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.010951886949689585,
+      "value": 20039.63
+    },
+    {
+      "id": 451,
+      "portfolio_id": 53,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.12681519964078267,
+      "value": 232044.93
+    },
+    {
+      "id": 452,
+      "portfolio_id": 53,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.059672576845749926,
+      "value": 109188.17
+    },
+    {
+      "id": 453,
+      "portfolio_id": 53,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.062364545435770496,
+      "value": 114113.9
+    },
+    {
+      "id": 454,
+      "portfolio_id": 53,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.09240054202317442,
+      "value": 169073.4
+    },
+    {
+      "id": 455,
+      "portfolio_id": 53,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.09856609661690663,
+      "value": 180355.06
+    },
+    {
+      "id": 456,
+      "portfolio_id": 53,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11061488731820565,
+      "value": 202401.79
+    },
+    {
+      "id": 457,
+      "portfolio_id": 53,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.15455731432209469,
+      "value": 282807.12
+    },
+    {
+      "id": 458,
+      "portfolio_id": 53,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.060598611749040514,
+      "value": 110882.61
+    },
+    {
+      "id": 459,
+      "portfolio_id": 53,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.12430160395935287,
+      "value": 227445.58
+    },
+    {
+      "id": 460,
+      "portfolio_id": 53,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.0934882050816228,
+      "value": 171063.6
+    },
+    {
+      "id": 461,
+      "portfolio_id": 54,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.14453630127939163,
+      "value": 263516.56
+    },
+    {
+      "id": 462,
+      "portfolio_id": 54,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.15356131670111425,
+      "value": 279970.84
+    },
+    {
+      "id": 463,
+      "portfolio_id": 54,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.11903237055367455,
+      "value": 217018.15
+    },
+    {
+      "id": 464,
+      "portfolio_id": 54,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06284125471622261,
+      "value": 114571.3
+    },
+    {
+      "id": 465,
+      "portfolio_id": 54,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.06491770845916212,
+      "value": 118357.06
+    },
+    {
+      "id": 466,
+      "portfolio_id": 54,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.034087855340483524,
+      "value": 62148.5
+    },
+    {
+      "id": 467,
+      "portfolio_id": 54,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1535663603216016,
+      "value": 279980.04
+    },
+    {
+      "id": 468,
+      "portfolio_id": 54,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.15154398222953036,
+      "value": 276292.87
+    },
+    {
+      "id": 469,
+      "portfolio_id": 54,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.03767740555957077,
+      "value": 68692.92
+    },
+    {
+      "id": 470,
+      "portfolio_id": 54,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.07823544483924877,
+      "value": 142637.77
+    },
+    {
+      "id": 471,
+      "portfolio_id": 55,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.11064460534270333,
+      "value": 109943.56
+    },
+    {
+      "id": 472,
+      "portfolio_id": 55,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.05604793124285935,
+      "value": 55692.81
+    },
+    {
+      "id": 473,
+      "portfolio_id": 55,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.14283233396635237,
+      "value": 141927.35
+    },
+    {
+      "id": 474,
+      "portfolio_id": 55,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.12693830696518177,
+      "value": 126134.03
+    },
+    {
+      "id": 475,
+      "portfolio_id": 55,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.10408588592222494,
+      "value": 103426.4
+    },
+    {
+      "id": 476,
+      "portfolio_id": 55,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.029602960271856063,
+      "value": 29415.4
+    },
+    {
+      "id": 477,
+      "portfolio_id": 55,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.15719828488555315,
+      "value": 156202.28
+    },
+    {
+      "id": 478,
+      "portfolio_id": 55,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.07038118923573763,
+      "value": 69935.25
+    },
+    {
+      "id": 479,
+      "portfolio_id": 55,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.14816066422446952,
+      "value": 147221.92
+    },
+    {
+      "id": 480,
+      "portfolio_id": 55,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.009014927027027579,
+      "value": 8957.81
+    },
+    {
+      "id": 481,
+      "portfolio_id": 55,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.020199348017573136,
+      "value": 20071.36
+    },
+    {
+      "id": 482,
+      "portfolio_id": 55,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.024893562898460998,
+      "value": 24735.84
+    },
+    {
+      "id": 483,
+      "portfolio_id": 56,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.10983814970923206,
+      "value": 182158.77
+    },
+    {
+      "id": 484,
+      "portfolio_id": 56,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.005381818012487252,
+      "value": 8925.36
+    },
+    {
+      "id": 485,
+      "portfolio_id": 56,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.15797515192633121,
+      "value": 261990.57
+    },
+    {
+      "id": 486,
+      "portfolio_id": 56,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.09694936804557724,
+      "value": 160783.64
+    },
+    {
+      "id": 487,
+      "portfolio_id": 56,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.11406721853141205,
+      "value": 189172.38
+    },
+    {
+      "id": 488,
+      "portfolio_id": 56,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.05368226186831345,
+      "value": 89028.22
+    },
+    {
+      "id": 489,
+      "portfolio_id": 56,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.0435149165822924,
+      "value": 72166.4
+    },
+    {
+      "id": 490,
+      "portfolio_id": 56,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.14346634197032557,
+      "value": 237928.74
+    },
+    {
+      "id": 491,
+      "portfolio_id": 56,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07216282750515243,
+      "value": 119676.93
+    },
+    {
+      "id": 492,
+      "portfolio_id": 56,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.08059499960462277,
+      "value": 133661.08
+    },
+    {
+      "id": 493,
+      "portfolio_id": 56,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.12236694624425346,
+      "value": 202936.89
+    },
+    {
+      "id": 494,
+      "portfolio_id": 57,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.14003892857951214,
+      "value": 21863.72
+    },
+    {
+      "id": 495,
+      "portfolio_id": 57,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12800773595595308,
+      "value": 19985.34
+    },
+    {
+      "id": 496,
+      "portfolio_id": 57,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.061937885733559545,
+      "value": 9670.11
+    },
+    {
+      "id": 497,
+      "portfolio_id": 57,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.14260170259413354,
+      "value": 22263.83
+    },
+    {
+      "id": 498,
+      "portfolio_id": 57,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13365840986506153,
+      "value": 20867.55
+    },
+    {
+      "id": 499,
+      "portfolio_id": 57,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.12049966835498338,
+      "value": 18813.13
+    },
+    {
+      "id": 500,
+      "portfolio_id": 57,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.13831569085254117,
+      "value": 21594.68
+    },
+    {
+      "id": 501,
+      "portfolio_id": 57,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10682004051462995,
+      "value": 16677.39
+    },
+    {
+      "id": 502,
+      "portfolio_id": 57,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.028119937549625537,
+      "value": 4390.25
+    },
+    {
+      "id": 503,
+      "portfolio_id": 58,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.2259649824918512,
+      "value": 215507.55
+    },
+    {
+      "id": 504,
+      "portfolio_id": 58,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1862884913541921,
+      "value": 177667.25
+    },
+    {
+      "id": 505,
+      "portfolio_id": 58,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.19559607841231075,
+      "value": 186544.09
+    },
+    {
+      "id": 506,
+      "portfolio_id": 58,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.09370331514383198,
+      "value": 89366.82
+    },
+    {
+      "id": 507,
+      "portfolio_id": 58,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.10257445876059151,
+      "value": 97827.42
+    },
+    {
+      "id": 508,
+      "portfolio_id": 58,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.1460284943028929,
+      "value": 139270.44
+    },
+    {
+      "id": 509,
+      "portfolio_id": 58,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.04984417953432966,
+      "value": 47537.44
+    },
+    {
+      "id": 510,
+      "portfolio_id": 59,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.03132766806454536,
+      "value": 34420.93
+    },
+    {
+      "id": 511,
+      "portfolio_id": 59,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.09476186176315265,
+      "value": 104118.55
+    },
+    {
+      "id": 512,
+      "portfolio_id": 59,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.23030058706706646,
+      "value": 253040.24
+    },
+    {
+      "id": 513,
+      "portfolio_id": 59,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.32759826111956786,
+      "value": 359944.99
+    },
+    {
+      "id": 514,
+      "portfolio_id": 59,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.3160116219856676,
+      "value": 347214.29
+    },
+    {
+      "id": 515,
+      "portfolio_id": 60,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.25784279681070604,
+      "value": 377243.09
+    },
+    {
+      "id": 516,
+      "portfolio_id": 60,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.15359087167221067,
+      "value": 224714.81
+    },
+    {
+      "id": 517,
+      "portfolio_id": 60,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.20965190566709202,
+      "value": 306736.25
+    },
+    {
+      "id": 518,
+      "portfolio_id": 60,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.19085620912396675,
+      "value": 279236.76
+    },
+    {
+      "id": 519,
+      "portfolio_id": 60,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.18104649025622538,
+      "value": 264884.41
+    },
+    {
+      "id": 520,
+      "portfolio_id": 60,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.007011726469799186,
+      "value": 10258.67
+    },
+    {
+      "id": 521,
+      "portfolio_id": 61,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.07725472450216339,
+      "value": 75317.49
+    },
+    {
+      "id": 522,
+      "portfolio_id": 61,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.0761810420681194,
+      "value": 74270.73
+    },
+    {
+      "id": 523,
+      "portfolio_id": 61,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.03761302965850644,
+      "value": 36669.85
+    },
+    {
+      "id": 524,
+      "portfolio_id": 61,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.09257342751800482,
+      "value": 90252.06
+    },
+    {
+      "id": 525,
+      "portfolio_id": 61,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.11280274946690723,
+      "value": 109974.11
+    },
+    {
+      "id": 526,
+      "portfolio_id": 61,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.0869996758303977,
+      "value": 84818.07
+    },
+    {
+      "id": 527,
+      "portfolio_id": 61,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1565048100338336,
+      "value": 152580.3
+    },
+    {
+      "id": 528,
+      "portfolio_id": 61,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.13418789996007116,
+      "value": 130823.0
+    },
+    {
+      "id": 529,
+      "portfolio_id": 61,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.13019827188314093,
+      "value": 126933.42
+    },
+    {
+      "id": 530,
+      "portfolio_id": 61,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.09568436907885532,
+      "value": 93284.99
+    },
+    {
+      "id": 531,
+      "portfolio_id": 62,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07192052495843422,
+      "value": 56205.39
+    },
+    {
+      "id": 532,
+      "portfolio_id": 62,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.14331575901547125,
+      "value": 112000.26
+    },
+    {
+      "id": 533,
+      "portfolio_id": 62,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1357470996211503,
+      "value": 106085.41
+    },
+    {
+      "id": 534,
+      "portfolio_id": 62,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.22385664001498437,
+      "value": 174942.4
+    },
+    {
+      "id": 535,
+      "portfolio_id": 62,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.0985963476717468,
+      "value": 77052.36
+    },
+    {
+      "id": 536,
+      "portfolio_id": 62,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.0862515059016566,
+      "value": 67404.95
+    },
+    {
+      "id": 537,
+      "portfolio_id": 62,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.19319404079869412,
+      "value": 150979.79
+    },
+    {
+      "id": 538,
+      "portfolio_id": 62,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.03660538045988474,
+      "value": 28606.85
+    },
+    {
+      "id": 539,
+      "portfolio_id": 62,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.010512701557977427,
+      "value": 8215.6
+    },
+    {
+      "id": 540,
+      "portfolio_id": 63,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.015377906358778922,
+      "value": 11420.79
+    },
+    {
+      "id": 541,
+      "portfolio_id": 63,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.11788531991957131,
+      "value": 87550.48
+    },
+    {
+      "id": 542,
+      "portfolio_id": 63,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.0007924797166830519,
+      "value": 588.55
+    },
+    {
+      "id": 543,
+      "portfolio_id": 63,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.08417403387684526,
+      "value": 62513.95
+    },
+    {
+      "id": 544,
+      "portfolio_id": 63,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1421017595199341,
+      "value": 105535.42
+    },
+    {
+      "id": 545,
+      "portfolio_id": 63,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06223472686591169,
+      "value": 46220.18
+    },
+    {
+      "id": 546,
+      "portfolio_id": 63,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.1430090971442604,
+      "value": 106209.28
+    },
+    {
+      "id": 547,
+      "portfolio_id": 63,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.1343474058197716,
+      "value": 99776.46
+    },
+    {
+      "id": 548,
+      "portfolio_id": 63,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07302367688085762,
+      "value": 54232.86
+    },
+    {
+      "id": 549,
+      "portfolio_id": 63,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.0305059247699281,
+      "value": 22655.99
+    },
+    {
+      "id": 550,
+      "portfolio_id": 63,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.14742646443200683,
+      "value": 109489.95
+    },
+    {
+      "id": 551,
+      "portfolio_id": 63,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.04912120469545113,
+      "value": 36481.09
+    },
+    {
+      "id": 552,
+      "portfolio_id": 64,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.12251523449687209,
+      "value": 193974.45
+    },
+    {
+      "id": 553,
+      "portfolio_id": 64,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.13580320033962373,
+      "value": 215012.86
+    },
+    {
+      "id": 554,
+      "portfolio_id": 64,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.0026616806302169555,
+      "value": 4214.15
+    },
+    {
+      "id": 555,
+      "portfolio_id": 64,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.06370864068061206,
+      "value": 100867.85
+    },
+    {
+      "id": 556,
+      "portfolio_id": 64,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.05575471779330363,
+      "value": 88274.66
+    },
+    {
+      "id": 557,
+      "portfolio_id": 64,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.1274506900983917,
+      "value": 201788.6
+    },
+    {
+      "id": 558,
+      "portfolio_id": 64,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.03650429687026375,
+      "value": 57796.09
+    },
+    {
+      "id": 559,
+      "portfolio_id": 64,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.11546032174993297,
+      "value": 182804.63
+    },
+    {
+      "id": 560,
+      "portfolio_id": 64,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.12070863826304039,
+      "value": 191114.12
+    },
+    {
+      "id": 561,
+      "portfolio_id": 64,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.07663099160875578,
+      "value": 121327.4
+    },
+    {
+      "id": 562,
+      "portfolio_id": 64,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.08082885864972952,
+      "value": 127973.75
+    },
+    {
+      "id": 563,
+      "portfolio_id": 64,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06197272881925763,
+      "value": 98119.44
+    },
+    {
+      "id": 564,
+      "portfolio_id": 65,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.12031436466411283,
+      "value": 132810.33
+    },
+    {
+      "id": 565,
+      "portfolio_id": 65,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11132437856440397,
+      "value": 122886.64
+    },
+    {
+      "id": 566,
+      "portfolio_id": 65,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.1639483631143761,
+      "value": 180976.2
+    },
+    {
+      "id": 567,
+      "portfolio_id": 65,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.06406117285490731,
+      "value": 70714.63
+    },
+    {
+      "id": 568,
+      "portfolio_id": 65,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.0384929833336899,
+      "value": 42490.9
+    },
+    {
+      "id": 569,
+      "portfolio_id": 65,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.16686343677125573,
+      "value": 184194.04
+    },
+    {
+      "id": 570,
+      "portfolio_id": 65,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.08334485506758842,
+      "value": 92001.14
+    },
+    {
+      "id": 571,
+      "portfolio_id": 65,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.0793006417890601,
+      "value": 87536.89
+    },
+    {
+      "id": 572,
+      "portfolio_id": 65,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.1723498038406057,
+      "value": 190250.23
+    },
+    {
+      "id": 573,
+      "portfolio_id": 66,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.014917758952971979,
+      "value": 23174.51
+    },
+    {
+      "id": 574,
+      "portfolio_id": 66,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.08372024228178836,
+      "value": 130058.14
+    },
+    {
+      "id": 575,
+      "portfolio_id": 66,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.13265510687376722,
+      "value": 206077.72
+    },
+    {
+      "id": 576,
+      "portfolio_id": 66,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07437949683400606,
+      "value": 115547.43
+    },
+    {
+      "id": 577,
+      "portfolio_id": 66,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.08419143566380434,
+      "value": 130790.13
+    },
+    {
+      "id": 578,
+      "portfolio_id": 66,
+      "ticker": "WS-US-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.07493167285285789,
+      "value": 116405.23
+    },
+    {
+      "id": 579,
+      "portfolio_id": 66,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.009470945746197883,
+      "value": 14712.97
+    },
+    {
+      "id": 580,
+      "portfolio_id": 66,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.07584696924807836,
+      "value": 117827.13
+    },
+    {
+      "id": 581,
+      "portfolio_id": 66,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.1323636580076755,
+      "value": 205624.96
+    },
+    {
+      "id": 582,
+      "portfolio_id": 66,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.11864441149453464,
+      "value": 184312.31
+    },
+    {
+      "id": 583,
+      "portfolio_id": 66,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06495008363259575,
+      "value": 100898.98
+    },
+    {
+      "id": 584,
+      "portfolio_id": 66,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.13392821841172195,
+      "value": 208055.48
+    },
+    {
+      "id": 585,
+      "portfolio_id": 67,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.29195311507636046,
+      "value": 255255.48
+    },
+    {
+      "id": 586,
+      "portfolio_id": 67,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.08932386490510374,
+      "value": 78096.12
+    },
+    {
+      "id": 587,
+      "portfolio_id": 67,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.0013931825746736856,
+      "value": 1218.06
+    },
+    {
+      "id": 588,
+      "portfolio_id": 67,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.00911942762042266,
+      "value": 7973.14
+    },
+    {
+      "id": 589,
+      "portfolio_id": 67,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.11967717207488486,
+      "value": 104634.11
+    },
+    {
+      "id": 590,
+      "portfolio_id": 67,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.27014931953163923,
+      "value": 236192.36
+    },
+    {
+      "id": 591,
+      "portfolio_id": 67,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.2183839182169154,
+      "value": 190933.71
+    },
+    {
+      "id": 592,
+      "portfolio_id": 68,
+      "ticker": "WS-CA-EQ2",
+      "asset_class": "Equity",
+      "weight": 0.12103094179380607,
+      "value": 119367.25
+    },
+    {
+      "id": 593,
+      "portfolio_id": 68,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.021876853205411627,
+      "value": 21576.13
+    },
+    {
+      "id": 594,
+      "portfolio_id": 68,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.21708487443329724,
+      "value": 214100.83
+    },
+    {
+      "id": 595,
+      "portfolio_id": 68,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.26693306875759515,
+      "value": 263263.81
+    },
+    {
+      "id": 596,
+      "portfolio_id": 68,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.3730742618098898,
+      "value": 367945.98
+    },
+    {
+      "id": 597,
+      "portfolio_id": 69,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.20336878575680742,
+      "value": 127520.16
+    },
+    {
+      "id": 598,
+      "portfolio_id": 69,
+      "ticker": "WS-ETF-BAL",
+      "asset_class": "ETF",
+      "weight": 0.21613563544913791,
+      "value": 135525.47
+    },
+    {
+      "id": 599,
+      "portfolio_id": 69,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.2685725308453037,
+      "value": 168405.45
+    },
+    {
+      "id": 600,
+      "portfolio_id": 69,
+      "ticker": "CASH-CA",
+      "asset_class": "Cash",
+      "weight": 0.06397604583786283,
+      "value": 40115.48
+    },
+    {
+      "id": 601,
+      "portfolio_id": 69,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.24794700211088821,
+      "value": 155472.44
+    },
+    {
+      "id": 602,
+      "portfolio_id": 70,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.060750141464133996,
+      "value": 33737.35
+    },
+    {
+      "id": 603,
+      "portfolio_id": 70,
+      "ticker": "WS-CA-BD2",
+      "asset_class": "Fixed Income",
+      "weight": 0.14293377142797428,
+      "value": 79377.7
+    },
+    {
+      "id": 604,
+      "portfolio_id": 70,
+      "ticker": "WS-INTL-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.16277049484257822,
+      "value": 90393.94
+    },
+    {
+      "id": 605,
+      "portfolio_id": 70,
+      "ticker": "WS-ETF-ALL",
+      "asset_class": "ETF",
+      "weight": 0.18478192942184773,
+      "value": 102617.91
+    },
+    {
+      "id": 606,
+      "portfolio_id": 70,
+      "ticker": "WS-CA-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.11360455155954426,
+      "value": 63089.83
+    },
+    {
+      "id": 607,
+      "portfolio_id": 70,
+      "ticker": "WS-ETF-EQ",
+      "asset_class": "ETF",
+      "weight": 0.19549726666556697,
+      "value": 108568.63
+    },
+    {
+      "id": 608,
+      "portfolio_id": 70,
+      "ticker": "WS-CA-EQ1",
+      "asset_class": "Equity",
+      "weight": 0.11257449141786718,
+      "value": 62517.79
+    },
+    {
+      "id": 609,
+      "portfolio_id": 70,
+      "ticker": "WS-IG-BD1",
+      "asset_class": "Fixed Income",
+      "weight": 0.027087353200487496,
+      "value": 15042.85
+    }
+  ]
+}
