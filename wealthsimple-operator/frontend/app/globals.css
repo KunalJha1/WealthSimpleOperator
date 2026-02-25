@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-ws-background text-gray-900;
+}
+
+.card {
+  @apply bg-white border border-ws-border rounded-xl;
+}
+
+.page-title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.page-subtitle {
+  @apply text-sm text-ws-muted;
+}
+
