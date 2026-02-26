@@ -7,7 +7,7 @@ body {
 }
 
 .card {
-  @apply bg-white border border-ws-border rounded-xl;
+  @apply bg-white border border-ws-border rounded-xl shadow-sm transform-gpu transition-shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg;
 }
 
 .page-title {
@@ -16,5 +16,29 @@ body {
 
 .page-subtitle {
   @apply text-sm text-ws-muted;
+}
+
+/* Modern scrollbars */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.9); /* slate-400 */
+  border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.95); /* slate-500 */
+}
+
+body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.9) transparent;
 }
 

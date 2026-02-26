@@ -89,7 +89,9 @@ export default function AlertDetailPage() {
         </div>
       )}
 
-      <RiskBrief alert={alert} onAction={handleAction} updating={updating} />
+      <div className="mx-auto w-full max-w-6xl">
+        <RiskBrief alert={alert} onAction={handleAction} updating={updating} />
+      </div>
     </div>
   );
 }

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -12,7 +14,11 @@ from sqlalchemy.orm import Session
 from ai.provider import get_provider
 from db import Base, engine, get_db
 from models import Run
-from routes import alerts, audit, operator, portfolios
+from routes import alerts, audit, meeting_notes, operator, portfolios, simulations
+
+
+# Load backend/.env so GEMINI_API_KEY and PROVIDER are available
+load_dotenv(dotenv_path=Path(__file__).with_name(".env"), override=False)
 
 app = FastAPI(title="Wealthsimple Operator Console Backend")
 
@@ -46,6 +52,8 @@ app.include_router(operator.router)
 app.include_router(alerts.router)
 app.include_router(audit.router)
 app.include_router(portfolios.router)
+app.include_router(simulations.router)
+app.include_router(meeting_notes.router)
 
 
 @app.get("/health")
@@ -83,5 +91,13 @@ def root() -> Dict[str, str]:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # On Windows, forcing reload can cause repeated spawn/import cycles when
+    # starting from `python main.py`. Keep reload opt-in via env var.
+    reload_enabled = os.getenv("UVICORN_RELOAD", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=reload_enabled)
 
