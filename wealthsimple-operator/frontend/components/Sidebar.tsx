@@ -4,7 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import type { ComponentType, SVGProps } from "react";
-import { Activity, Globe2, ClipboardList, Settings as SettingsIcon } from "lucide-react";
+import {
+  Activity,
+  Globe2,
+  ClipboardList,
+  Settings as SettingsIcon,
+  LineChart
+} from "lucide-react";
 
 type NavItem = {
   href: string;
@@ -50,6 +56,21 @@ export default function Sidebar() {
             </Link>
           );
         })}
+        <div className="mt-5 pt-4 border-t border-gray-100 text-[11px] font-semibold uppercase tracking-[0.18em] text-ws-muted">
+          Simulations
+        </div>
+        <Link
+          href="/simulations"
+          className={clsx(
+            "flex items-center px-3 py-2 rounded-lg text-sm gap-2",
+            pathname === "/simulations" || pathname?.startsWith("/simulations/")
+              ? "bg-ws-ink text-white font-medium"
+              : "text-gray-700 hover:bg-gray-100"
+          )}
+        >
+          <LineChart className="w-4 h-4" aria-hidden="true" />
+          <span>Scenario lab</span>
+        </Link>
       </nav>
       <div className="px-4 py-4 border-t border-ws-border text-xs text-ws-muted">
         AI responsibility: monitoring/triage only.

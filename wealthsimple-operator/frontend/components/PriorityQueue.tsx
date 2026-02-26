@@ -1,26 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import type { AlertDetail, AlertSummary } from "../lib/types";
-import { formatDateTime } from "../lib/utils";
-import { fetchAlert } from "../lib/api";
-import { ConfidencePill, PriorityPill, StatusPill } from "./StatusPills";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { AlertDetail, AlertSummary, FollowUpDraft } from "../lib/types";
+import {
+  approveFollowUpDraft,
+  createFollowUpDraft,
+  fetchAlert,
+  fetchFollowUpDraft,
+  postAlertAction,
+  rejectFollowUpDraft
+} from "../lib/api";
+import { PriorityPill } from "./StatusPills";
 import { Button } from "./Buttons";
+import { ClientDetailsPanel } from "./RiskBrief";
+import { AlertTriangle, ArrowUpRight, UserRound } from "lucide-react";
 
 interface PriorityQueueProps {
   alerts: AlertSummary[];
+  onAlertAction?: (payload: {
+    id: number;
+    action: "reviewed" | "escalate" | "false_positive";
+    previousStatus: string;
+    updated: AlertDetail;
+  }) => void;
+  onFollowUpDraftEvent?: (payload: {
+    type: "created" | "approved" | "rejected";
+    draft: FollowUpDraft;
+  }) => void;
 }
-
-type QueueEvent = {
-  timestamp: string;
-  message: string;
-};
-
-type MiniHistoryEntry = {
-  dateLabel: string;
-  description: string;
-};
 
 type ClientProfileExtras = {
   investmentHorizon: string;
@@ -28,23 +35,29 @@ type ClientProfileExtras = {
   advisorName: string;
 };
 
+type ChangeRow = {
+  label: string;
+  from: string;
+  to: string;
+};
+
 function segmentLabel(segment: string): string {
   if (segment === "HNW") return "High Net Worth";
   return segment;
 }
 
-function pseudoRandomForAlert(id: number): number {
-  const x = Math.sin(id * 12.9898) * 43758.5453;
-  return x - Math.floor(x);
+function formatPortfolioCode(id: number): string {
+  const code = (10000 + id).toString();
+  return `Portfolio PTF-${code}`;
 }
 
 function buildClientProfileExtras(detail: AlertDetail): ClientProfileExtras {
   const { client, id } = detail;
 
-  let investmentHorizon = "Medium-term (7–15 years)";
+  let investmentHorizon = "Medium-term (7-15 years)";
   const risk = client.risk_profile.toLowerCase();
   if (risk.includes("conservative")) {
-    investmentHorizon = "Short to medium-term (3–7 years)";
+    investmentHorizon = "Short to medium-term (3-7 years)";
   } else if (risk.includes("growth")) {
     investmentHorizon = "Long-term (15+ years)";
   }
@@ -62,67 +75,63 @@ function buildClientProfileExtras(detail: AlertDetail): ClientProfileExtras {
   };
 }
 
-function buildMiniHistory(alert: AlertSummary): MiniHistoryEntry[] {
-  const created = new Date(alert.created_at);
-  const priorityLabel = alert.priority.charAt(0) + alert.priority.slice(1).toLowerCase();
+function parseMaybeNumber(value: string): number | null {
+  const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
-  function dateWithOffset(offsetDays: number): string {
-    const d = new Date(created.getTime() + offsetDays * 24 * 60 * 60 * 1000);
-    return d.toISOString().slice(0, 10);
+function buildChangeRows(detail: AlertDetail | null | undefined): ChangeRow[] {
+  if (!detail) {
+    return [];
   }
 
-  return [
-    {
-      dateLabel: dateWithOffset(-5),
-      description: "Risk within tolerance"
-    },
-    {
-      dateLabel: dateWithOffset(-3),
-      description: "Minor drift detected"
-    },
-    {
-      dateLabel: dateWithOffset(-1),
-      description: `Escalated to ${priorityLabel} priority`
-    }
-  ];
-  const priorityLabel = alert.priority.charAt(0) + alert.priority.slice(1).toLowerCase();
-}
+  const changeDetection = Array.isArray(detail.change_detection)
+    ? detail.change_detection
+    : [];
 
-function buildEvents(alert: AlertSummary): QueueEvent[] {
-  const baseMinutes = 2 + Math.floor(pseudoRandomForAlert(alert.id) * 5); // 2–6 minutes ago
-  const offsets = [
-    baseMinutes + 13, // earliest event
-    baseMinutes + 9,
-    baseMinutes + 5,
-    baseMinutes // most recent event
-  ];
+  if (changeDetection.length > 0) {
+    return changeDetection.slice(0, 3).map((item) => ({
+      label: item.metric.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      from: item.from,
+      to: item.to
+    }));
+  }
+
+  const equityTo = Math.min(95, Math.max(5, Math.round(detail.portfolio.target_equity_pct + detail.concentration_score * 1.8)));
+  const equityFrom = Math.max(0, equityTo - Math.round(Math.max(2, detail.drift_score)));
+  const riskTo = detail.risk_score.toFixed(1);
+  const riskFrom = Math.max(0, detail.risk_score - Math.max(0.6, detail.drift_score * 0.25)).toFixed(1);
+  const priorityFrom =
+    detail.priority === "HIGH" ? "MEDIUM" : detail.priority === "MEDIUM" ? "LOW" : "LOW";
 
   return [
-    {
-      timestamp: `T-${offsets[0]}m`,
-      message: "Risk within tolerance"
-    },
-    {
-      timestamp: `T-${offsets[1]}m`,
-      message: "Minor drift detected"
-    },
-    {
-      timestamp: `T-${offsets[2]}m`,
-      message: `Escalated to ${priorityLabel} priority`
-    },
-    {
-      timestamp: `T-${offsets[3]}m`,
-      message: "Queued for operator review"
-    }
+    { label: "Equity Exposure", from: `${equityFrom}%`, to: `${equityTo}%` },
+    { label: "Risk Score", from: riskFrom, to: riskTo },
+    { label: "Priority Level", from: priorityFrom, to: detail.priority }
   ];
 }
 
-export default function PriorityQueue({ alerts }: PriorityQueueProps) {
+function minutesSince(value: string): number {
+  const created = new Date(value).getTime();
+  if (!Number.isFinite(created)) return 2;
+  const diff = Date.now() - created;
+  return Math.max(1, Math.round(diff / 60000));
+}
+
+export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEvent }: PriorityQueueProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(5);
   const [selectedDetail, setSelectedDetail] = useState<AlertDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement | null>(null);
+  const [showClientDetails, setShowClientDetails] = useState(false);
+  const [actionLoading, setActionLoading] = useState<null | "reviewed" | "escalate" | "false_positive">(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [followUpDraft, setFollowUpDraft] = useState<FollowUpDraft | null>(null);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [draftActionLoading, setDraftActionLoading] = useState<null | "create" | "approve" | "reject" | "regenerate">(null);
+  const [draftMessage, setDraftMessage] = useState<string | null>(null);
 
   const selected = useMemo(
     () => alerts.find((a) => a.id === selectedId) ?? null,
@@ -138,6 +147,10 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
     if (selectedId == null) {
       setSelectedDetail(null);
       setDetailError(null);
+      setShowClientDetails(false);
+      setActionMessage(null);
+      setFollowUpDraft(null);
+      setDraftMessage(null);
       return;
     }
 
@@ -163,9 +176,112 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
         }
       });
 
+    fetchFollowUpDraft(selectedId)
+      .then((response) => {
+        if (!cancelled) {
+          setFollowUpDraft(response.draft);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFollowUpDraft(null);
+        }
+      });
+
     return () => {
       cancelled = true;
     };
+  }, [selectedId]);
+
+  async function handleCreateFollowUpDraft(forceRegenerate = false) {
+    if (!selected) return;
+    setDraftActionLoading(forceRegenerate ? "regenerate" : "create");
+    setDraftLoading(true);
+    setDraftMessage(null);
+    try {
+      const response = await createFollowUpDraft(selected.id, { forceRegenerate });
+      setFollowUpDraft(response.draft);
+      setDraftMessage(response.message);
+      onFollowUpDraftEvent?.({ type: "created", draft: response.draft });
+    } catch (e) {
+      setDraftMessage((e as Error).message);
+    } finally {
+      setDraftLoading(false);
+      setDraftActionLoading(null);
+    }
+  }
+
+  async function handleApproveFollowUpDraft() {
+    if (!followUpDraft) return;
+    setDraftActionLoading("approve");
+    setDraftMessage(null);
+    try {
+      const response = await approveFollowUpDraft(followUpDraft.id);
+      setFollowUpDraft(response.draft);
+      setDraftMessage(response.message);
+      onFollowUpDraftEvent?.({ type: "approved", draft: response.draft });
+    } catch (e) {
+      setDraftMessage((e as Error).message);
+    } finally {
+      setDraftActionLoading(null);
+    }
+  }
+
+  async function handleRejectFollowUpDraft() {
+    if (!followUpDraft) return;
+    setDraftActionLoading("reject");
+    setDraftMessage(null);
+    try {
+      const response = await rejectFollowUpDraft(followUpDraft.id, "Advisor requested edits");
+      setFollowUpDraft(response.draft);
+      setDraftMessage(response.message);
+      onFollowUpDraftEvent?.({ type: "rejected", draft: response.draft });
+    } catch (e) {
+      setDraftMessage((e as Error).message);
+    } finally {
+      setDraftActionLoading(null);
+    }
+  }
+
+  async function handleAlertAction(action: "reviewed" | "escalate" | "false_positive") {
+    if (!selected) return;
+
+    const previousStatus = selectedDetail?.status ?? selected.status;
+    setActionLoading(action);
+    setActionMessage(null);
+    try {
+      const response = await postAlertAction(selected.id, action);
+      const patchedDetail: AlertDetail = {
+        ...response.alert,
+        change_detection: [
+          {
+            metric: "status",
+            from: previousStatus,
+            to: response.alert.status
+          },
+          ...response.alert.change_detection
+        ]
+      };
+      setSelectedDetail(patchedDetail);
+      setActionMessage(response.message);
+      onAlertAction?.({
+        id: selected.id,
+        action,
+        previousStatus,
+        updated: patchedDetail
+      });
+      setSelectedId(null);
+    } catch (e) {
+      setActionMessage((e as Error).message);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  // When an alert is selected, scroll the risk brief panel into view
+  useEffect(() => {
+    if (!selectedId || !detailRef.current) return;
+    detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selectedId]);
 
   if (!alerts.length) {
@@ -188,9 +304,9 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
         <div className="text-xs text-ws-muted">{alerts.length} items in queue</div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,1fr)] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.8fr)_minmax(280px,0.8fr)] gap-3">
         <div className="space-y-3">
-          {visibleAlerts.map((alert, index) => {
+          {visibleAlerts.map((alert) => {
             const active = selected?.id === alert.id;
             const priorityAccent =
               alert.priority === "HIGH"
@@ -201,7 +317,7 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
 
             return (
               <div
-                key={`${alert.id}-${index}`}
+                key={alert.id}
                 role="button"
                 tabIndex={0}
                 className={`w-full text-left card p-4 transition-colors cursor-pointer ${
@@ -215,34 +331,30 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
                   }
                 }}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <PriorityPill priority={alert.priority} />
-                    <StatusPill status={alert.status} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <PriorityPill priority={alert.priority} />
+                  <div className="text-sm font-medium text-gray-900">
+                    {formatPortfolioCode(alert.portfolio.id)}
                   </div>
-                  <div className="text-xs text-ws-muted">{formatDateTime(alert.created_at)}</div>
+                  <div className="text-sm text-gray-600">{alert.client.name}</div>
                 </div>
 
                 <div className="mt-3">
-                  <div className="text-xs text-ws-muted">Portfolio {alert.portfolio.name}</div>
                   <div className="mt-1 text-base font-semibold text-gray-900">{alert.event_title}</div>
-                  <div className="mt-1 text-sm text-ws-muted">
-                    {alert.client.name} • {segmentLabel(alert.client.segment)} • {alert.client.risk_profile}
-                  </div>
+                  <div className="mt-3 text-sm text-gray-700 leading-6">{alert.summary}</div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <ConfidencePill confidence={alert.confidence} />
+                <div className="mt-4">
                   <Button
                     type="button"
                     variant="secondary"
-                    className="text-xs font-semibold rounded-full border border-purple-500 text-purple-700 bg-white hover:bg-purple-50 px-3 py-1 shadow-[0_0_0_1px_rgba(129,140,248,0.35)]"
+                    className="w-full text-sm font-semibold !border-black !text-black !bg-white hover:!bg-gray-100 hover:!text-black"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedId(alert.id);
                     }}
                   >
-                    View brief
+                    View Brief
                   </Button>
                 </div>
               </div>
@@ -265,78 +377,90 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
         </div>
 
         <div
-          className={`card p-4 space-y-4 ${
-            selected?.priority === "HIGH"
-              ? "border-red-200 bg-red-50"
-              : selected?.priority === "MEDIUM"
-                ? "border-amber-200 bg-amber-50"
-                : selected?.priority === "LOW"
-                  ? "border-emerald-200 bg-emerald-50"
-                  : ""
-          }`}
+          ref={detailRef}
+          className="card p-4 space-y-4 self-start border-gray-200 bg-gray-50"
         >
           {!selected ? (
-            <div className="space-y-2 text-center md:text-left">
-              <div className="flex md:inline-flex justify-center md:justify-start">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-gray-300 text-gray-400">
-                  <svg
-                    aria-hidden="true"
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M8 3.5h6.2L19 8.3V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 7 19V5a1.5 1.5 0 0 1 1-1.4Z" />
-                    <path d="M14 3.5V8h4.5" />
-                    <path d="M10 11h4" />
-                    <path d="M10 14h4" />
-                  </svg>
-                </div>
+            <div className="flex flex-col items-center justify-center space-y-3 py-10 text-center max-w-sm mx-auto">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-gray-400">
+                <svg
+                  aria-hidden="true"
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 3.5h6.2L19 8.3V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 7 19V5a1.5 1.5 0 0 1 1-1.4Z" />
+                  <path d="M14 3.5V8h4.5" />
+                  <path d="M10 11h4" />
+                  <path d="M10 14h4" />
+                </svg>
               </div>
-              <div className="text-sm font-semibold text-gray-900">No brief selected</div>
-              <div className="text-xs text-ws-muted">
+              <div className="text-base font-semibold text-gray-900">No Brief Selected</div>
+              <div className="text-sm text-ws-muted">
                 Select a priority item to view the detailed risk brief.
               </div>
             </div>
           ) : (
             <>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="page-title">Risk brief</div>
-                  <PriorityPill priority={selected.priority} />
+              <div className="space-y-2.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-2xl font-semibold leading-none text-gray-900">Risk Brief</div>
+                    <PriorityPill priority={selected.priority} />
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Close risk brief"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:bg-white hover:text-gray-600"
+                    onClick={() => setSelectedId(null)}
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 6 6 18" />
+                      <path d="m6 6 12 12" />
+                    </svg>
+                  </button>
                 </div>
-                <div className="text-sm font-medium text-gray-900">{selected.portfolio.name}</div>
-                <div className="page-subtitle">{selected.event_title}</div>
-                <div className="mt-1 text-xs text-ws-muted">
-                  {selected.client.name} • {segmentLabel(selected.client.segment)} •{" "}
-                  {selected.client.risk_profile}
-                </div>
-              </div>
-
-              <div className="rounded-lg border bg-white/80 p-3 space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-                  AI confidence
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="text-sm text-gray-900">Model confidence score</div>
-                  <div className="text-2xl font-semibold text-gray-900">
-                    {selected.confidence.toFixed(0)}%
+                <div className="space-y-1">
+                  <div className="text-base font-semibold text-gray-900">{selected.portfolio.name}</div>
+                  <div className="text-sm font-medium text-gray-700">
+                    {formatPortfolioCode(selected.portfolio.id)}
+                  </div>
+                  <div className="text-xs text-gray-500">{selected.event_title}</div>
+                  <div className="text-xs text-ws-muted">
+                    {selected.client.name} - {segmentLabel(selected.client.segment)} -{" "}
+                    {selected.client.risk_profile}
                   </div>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-gray-200">
-                  <div
-                    className={`h-2 rounded-full ${
-                      selected.priority === "HIGH"
-                        ? "bg-red-400"
-                        : selected.priority === "MEDIUM"
-                          ? "bg-amber-400"
-                          : "bg-emerald-400"
-                    }`}
-                    style={{ width: `${Math.max(4, Math.min(100, selected.confidence))}%` }}
-                  />
+                <div className="rounded-[14px] bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 p-[1.5px] overflow-hidden shadow-[0_0_0_1px_rgba(168,85,247,0.2)]">
+                  <div className="rounded-[12px] bg-white px-3 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-semibold tracking-wide text-purple-800">
+                        AI Confidence
+                      </div>
+                      <div className="text-3xl font-semibold leading-none text-purple-800">
+                        {selected.confidence.toFixed(0)}%
+                      </div>
+                    </div>
+                    <div className="mt-3 h-2.5 rounded-full bg-purple-100">
+                      <div
+                        className="h-2.5 rounded-full bg-purple-700"
+                        style={{ width: `${Math.max(4, Math.min(100, selected.confidence))}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -348,29 +472,31 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
 
               {detailLoading && !detailError && (
                 <div className="rounded-md border border-ws-border bg-white/80 p-2 text-[11px] text-ws-muted">
-                  Loading AI summary and client profile…
+                  Loading AI summary and client profile...
                 </div>
               )}
 
               {selectedDetail && !detailLoading && !detailError && (
-                <div className="space-y-3 text-xs">
+                <div className="space-y-5 text-sm">
                   <div className="space-y-1">
-                    <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">
+                    <div className="text-base font-semibold leading-6 text-gray-900">
                       Event
                     </div>
-                    <div className="text-gray-900">{selectedDetail.event_title}</div>
+                    <div className="text-sm leading-6 text-gray-700">
+                      {selectedDetail.event_title}
+                    </div>
                   </div>
                   <div className="space-y-1">
-                    <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">
-                      AI summary
+                    <div className="text-base font-semibold leading-6 text-gray-900">
+                      AI Summary
                     </div>
-                    <p className="text-gray-800">{selectedDetail.summary}</p>
+                    <p className="text-sm leading-6 text-gray-700">{selectedDetail.summary}</p>
                   </div>
-                  <div className="rounded-md border border-amber-200 bg-amber-50 p-2 space-y-1">
-                    <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 space-y-2">
+                    <div className="text-xs font-semibold text-amber-800">
                       Priority justification
                     </div>
-                    <p className="text-[11px] text-amber-900">
+                    <p className="text-sm text-amber-900 leading-6">
                       Ranked with {selectedDetail.priority.toLowerCase()} priority based on
                       concentration {selectedDetail.concentration_score.toFixed(1)}, drift{" "}
                       {selectedDetail.drift_score.toFixed(1)}, and volatility{" "}
@@ -380,13 +506,13 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-baseline justify-between gap-2">
-                      <div className="text-[11px] font-semibold text-gray-900">AI reasoning</div>
+                      <div className="text-sm font-semibold text-gray-900">AI Reasoning</div>
                       <div className="text-[10px] text-ws-muted">AI-generated reasoning</div>
                     </div>
-                    <ol className="space-y-1 text-[11px] text-gray-800">
+                    <ol className="space-y-2 text-sm text-gray-800">
                       {selectedDetail.reasoning_bullets.map((bullet, idx) => (
                         <li key={`${idx}-${bullet}`} className="flex gap-2">
-                          <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-medium text-gray-700">
+                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-medium text-gray-700">
                             {idx + 1}
                           </span>
                           <span>{bullet}</span>
@@ -394,110 +520,317 @@ export default function PriorityQueue({ alerts }: PriorityQueueProps) {
                       ))}
                     </ol>
                   </div>
-                  <div className="rounded-md border border-ws-border bg-white p-2 space-y-1">
-                    <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">
-                      Client profile
-                    </div>
-                    <div className="text-xs font-medium text-gray-900">
-                      {selectedDetail.client.name}
-                    </div>
+                  <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-2.5">
+                    <div className="text-base font-semibold text-gray-900">Client Profile</div>
                     {(() => {
                       const extras = buildClientProfileExtras(selectedDetail);
                       return (
-                        <dl className="mt-1 space-y-0.5 text-[11px] text-gray-800">
+                        <dl className="mt-1 space-y-1 text-sm text-gray-800">
                           <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Risk tolerance</dt>
+                            <dt className="text-ws-muted">Name</dt>
+                            <dd className="font-semibold text-gray-900">
+                              {selectedDetail.client.name}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-ws-muted">Risk Tolerance</dt>
                             <dd className="text-gray-900">
                               {selectedDetail.client.risk_profile}
                             </dd>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Investment horizon</dt>
+                            <dt className="text-ws-muted">Investment Horizon</dt>
                             <dd className="text-gray-900">{extras.investmentHorizon}</dd>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Last advisor review</dt>
+                            <dt className="text-ws-muted">Last Advisor Review</dt>
                             <dd className="text-gray-900">{extras.lastAdvisorReviewLabel}</dd>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Advisor</dt>
+                            <dt className="text-ws-muted">Advisor Assigned</dt>
                             <dd className="text-gray-900">{extras.advisorName}</dd>
                           </div>
                         </dl>
                       );
                     })()}
+                    <div className="pt-1">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="text-base px-4 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                        onClick={() => setShowClientDetails(true)}
+                      >
+                        <UserRound className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                        View Client Details
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
 
-              <div>
-                <div className="text-sm font-semibold text-gray-900">Queue events</div>
-                <ul className="mt-2 space-y-2">
-                  {buildEvents(selected).map((event) => (
-                    <li key={`${selected.id}-${event.label}`} className="rounded-lg border border-ws-border p-2">
-                      <div className="text-xs font-medium text-gray-600">{event.timestamp}</div>
-                      <div className="text-sm font-medium text-gray-900">{event.label}</div>
-                      <div className="text-xs text-ws-muted">{event.detail}</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {selectedDetail ? (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-teal-100 bg-teal-50/40 p-4">
+                    <div className="text-[1.05rem] font-semibold text-gray-900">Change Detection</div>
+                    <div className="mt-3 space-y-2 text-sm">
+                      {buildChangeRows(selectedDetail).map((row, idx) => {
+                        const fromNum = parseMaybeNumber(row.from);
+                        const toNum = parseMaybeNumber(row.to);
+                        const movedUp = fromNum != null && toNum != null ? toNum > fromNum : true;
+                        return (
+                          <div key={`${idx}-${row.label}`} className="flex items-center justify-between gap-3">
+                            <div className="text-gray-700">{row.label}</div>
+                            <div className="flex items-center gap-2 font-medium">
+                              <span className="text-gray-600">{row.from}</span>
+                              <span className="text-gray-400">{"->"}</span>
+                              <span className={movedUp ? "text-orange-500" : "text-emerald-600"}>
+                                {row.to}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 border-t border-teal-200 pt-2 text-xs text-gray-600">
+                      Changes detected in last operator scan ({minutesSince(selectedDetail.created_at)} minutes ago)
+                    </div>
+                  </div>
 
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-                  Operator history
+                  <div className="rounded-2xl border border-purple-200 bg-purple-50/30 p-4">
+                    <div className="text-[1.05rem] font-semibold text-purple-800">
+                      Operator Learning &amp; Feedback
+                    </div>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <dt className="text-gray-700">Human feedback incorporated</dt>
+                        <dd className="font-semibold text-gray-900">
+                          {40 + (selectedDetail.id % 12)} cases
+                        </dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <dt className="text-gray-700">False positives corrected</dt>
+                        <dd className="font-semibold text-gray-900">{8 + (selectedDetail.id % 9)}</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <dt className="text-gray-700">Confidence calibration</dt>
+                        <dd className="rounded-full border border-teal-200 bg-teal-100 px-2.5 py-0.5 text-xs font-medium text-teal-700">
+                          Improving
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-3">
+                    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                      Human Review Required
+                    </span>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+                    <div>
+                      <span className="font-medium text-gray-900">AI Responsibility:</span> Detection and triage
+                    </div>
+                    <div className="mt-1">
+                      <span className="font-medium text-gray-900">Human Responsibility:</span> Final portfolio decisions
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-1 relative pl-3">
-                  <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200" />
-                  <ul className="space-y-1 text-xs text-gray-800">
-                    {buildMiniHistory(selected).map((entry) => (
-                      <li
-                        key={`${selected.id}-${entry.dateLabel}-${entry.description}`}
-                        className="relative flex gap-2"
+              ) : (
+                <div className="rounded-md border border-ws-border bg-white/80 p-2 text-[11px] text-ws-muted">
+                  Loading change detection and learning metrics...
+                </div>
+              )}
+
+              {actionMessage && (
+                <div className="rounded-md border border-gray-200 bg-white p-2 text-xs text-gray-700">
+                  {actionMessage}
+                </div>
+              )}
+
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-semibold text-gray-900">Follow-up Draft Agent</div>
+                  {followUpDraft && (
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                      followUpDraft.status === "PENDING_APPROVAL"
+                        ? "border-amber-200 bg-amber-50 text-amber-700"
+                        : followUpDraft.status === "APPROVED_READY"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-gray-200 bg-gray-50 text-gray-600"
+                    }`}>
+                      {followUpDraft.status === "PENDING_APPROVAL"
+                        ? "Pending Approval"
+                        : followUpDraft.status === "APPROVED_READY"
+                          ? "Approved Ready"
+                          : "Rejected"}
+                    </span>
+                  )}
+                </div>
+                {followUpDraft ? (
+                  <div className="space-y-2 text-xs">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">To</div>
+                      <div className="text-gray-900">{followUpDraft.recipient_email}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">Subject</div>
+                      <div className="text-gray-900">{followUpDraft.subject}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">Body</div>
+                      <div className="max-h-28 overflow-y-auto whitespace-pre-wrap rounded-md border border-gray-200 bg-white p-2 text-[11px] text-gray-800">
+                        {followUpDraft.body}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="text-xs px-2 py-1 border border-gray-300"
+                        disabled={draftActionLoading !== null}
+                        onClick={() => void handleCreateFollowUpDraft(true)}
                       >
-                        <span className="absolute -left-1.5 mt-1 h-2 w-2 rounded-full bg-gray-400" />
-                        <div>
-                          <div className="text-[11px] text-ws-muted">{entry.dateLabel}</div>
-                          <div className="text-gray-900">{entry.description}</div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                        Regenerate
+                      </Button>
+                      {followUpDraft.status === "PENDING_APPROVAL" && (
+                        <>
+                          <Button
+                            type="button"
+                            className="text-xs px-2 py-1"
+                            disabled={draftActionLoading !== null}
+                            onClick={() => void handleApproveFollowUpDraft()}
+                          >
+                            Approve Draft
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="text-xs px-2 py-1 border border-red-300 text-red-600 hover:bg-red-50"
+                            disabled={draftActionLoading !== null}
+                            onClick={() => void handleRejectFollowUpDraft()}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-xs text-ws-muted">
+                    No follow-up draft yet. Use Schedule Follow-up to generate one.
+                  </div>
+                )}
+                {(draftLoading || draftActionLoading !== null) && (
+                  <div className="text-[11px] text-ws-muted">Agent working on follow-up draft...</div>
+                )}
+                {draftMessage && (
+                  <div className="rounded-md border border-indigo-200 bg-white p-2 text-[11px] text-gray-700">
+                    {draftMessage}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2">
-                <Button type="button" className="flex-1">
-                  Mark as reviewed
+                <Button
+                  type="button"
+                  className="flex-1 text-base"
+                  disabled={actionLoading !== null || draftActionLoading !== null}
+                  onClick={() => void handleAlertAction("reviewed")}
+                >
+                  Mark as Reviewed
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
-                  className="flex-1 border-dashed"
+                  className="flex-1 text-base border border-gray-300 bg-white hover:bg-gray-50"
+                  disabled={actionLoading !== null || draftActionLoading !== null}
+                  onClick={() => void handleCreateFollowUpDraft(false)}
                 >
-                  Schedule follow-up
+                  Schedule Follow-up
                 </Button>
               </div>
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="ghost"
-                  className="flex-1 border border-amber-400 text-amber-800 hover:bg-amber-50"
+                  className="flex-1 text-base !border-2 !border-amber-400 !bg-white !text-amber-700 hover:!bg-amber-50"
+                  disabled={actionLoading !== null || draftActionLoading !== null}
+                  onClick={() => void handleAlertAction("escalate")}
                 >
-                  Escalate to senior
+                  <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  Escalate to Senior
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
-                  className="flex-1 border border-red-400 text-red-700 hover:bg-red-50"
+                  className="flex-1 text-base !border-2 !border-red-400 !bg-white !text-red-600 hover:!bg-red-50"
+                  disabled={actionLoading !== null || draftActionLoading !== null}
+                  onClick={() => void handleAlertAction("false_positive")}
                 >
-                  False positive
+                  <AlertTriangle className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  False Positive
                 </Button>
               </div>
+              {showClientDetails && selectedDetail && (
+                <div className="fixed inset-0 z-40 flex justify-center bg-black/50 backdrop-blur-sm overflow-y-auto px-4 py-10">
+                  <div className="relative w-full max-w-5xl rounded-2xl bg-white shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                          Client details
+                        </div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {selectedDetail.client.name} -{" "}
+                          {formatPortfolioCode(selectedDetail.portfolio.id)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
+                        onClick={() => setShowClientDetails(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="p-5 md:p-6">
+                      <ClientDetailsPanel alert={selectedDetail} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </div>
+      {showClientDetails && selectedDetail && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+          <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
+              <div className="space-y-0.5">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                  Client details
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {selectedDetail.client.name} -{" "}
+                  {formatPortfolioCode(selectedDetail.portfolio.id)}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
+                onClick={() => setShowClientDetails(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-5 md:p-6">
+              <ClientDetailsPanel alert={selectedDetail} />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+
+

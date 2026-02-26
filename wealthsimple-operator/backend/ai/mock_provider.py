@@ -6,7 +6,9 @@ from models import (
     AIOutput,
     ChangeDetectionItem,
     DecisionTraceStep,
+    FollowUpDraftContent,
     Priority,
+    TranscriptSummary,
 )
 
 
@@ -57,8 +59,12 @@ class MockAIProvider:
         elif priority == Priority.LOW:
             base_confidence -= 4.0
 
+        # Add pseudo-random variation based on portfolio ID for realistic variance
+        portfolio_id = context.get("portfolio", {}).get("id", 0)
+        variation = ((portfolio_id * 37 + 17) % 41 - 20) / 10.0  # ±2% variation
+
         confidence = int(
-            max(50.0, min(99.0, round(base_confidence + trend_adjustment)))
+            max(50.0, min(99.0, round(base_confidence + trend_adjustment + variation)))
         )
 
         human_review_required = priority != Priority.LOW or drift >= 3 or concentration >= 3
@@ -109,6 +115,94 @@ class MockAIProvider:
             suggested_next_step=suggested_next_step,
             decision_trace_steps=decision_trace_steps,
             change_detection=change_detection,
+        )
+
+    def generate_follow_up_draft(self, alert_context: Dict) -> FollowUpDraftContent:
+        client_name = str(alert_context.get("client_name", "Client")).strip()
+        advisor_name = str(alert_context.get("advisor_name", "Your advisor team")).strip()
+        event_title = str(alert_context.get("event_title", "recent portfolio signal")).strip()
+        summary = str(alert_context.get("summary", "We detected a portfolio change worth reviewing.")).strip()
+        suggested_next_step = str(
+            alert_context.get(
+                "suggested_next_step",
+                "Review alignment with your risk profile and planned allocation."
+            )
+        ).strip()
+
+        subject = f"Quick follow-up: {event_title}"
+        body = (
+            f"Hi {client_name},\n\n"
+            f"We wanted to follow up regarding {event_title.lower()} in your portfolio.\n\n"
+            f"{summary}\n\n"
+            f"Recommended next step: {suggested_next_step}\n\n"
+            "If helpful, we can schedule a quick review call to walk through this together.\n\n"
+            f"Best,\n{advisor_name}"
+        )
+        return FollowUpDraftContent(subject=subject, body=body)
+
+    def summarize_transcript(self, transcript: str, context: Dict) -> TranscriptSummary:
+        """Deterministically summarize a call transcript based on keyword detection.
+
+        Scans for key topics (RRSP/retirement, home/mortgage, tax, estate, schedule/follow)
+        and builds a summary with relevant action items.
+        """
+        client_name = context.get("client_name", "client")
+        risk_profile = context.get("risk_profile", "balanced")
+
+        transcript_lower = transcript.lower()
+
+        # Topic detection
+        topics = []
+        action_items_pool = []
+
+        if any(word in transcript_lower for word in ["rrsp", "retirement", "rsps", "tfsa"]):
+            topics.append("retirement planning")
+            action_items_pool.append("Send RRSP contribution room confirmation")
+            action_items_pool.append("Schedule dedicated retirement planning call")
+
+        if any(word in transcript_lower for word in ["home", "mortgage", "purchase", "down payment"]):
+            topics.append("home purchase timeline")
+            action_items_pool.append("Review liquidity needs for planned purchase")
+            action_items_pool.append("Discuss impact of withdrawal on long-term plan")
+
+        if any(word in transcript_lower for word in ["tax", "deduction", "taxable", "capital gains"]):
+            topics.append("tax optimization")
+            action_items_pool.append("Review tax-efficient withdrawal strategy")
+            action_items_pool.append("Coordinate with client's accountant on year-end planning")
+
+        if any(word in transcript_lower for word in ["estate", "will", "beneficiary", "legacy"]):
+            topics.append("estate planning")
+            action_items_pool.append("Refer to estate planning specialist for legal review")
+            action_items_pool.append("Confirm beneficiary designations are current")
+
+        if any(word in transcript_lower for word in ["schedule", "follow", "call", "meeting", "review"]):
+            topics.append("follow-up engagement")
+            action_items_pool.append("Schedule follow-up review call in 30 days")
+
+        # Build summary
+        if topics:
+            topics_str = ", ".join(topics)
+            summary = (
+                f"During this call with {client_name}, we discussed {topics_str} in the context of "
+                f"their {risk_profile} portfolio. The discussion covered key planning priorities and "
+                f"next steps to ensure the portfolio remains aligned with their financial goals."
+            )
+        else:
+            summary = (
+                f"Conducted a general portfolio review with {client_name}. Reviewed overall portfolio "
+                f"performance and alignment with their {risk_profile} risk profile and stated objectives."
+            )
+
+        # Select up to 4 action items
+        selected_actions = action_items_pool[:4] if action_items_pool else [
+            "Schedule follow-up review",
+            "Send portfolio summary",
+            "Confirm client satisfaction"
+        ]
+
+        return TranscriptSummary(
+            summary_paragraph=summary,
+            action_items=selected_actions
         )
 
     def _build_event_title(

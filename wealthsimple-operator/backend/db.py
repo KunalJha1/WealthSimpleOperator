@@ -1,16 +1,25 @@
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Generator
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
+from db_utils import create_sqlite_engine
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./operator.db"
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+DEFAULT_DB_PATH = Path(__file__).resolve().parent / "operator.db"
+SQLALCHEMY_DATABASE_URL = os.getenv(
+    "SQLALCHEMY_DATABASE_URL",
+    f"sqlite:///{DEFAULT_DB_PATH.as_posix()}",
+)
+
+engine = create_sqlite_engine(
+    SQLALCHEMY_DATABASE_URL,
+    busy_timeout_seconds=30,
+    check_same_thread=False,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -17,9 +17,9 @@ export function Button({
 
   const variantClasses =
     variant === "primary"
-      ? "bg-ws-ink text-white border-ws-ink hover:bg-black"
+      ? "bg-ws-ink text-white border-ws-ink hover:bg-gray-800"
       : variant === "secondary"
-        ? "bg-white text-gray-900 border-ws-border hover:bg-gray-50"
+        ? "bg-white text-gray-900 border-ws-border hover:bg-gray-100"
         : "bg-transparent text-gray-700 border-transparent hover:bg-gray-100";
 
   return (

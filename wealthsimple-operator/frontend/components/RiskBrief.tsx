@@ -1,10 +1,18 @@
 import { ConfidencePill, PriorityPill } from "./StatusPills";
 import { Button } from "./Buttons";
-import type { AlertDetail } from "../lib/types";
+import type { AlertDetail, ClientProfileView } from "../lib/types";
+import { useState } from "react";
+import { AlertTriangle, ArrowUpRight, UserRound, Loader2 } from "lucide-react";
+import { summarizeTranscript } from "../lib/api";
 
 function segmentLabel(segment: string): string {
   if (segment === "HNW") return "High Net Worth";
   return segment;
+}
+
+function formatPortfolioCode(id: number): string {
+  const code = (10000 + id).toString();
+  return `Portfolio PTF-${code}`;
 }
 
 type RiskBriefAction = "reviewed" | "escalate" | "false_positive";
@@ -26,14 +34,32 @@ type OperatorLearningStats = {
   calibrationStatus: string;
 };
 
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+    maximumFractionDigits: 0
+  }).format(amount);
+}
+
+function formatDateISO(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function formatDateLabel(baseDate: Date, offsetDays: number): string {
+  const value = new Date(baseDate);
+  value.setDate(value.getDate() + offsetDays);
+  return formatDateISO(value);
+}
+
 function buildClientProfileExtras(alert: AlertDetail): ClientProfileExtras {
   const { client, id } = alert;
-  let investmentHorizon = "Medium-term (7–15 years)";
+  let investmentHorizon = "Medium-term (7-15 years)";
 
   const risk = client.risk_profile.toLowerCase();
   if (risk.includes("conservative")) {
-    investmentHorizon = "Short to medium-term (3–7 years)";
-  } else if (risk.includes("growth")) {
+    investmentHorizon = "Short to medium-term (3-7 years)";
+  } else if (risk.includes("growth") || risk.includes("moderate")) {
     investmentHorizon = "Long-term (15+ years)";
   }
 
@@ -98,6 +124,7 @@ export default function RiskBrief({
   const clientExtras = buildClientProfileExtras(alert);
   const operatorHistory = buildOperatorHistory(alert);
   const learningStats = buildOperatorLearningStats(alert);
+  const [showClientProfile, setShowClientProfile] = useState(false);
 
   function handleScheduleFollowUp() {
     if (typeof window !== "undefined") {
@@ -106,7 +133,8 @@ export default function RiskBrief({
   }
 
   return (
-    <section className="card p-5 space-y-6">
+    <>
+      <section className="card p-5 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -114,9 +142,7 @@ export default function RiskBrief({
             <PriorityPill priority={alert.priority} />
             <ConfidencePill confidence={alert.confidence} />
           </div>
-          <div className="mt-1 text-sm font-medium text-gray-900">
-            Portfolio {portfolio.name}
-          </div>
+          <div className="mt-1 text-sm font-medium text-gray-900">{formatPortfolioCode(portfolio.id)}</div>
           <div className="page-subtitle">{alert.event_title}</div>
         </div>
         <div className="text-right text-xs text-ws-muted space-y-1">
@@ -128,15 +154,11 @@ export default function RiskBrief({
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+          <div className="rounded-xl border-[0.5px] border-gray-200 bg-gray-50 p-4 space-y-3">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-                  AI confidence
-                </div>
-                <div className="text-sm text-ws-muted">
-                  Model confidence score for this alert
-                </div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">AI confidence</div>
+                <div className="text-sm text-ws-muted">Model confidence score for this alert</div>
               </div>
               <div className="text-3xl font-semibold text-gray-900">{confidence}%</div>
             </div>
@@ -151,13 +173,9 @@ export default function RiskBrief({
           <div className="rounded-xl border border-ws-border bg-white p-4 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-                  Event
-                </div>
-                <div className="text-sm font-medium text-gray-900">{alert.event_title}</div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-                  AI summary
-                </div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Event</div>
+                <div className="text-sm text-gray-800">{alert.event_title}</div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">AI summary</div>
                 <p className="text-sm text-gray-800">{alert.summary}</p>
               </div>
               <div className="rounded-lg bg-gray-900 text-gray-100 p-3 space-y-2">
@@ -166,8 +184,8 @@ export default function RiskBrief({
                 </div>
                 <p className="text-sm">
                   Ranked with {alert.priority.toLowerCase()} priority based on concentration (
-                  {alert.concentration_score.toFixed(1)}), drift ({alert.drift_score.toFixed(1)}),
-                  and volatility ({alert.volatility_proxy.toFixed(1)}). Combined risk score is{" "}
+                  {alert.concentration_score.toFixed(1)}), drift ({alert.drift_score.toFixed(1)}), and
+                  volatility ({alert.volatility_proxy.toFixed(1)}). Combined risk score is {" "}
                   {alert.risk_score.toFixed(1)} / 10. Human review is required before any client
                   action.
                 </p>
@@ -185,7 +203,7 @@ export default function RiskBrief({
                     <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-700">
                       {idx + 1}
                     </span>
-                    <span>{bullet}</span>
+                    <span className="text-sm text-gray-800">{bullet}</span>
                   </li>
                 ))}
               </ol>
@@ -194,10 +212,8 @@ export default function RiskBrief({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-              Client profile
-            </div>
+          <div className="rounded-xl border border-ws-border bg-white p-4 space-y-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Client profile</div>
             <div className="text-sm font-medium text-gray-900">{client.name}</div>
             <dl className="mt-1 space-y-1 text-xs text-gray-800">
               <div className="flex justify-between gap-3">
@@ -217,12 +233,20 @@ export default function RiskBrief({
                 <dd className="text-gray-900">{clientExtras.advisorName}</dd>
               </div>
             </dl>
+            <Button
+              type="button"
+              variant="secondary"
+              className="mt-3 inline-flex text-xs px-3 py-1.5"
+              disabled={updating}
+              onClick={() => setShowClientProfile(true)}
+            >
+              <UserRound className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              View client details
+            </Button>
           </div>
 
           <div className="rounded-xl border border-ws-border bg-white p-4 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-              Operator history
-            </div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Operator history</div>
             <div className="relative pl-3">
               <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200" />
               <ul className="space-y-2 text-xs text-gray-800">
@@ -245,9 +269,7 @@ export default function RiskBrief({
         <div className="space-y-4 lg:col-span-2">
           {alert.decision_trace_steps.length > 0 && (
             <div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-                Operator decision trace
-              </div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Operator decision trace</div>
               <div className="text-xs text-ws-muted">
                 How the AI evaluated the portfolio, client constraints, and deviation severity
                 before ranking this alert.
@@ -264,16 +286,10 @@ export default function RiskBrief({
           )}
 
           <div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-              Change detection
-            </div>
-            <div className="text-xs text-ws-muted">
-              How key risk metrics have moved since the last operator run.
-            </div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Change detection</div>
+            <div className="text-xs text-ws-muted">How key risk metrics have moved since the last operator run.</div>
             {alert.change_detection.length === 0 ? (
-              <div className="mt-2 text-sm text-ws-muted">
-                No prior run metrics available yet for change detection.
-              </div>
+              <div className="mt-2 text-sm text-ws-muted">No prior run metrics available yet for change detection.</div>
             ) : (
               <table className="mt-3 min-w-full text-sm">
                 <thead className="bg-gray-50">
@@ -286,9 +302,7 @@ export default function RiskBrief({
                 <tbody className="divide-y divide-ws-border">
                   {alert.change_detection.map((item, idx) => (
                     <tr key={`${idx}-${item.metric}`}>
-                      <td className="px-3 py-2 text-sm text-gray-900">
-                        {item.metric.replace("_", " ")}
-                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">{item.metric.replace("_", " ")}</td>
                       <td className="px-3 py-2 text-sm text-ws-muted">{item.from}</td>
                       <td className="px-3 py-2 text-sm text-gray-900">{item.to}</td>
                     </tr>
@@ -301,9 +315,7 @@ export default function RiskBrief({
 
         <div className="space-y-4">
           <div className="rounded-xl border border-ws-border bg-white p-4 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-              Risk metrics
-            </div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Risk metrics</div>
             <div className="grid grid-cols-2 gap-3">
               <MetricCard label="Concentration score" value={alert.concentration_score} />
               <MetricCard label="Drift score" value={alert.drift_score} />
@@ -313,9 +325,7 @@ export default function RiskBrief({
           </div>
 
           <div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-              Operator learning & feedback
-            </div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Operator learning & feedback</div>
             <dl className="mt-1 space-y-1 text-xs text-gray-800">
               <div className="flex justify-between gap-3">
                 <dt className="text-ws-muted">Human feedback incorporated</dt>
@@ -337,13 +347,11 @@ export default function RiskBrief({
       <div className="rounded-xl border border-ws-border bg-gray-50 p-4 space-y-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">
-              Human review & responsibility
-            </div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Human review & responsibility</div>
             <div className="text-sm text-gray-900">
               {alert.human_review_required
                 ? "Human review required before any client-facing action."
-                : "Human review optional — advisor discretion based on client context."}
+                : "Human review optional - advisor discretion based on client context."}
             </div>
             <div className="text-xs text-ws-muted">
               <span className="font-medium">AI responsibility:</span> detection, triage, and
@@ -374,36 +382,55 @@ export default function RiskBrief({
             <Button
               variant="secondary"
               type="button"
+              className="!border-2 !border-amber-400 !bg-white !text-amber-700 hover:!bg-amber-50"
               disabled={updating}
               onClick={() => onAction("escalate")}
             >
+              <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
               Escalate to senior
             </Button>
             <Button
               variant="ghost"
               type="button"
+              className="!border-2 !border-red-300 !bg-white !text-red-600 hover:!bg-red-50"
               disabled={updating}
               onClick={() => onAction("false_positive")}
             >
+              <AlertTriangle className="mr-1.5 h-4 w-4" aria-hidden="true" />
               False positive
             </Button>
           </div>
         </div>
       </div>
-    </section>
-  );
-}
 
-function ContextCard({ label, lines }: { label: string; lines: string[] }) {
-  return (
-    <div className="rounded-xl border border-ws-border p-4 space-y-2">
-      <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">{label}</div>
-      {lines.map((line) => (
-        <div key={`${label}-${line}`} className="text-sm text-gray-900">
-          {line}
+      </section>
+      {showClientProfile && (
+        <div className="fixed inset-0 z-40 flex justify-center bg-black/50 backdrop-blur-sm overflow-y-auto px-4 py-10">
+          <div className="relative w-full max-w-5xl rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
+              <div className="space-y-0.5">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                  Client details
+                </div>
+                <div className="text-sm font-medium text-gray-900">
+                  {alert.client.name} • {formatPortfolioCode(alert.portfolio.id)}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
+                onClick={() => setShowClientProfile(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-5 md:p-6">
+              <ClientDetailsPanel alert={alert} />
+            </div>
+          </div>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 
@@ -412,6 +439,441 @@ function MetricCard({ label, value }: { label: string; value: number }) {
     <div className="rounded-xl border border-ws-border p-3">
       <div className="text-xs text-ws-muted">{label}</div>
       <div className="mt-1 text-lg font-semibold text-gray-900">{value.toFixed(1)} / 10</div>
+    </div>
+  );
+}
+
+function buildFallbackClientProfileView(alert: AlertDetail): ClientProfileView {
+  const { client, portfolio, risk_score } = alert;
+  const aum = portfolio.total_value;
+  const ytdReturnPct = 4 + (alert.id % 9);
+  const unrealizedPL = (aum * ytdReturnPct) / 100;
+  const realizedPL = (aum * (1 + (alert.id % 5))) / 100;
+
+  const equityDrift = Math.min(7, Math.max(0, Math.round(alert.drift_score)));
+  const equities = Math.min(90, Math.max(0, portfolio.target_equity_pct + equityDrift));
+  const fixedIncome = Math.max(0, portfolio.target_fixed_income_pct - Math.round(equityDrift * 0.6));
+  const cash = Math.max(2, portfolio.target_cash_pct);
+  const alternatives = Math.max(0, 100 - equities - fixedIncome - cash);
+
+  const referenceDate = new Date(alert.created_at);
+  const lastMeetingDaysAgo = 20 + (alert.id % 40);
+  const nextReviewInDays = 10 + (alert.id % 30);
+  const lastEmailDaysAgo = 5 + (alert.id % 10);
+
+  const lastMeeting = new Date(referenceDate);
+  const nextReview = new Date(referenceDate);
+  const lastEmail = new Date(referenceDate);
+  lastMeeting.setDate(referenceDate.getDate() - lastMeetingDaysAgo);
+  nextReview.setDate(referenceDate.getDate() + nextReviewInDays);
+  lastEmail.setDate(referenceDate.getDate() - lastEmailDaysAgo);
+
+  const callsLast90Days = 2 + (alert.id % 4);
+  const avgCallDuration = 14 + (alert.id % 8);
+
+  const homeGoalAmount = 350_000 + (alert.id % 5) * 25_000;
+  const retirementTarget = 2_000_000 + (alert.id % 6) * 250_000;
+  const retirementCurrent = retirementTarget * (0.4 + risk_score / 25);
+  const retirementProgress = Math.min(100, Math.max(0, Math.round((retirementCurrent / retirementTarget) * 100)));
+
+  return {
+    header: {
+      client_name: client.name,
+      portfolio_code: formatPortfolioCode(portfolio.id)
+    },
+    portfolio_performance: {
+      total_aum: formatCurrency(aum),
+      ytd_return_pct: ytdReturnPct,
+      unrealized_pl: formatCurrency(unrealizedPL),
+      unrealized_gain_pct: Number(((unrealizedPL / aum) * 100).toFixed(1)),
+      realized_pl_ytd: formatCurrency(realizedPL),
+      realized_pl_note: "From rebalancing"
+    },
+    current_asset_allocation: {
+      equities_pct: Number(equities.toFixed(1)),
+      fixed_income_pct: Number(fixedIncome.toFixed(1)),
+      alternatives_pct: Number(alternatives.toFixed(1)),
+      cash_pct: Number(cash.toFixed(1))
+    },
+    outreach_engagement: {
+      last_meeting: formatDateISO(lastMeeting),
+      last_meeting_days_ago: lastMeetingDaysAgo,
+      next_scheduled_review: formatDateISO(nextReview),
+      next_review_in_days: nextReviewInDays,
+      last_email_contact: formatDateISO(lastEmail),
+      last_email_days_ago: lastEmailDaysAgo,
+      phone_calls_last_90_days: callsLast90Days,
+      avg_call_duration_minutes: avgCallDuration
+    },
+    recent_meeting_notes: [
+      {
+        title: "Q4 2025 Portfolio Review",
+        date: formatDateISO(lastMeeting),
+        note:
+          "Client expressed satisfaction with performance. Discussed upcoming home purchase and need for liquidity planning. Client wants reduced equity exposure before withdrawal.",
+        action_required: ["Tax planning"]
+      },
+      {
+        title: "Annual Planning Meeting",
+        date: formatDateLabel(lastMeeting, -43),
+        note:
+          "Reviewed financial goals and risk questionnaire. Confirmed current profile and retirement timeline. Estate planning updates were completed.",
+        action_required: []
+      }
+    ],
+    financial_goals: [
+      {
+        goal: "Home Purchase",
+        target_date: "Late 2026",
+        status: "In Progress",
+        target_amount: formatCurrency(homeGoalAmount)
+      },
+      {
+        goal: "Retirement Savings",
+        target_date: "2041",
+        status: "On Track",
+        current_vs_target: `${formatCurrency(retirementCurrent)} / ${formatCurrency(retirementTarget)}`,
+        progress_pct: retirementProgress
+      },
+      {
+        goal: "Emergency Fund",
+        target_date: "6 months expenses",
+        status: "Complete",
+        amount: formatCurrency(45_000)
+      }
+    ],
+    actions: ["Schedule Meeting", "Send Email", "Add Note"]
+  };
+}
+
+export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
+  const profile = alert.client_profile_view ?? buildFallbackClientProfileView(alert);
+  const [localNotes, setLocalNotes] = useState(profile.recent_meeting_notes);
+  const [activeNoteTab, setActiveNoteTab] = useState<Record<number, "notes" | "transcript" | "ai_summary">>({});
+  const [summarizing, setSummarizing] = useState<Record<number, boolean>>({});
+
+  const allocationRows = [
+    { label: "Equities", value: profile.current_asset_allocation.equities_pct, color: "bg-gray-900" },
+    {
+      label: "Fixed Income",
+      value: profile.current_asset_allocation.fixed_income_pct,
+      color: "bg-emerald-500"
+    },
+    {
+      label: "Alternatives",
+      value: profile.current_asset_allocation.alternatives_pct,
+      color: "bg-amber-500"
+    },
+    { label: "Cash", value: profile.current_asset_allocation.cash_pct, color: "bg-gray-400" }
+  ];
+
+  function notify(message: string) {
+    if (typeof window !== "undefined") {
+      window.alert(`${message} (demo only).`);
+    }
+  }
+
+  async function handleSummarize(noteId: number | undefined) {
+    if (!noteId) return;
+    try {
+      setSummarizing(prev => ({ ...prev, [noteId]: true }));
+      const res = await summarizeTranscript(noteId);
+      setLocalNotes(prev =>
+        prev.map(n => n.id === noteId ? { ...n, ...res.note } : n)
+      );
+    } catch (err) {
+      notify(`Failed to summarize: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSummarizing(prev => ({ ...prev, [noteId]: false }));
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-ws-border bg-white p-4 space-y-4">
+      <div className="space-y-1">
+        <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Client profile</div>
+        <div className="text-sm font-medium text-gray-900">{profile.header.client_name}</div>
+        <div className="text-xs text-ws-muted">{profile.header.portfolio_code}</div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Portfolio Performance</h3>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-2 hover:border-gray-300 transition-colors">
+            <div className="text-xs font-medium text-ws-muted uppercase tracking-wide">Total AUM</div>
+            <div className="text-2xl font-bold text-gray-900">{profile.portfolio_performance.total_aum}</div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-semibold text-emerald-600">↑ +{profile.portfolio_performance.ytd_return_pct.toFixed(1)}%</span>
+              <span className="text-[10px] text-ws-muted">YTD</span>
+            </div>
+          </div>
+          <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 space-y-2 hover:border-emerald-300 transition-colors">
+            <div className="text-xs font-medium text-emerald-700 uppercase tracking-wide">Unrealized P/L</div>
+            <div className="text-2xl font-bold text-emerald-700">{profile.portfolio_performance.unrealized_pl}</div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs font-semibold text-emerald-600">+{profile.portfolio_performance.unrealized_gain_pct.toFixed(1)}%</span>
+              <span className="text-[10px] text-emerald-600">gain</span>
+            </div>
+          </div>
+          <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-4 space-y-2 hover:border-blue-300 transition-colors">
+            <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Realized P/L (YTD)</div>
+            <div className="text-2xl font-bold text-blue-700">{profile.portfolio_performance.realized_pl_ytd}</div>
+            <div className="text-xs text-blue-600 font-medium">{profile.portfolio_performance.realized_pl_note}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Current Asset Allocation</h3>
+        <div className="space-y-2 text-xs text-gray-900">
+          {allocationRows.map((row) => (
+            <div key={row.label}>
+              <div className="flex items-center justify-between">
+                <span>{row.label}</span>
+                <span className="text-ws-muted">{row.value.toFixed(0)}%</span>
+              </div>
+              <div className="mt-1 h-1.5 rounded-full bg-gray-200">
+                <div
+                  className={`h-1.5 rounded-full ${row.color}`}
+                  style={{ width: `${Math.min(100, Math.max(0, row.value))}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Outreach & Engagement</h4>
+          <dl className="space-y-1 text-xs text-gray-800">
+            <div className="flex justify-between gap-3">
+              <dt className="text-ws-muted">Last meeting</dt>
+              <dd className="text-gray-900">
+                {profile.outreach_engagement.last_meeting} ({profile.outreach_engagement.last_meeting_days_ago} days ago)
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-ws-muted">Next scheduled review</dt>
+              <dd className="text-gray-900">
+                {profile.outreach_engagement.next_scheduled_review} (in {profile.outreach_engagement.next_review_in_days} days)
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-ws-muted">Last email contact</dt>
+              <dd className="text-gray-900">
+                {profile.outreach_engagement.last_email_contact} ({profile.outreach_engagement.last_email_days_ago} days ago)
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-ws-muted">Phone calls (last 90 days)</dt>
+              <dd className="text-gray-900">
+                {profile.outreach_engagement.phone_calls_last_90_days} {profile.outreach_engagement.phone_calls_last_90_days === 1 ? "call" : "calls"}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-ws-muted">Avg duration</dt>
+              <dd className="text-gray-900">{profile.outreach_engagement.avg_call_duration_minutes} min</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Financial Goals</h4>
+          <div className="space-y-3 text-xs text-gray-900">
+            {profile.financial_goals.map((goal) => {
+              const isComplete = goal.status === "Complete";
+              const isOnTrack = goal.status === "On Track";
+              const statusClasses = isComplete
+                ? "bg-emerald-100 text-emerald-800"
+                : isOnTrack
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-amber-100 text-amber-800";
+              const barColor =
+                goal.goal === "Home Purchase" ? "bg-purple-500" : "bg-emerald-500";
+
+              return (
+                <div
+                  key={`${goal.goal}-${goal.target_date}`}
+                  className="rounded-xl border border-ws-border bg-gradient-to-r from-purple-50/60 via-white to-purple-50/60 p-3 md:p-4 space-y-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-semibold text-gray-900">{goal.goal}</div>
+                      <div className="mt-0.5 text-[11px] text-ws-muted">
+                        Target: {goal.target_date}
+                      </div>
+                    </div>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClasses}`}
+                    >
+                      {goal.status}
+                    </span>
+                  </div>
+                  {goal.target_amount && (
+                    <div className="text-sm font-medium">{goal.target_amount}</div>
+                  )}
+                  {goal.current_vs_target && (
+                    <div className="text-sm font-medium">{goal.current_vs_target}</div>
+                  )}
+                  {typeof goal.progress_pct === "number" && (
+                    <div className="mt-2 space-y-1">
+                      <div className="h-1.5 w-full rounded-full bg-gray-200">
+                        <div
+                          className={`h-1.5 rounded-full ${barColor}`}
+                          style={{
+                            width: `${Math.min(100, Math.max(0, goal.progress_pct))}%`
+                          }}
+                        />
+                      </div>
+                      <div className="text-[11px] text-ws-muted">
+                        {goal.progress_pct}% complete
+                        {goal.goal === "Retirement Savings" && " • 15 years remaining"}
+                      </div>
+                    </div>
+                  )}
+                  {goal.amount && <div className="text-sm font-medium">{goal.amount}</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Recent Meeting Notes</h3>
+        <div className="space-y-3">
+          {localNotes.map((note) => {
+            const hasTranscript = note.has_transcript && note.call_transcript;
+            const noteId = note.id || 0;
+            const activeTab = activeNoteTab[noteId] || "notes";
+
+            return (
+              <div key={`${note.title}-${note.date}`} className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 hover:border-gray-300 transition-colors">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-semibold text-gray-900">{note.title}</div>
+                      {note.meeting_type === "phone_call" && (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800">
+                          Phone call
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-ws-muted mt-1">{note.date}</div>
+                  </div>
+                </div>
+
+                {hasTranscript ? (
+                  <>
+                    {/* Tab bar for notes with transcript */}
+                    <div className="flex gap-1 border-b border-ws-border">
+                      {["notes", "transcript", "ai_summary"].map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveNoteTab(prev => ({ ...prev, [noteId]: tab as any }))}
+                          className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
+                            activeTab === tab
+                              ? "border-gray-900 text-gray-900"
+                              : "border-transparent text-ws-muted hover:text-gray-900"
+                          }`}
+                        >
+                          {tab === "notes" ? "Notes" : tab === "transcript" ? "Transcript" : "AI Summary"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Notes tab */}
+                    {activeTab === "notes" && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-700">{note.note}</p>
+                        {note.action_required && note.action_required.length > 0 && (
+                          <div className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                            Action required: {note.action_required.join(", ")}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Transcript tab */}
+                    {activeTab === "transcript" && (
+                      <div className="bg-white rounded border border-ws-border p-3">
+                        <pre className="text-[11px] text-gray-700 overflow-x-auto whitespace-pre-wrap break-words max-h-48">
+                          {note.call_transcript}
+                        </pre>
+                      </div>
+                    )}
+
+                    {/* AI Summary tab */}
+                    {activeTab === "ai_summary" && (
+                      <div className="space-y-2">
+                        {note.ai_summary ? (
+                          <>
+                            <p className="text-xs text-gray-700">{note.ai_summary}</p>
+                            {note.ai_action_items && note.ai_action_items.length > 0 && (
+                              <div className="space-y-1">
+                                <div className="text-xs font-semibold text-gray-900">Action items:</div>
+                                <ul className="list-disc list-inside space-y-1">
+                                  {note.ai_action_items.map((item, idx) => (
+                                    <li key={idx} className="text-xs text-gray-700">{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            <div className="text-[10px] text-ws-muted italic">
+                              AI-generated summary. Advisor judgment required.
+                            </div>
+                          </>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-xs text-ws-muted">No AI summary yet.</p>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="text-xs px-3 py-1.5"
+                              disabled={summarizing[noteId]}
+                              onClick={() => handleSummarize(noteId)}
+                            >
+                              {summarizing[noteId] && (
+                                <Loader2 className="mr-1.5 h-3 w-3 animate-spin" aria-hidden="true" />
+                              )}
+                              {summarizing[noteId] ? "Summarizing..." : "Generate AI Summary"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* Non-transcript notes: simple rendering */
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-700">{note.note}</p>
+                    {note.action_required && note.action_required.length > 0 && (
+                      <div className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                        Action required: {note.action_required.join(", ")}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {profile.actions.map((action, idx) => (
+          <Button
+            key={action}
+            type="button"
+            variant={idx < 2 ? "secondary" : "ghost"}
+            className="text-xs px-3 py-1.5"
+            onClick={() => notify(`${action} triggered`)}
+          >
+            {action}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }

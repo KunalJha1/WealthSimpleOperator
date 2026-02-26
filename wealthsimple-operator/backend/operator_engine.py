@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 
-from sqlalchemy import func
+from sqlalchemy import and_, case, func
 from sqlalchemy.orm import Session, joinedload
 
 from ai.provider import AIProvider
+
+logger = logging.getLogger(__name__)
 from db import session_scope
 from models import (
     Alert,
@@ -15,6 +18,9 @@ from models import (
     AuditEvent,
     AuditEventType,
     Client,
+    MonitoringClientRow,
+    MonitoringQueuedCase,
+    MonitoringUniverseDetail,
     MonitoringUniverseSummary,
     Portfolio,
     Priority,
@@ -109,19 +115,6 @@ def run_operator(db: Session, provider: AIProvider, actor: str = "operator_demo"
     and logs audit events. Returns a summary suitable for the Operator UI.
     """
     now = datetime.utcnow()
-    run = Run(started_at=now, provider_used=provider.name)
-    db.add(run)
-    db.flush()  # assign run.id
-
-    # Run-level audit start
-    db.add(
-        AuditEvent(
-            run_id=run.id,
-            event_type=AuditEventType.RUN_STARTED,
-            actor=actor,
-            details={"provider_used": provider.name},
-        )
-    )
 
     portfolios: List[Portfolio] = (
         db.query(Portfolio)
@@ -132,12 +125,25 @@ def run_operator(db: Session, provider: AIProvider, actor: str = "operator_demo"
         .all()
     )
 
-    alerts_created = 0
+    prepared_alerts = []
     priority_counts: Dict[Priority, int] = defaultdict(int)
 
-    for portfolio in portfolios:
+    logger.info(f"🚀 Scoring {len(portfolios)} portfolios...")
+
+    for idx, portfolio in enumerate(portfolios, 1):
         client: Client = portfolio.client
         metrics = _compute_metrics(portfolio)
+
+        # For very low-risk portfolios, skip creating an alert entirely so that
+        # the monitoring universe includes accounts with no active alerts.
+        risk_score = float(metrics.get("risk_score", 0.0))
+        concentration_score = float(metrics.get("concentration_score", 0.0))
+        drift_score = float(metrics.get("drift_score", 0.0))
+        if risk_score < 3.0 and concentration_score < 3.0 and drift_score < 3.0 and (
+            portfolio.id % 4 == 0
+        ):
+            continue
+
         last_metrics = _latest_metrics_for_portfolio(db, portfolio.id)
 
         context = {
@@ -160,11 +166,58 @@ def run_operator(db: Session, provider: AIProvider, actor: str = "operator_demo"
         }
 
         ai_output = provider.score_portfolio(metrics=metrics, context=context)
+        prepared_alerts.append((portfolio, client, metrics, ai_output))
+        priority_counts[ai_output.priority] += 1
 
+        if idx % 10 == 0:
+            priority_str = ai_output.priority.value if hasattr(ai_output.priority, 'value') else str(ai_output.priority)
+            title = ai_output.event_title[:50] if ai_output.event_title else "N/A"
+            summary = ai_output.summary[:80] if ai_output.summary else "N/A"
+            logger.info(
+                f"Scored {idx}/{len(portfolios)} | "
+                f"{client.name[:18]:18s} | "
+                f"{title} | "
+                f"{summary}..."
+            )
+
+    logger.info(f"✅ Finished scoring. Creating {len(prepared_alerts)} alerts...")
+
+    alerts_created = len(prepared_alerts)
+    run = Run(started_at=now, provider_used=provider.name)
+    db.add(run)
+    db.flush()  # assign run.id
+
+    # Keep only one active OPEN alert per client after each operator run.
+    client_ids_with_new_alerts = list({client.id for _, client, _, _ in prepared_alerts})
+    if client_ids_with_new_alerts:
+        (
+            db.query(Alert)
+            .filter(
+                Alert.client_id.in_(client_ids_with_new_alerts),
+                Alert.status == AlertStatus.OPEN,
+            )
+            .update({"status": AlertStatus.REVIEWED}, synchronize_session=False)
+        )
+
+    # Run-level audit start
+    db.add(
+        AuditEvent(
+            run_id=run.id,
+            event_type=AuditEventType.RUN_STARTED,
+            actor=actor,
+            details={"provider_used": provider.name},
+        )
+    )
+
+    batch_size = 30
+    for batch_idx, (portfolio, client, metrics, ai_output) in enumerate(prepared_alerts):
+        # Deterministic spread for alert timestamps so "last alert" values vary by client.
+        created_offset_minutes = ((client.id * 11) + (portfolio.id * 5)) % 180
         alert = Alert(
             run_id=run.id,
             portfolio_id=portfolio.id,
             client_id=client.id,
+            created_at=now - timedelta(minutes=created_offset_minutes),
             priority=ai_output.priority,
             confidence=int(ai_output.confidence),
             event_title=ai_output.event_title,
@@ -186,10 +239,6 @@ def run_operator(db: Session, provider: AIProvider, actor: str = "operator_demo"
             risk_score=metrics["risk_score"],
         )
         db.add(alert)
-        db.flush()
-
-        alerts_created += 1
-        priority_counts[ai_output.priority] += 1
 
         db.add(
             AuditEvent(
@@ -204,6 +253,18 @@ def run_operator(db: Session, provider: AIProvider, actor: str = "operator_demo"
                 },
             )
         )
+
+        # Batch write every 30 alerts
+        if (batch_idx + 1) % batch_size == 0:
+            db.flush()
+            alerts_written = batch_idx + 1
+            logger.info(f"💾 Flushed {alerts_written} alerts to database")
+
+    # Final flush for any remaining alerts not in a complete batch
+    db.flush()
+    remaining = alerts_created % batch_size
+    if remaining:
+        logger.info(f"💾 Flushed final batch ({remaining} alerts) to database")
 
     run.alerts_created = alerts_created
     run.completed_at = datetime.utcnow()
@@ -239,6 +300,49 @@ def run_operator(db: Session, provider: AIProvider, actor: str = "operator_demo"
     )
 
 
+def get_cached_run_summary(
+    db: Session,
+    *,
+    provider_name: str,
+    max_age_seconds: int = 120,
+) -> RunSummary | None:
+    """Return a recent completed run summary for the provider if still fresh."""
+    if max_age_seconds <= 0:
+        return None
+
+    cutoff = datetime.utcnow() - timedelta(seconds=max_age_seconds)
+    run: Run | None = (
+        db.query(Run)
+        .filter(
+            Run.provider_used == provider_name,
+            Run.completed_at.is_not(None),
+            Run.completed_at >= cutoff,
+        )
+        .order_by(Run.completed_at.desc())
+        .first()
+    )
+    if run is None:
+        return None
+
+    rows = (
+        db.query(Alert.priority, func.count(Alert.id))
+        .filter(Alert.run_id == run.id)
+        .group_by(Alert.priority)
+        .all()
+    )
+    full_priority_counts: Dict[Priority, int] = {p: 0 for p in Priority}
+    for priority, count in rows:
+        full_priority_counts[priority] = int(count or 0)
+
+    return RunSummary(
+        run_id=run.id,
+        provider_used=run.provider_used,
+        created_alerts_count=int(run.alerts_created or 0),
+        priority_counts=full_priority_counts,
+        top_alerts=_top_alerts_for_run(db, run.id, limit=20),
+    )
+
+
 def _top_alerts_for_run(db: Session, run_id: int, limit: int = 20):
     from models import AlertSummary, ClientSummary, PortfolioSummary
 
@@ -252,8 +356,14 @@ def _top_alerts_for_run(db: Session, run_id: int, limit: int = 20):
         .all()
     )
 
-    def sort_key(a: Alert) -> Tuple[int, datetime]:
-        return PRIORITY_ORDER.get(a.priority, 99), a.created_at
+    def sort_key(a: Alert) -> Tuple[int, float, int]:
+        # High priority first, then newest alerts, then highest confidence.
+        created_ts = a.created_at.timestamp() if a.created_at else 0.0
+        return (
+            PRIORITY_ORDER.get(a.priority, 99),
+            -created_ts,
+            -int(a.confidence or 0),
+        )
 
     alerts_sorted = sorted(alerts, key=sort_key)[:limit]
 
@@ -284,6 +394,7 @@ def _top_alerts_for_run(db: Session, run_id: int, limit: int = 20):
                 priority=a.priority,
                 confidence=a.confidence,
                 event_title=a.event_title,
+                summary=a.summary,
                 status=a.status,
                 client=client_summary,
                 portfolio=portfolio_summary,
@@ -294,7 +405,15 @@ def _top_alerts_for_run(db: Session, run_id: int, limit: int = 20):
 def compute_monitoring_universe_summary(db: Session) -> MonitoringUniverseSummary:
     """Aggregate statistics for the Monitoring Universe page."""
     total_clients = db.query(func.count(Client.id)).scalar() or 0
-    total_portfolios = db.query(func.count(Portfolio.id)).scalar() or 0
+    current_year = datetime.utcnow().year
+    start_of_year = datetime(current_year, 1, 1)
+    clients_created_this_year = (
+        db.query(func.count(Client.id))
+        .filter(Client.created_at >= start_of_year)
+        .scalar()
+        or 0
+    )
+    raw_portfolios = db.query(func.count(Portfolio.id)).scalar() or 0
     total_runs = db.query(func.count(Run.id)).scalar() or 0
 
     alerts_by_priority: Dict[Priority, int] = {p: 0 for p in Priority}
@@ -317,13 +436,162 @@ def compute_monitoring_universe_summary(db: Session) -> MonitoringUniverseSummar
         float(human_required_count) / float(total_alerts) * 100.0 if total_alerts else 0.0
     )
 
+    # For demo purposes, scale the displayed monitoring universe so it feels
+    # closer to a production deployment with thousands of accounts.
+    scaled_portfolios = int(raw_portfolios * 18) if raw_portfolios else 0
+
     return MonitoringUniverseSummary(
         total_clients=total_clients,
-        total_portfolios=total_portfolios,
+        clients_created_this_year=int(clients_created_this_year),
+        total_portfolios=scaled_portfolios,
         alerts_by_priority=alerts_by_priority,
         alerts_by_status=alerts_by_status,
         total_runs=total_runs,
         average_alerts_per_run=round(average_alerts_per_run, 2),
         percent_alerts_human_review_required=round(percent_human_required, 2),
+    )
+
+
+def compute_monitoring_universe_detail(db: Session) -> MonitoringUniverseDetail:
+    """Return client-level monitoring rows and queued review cases."""
+    generated_at = datetime.utcnow()
+
+    clients: List[Client] = db.query(Client).all()
+    client_map = {c.id: c for c in clients}
+
+    portfolio_rows = (
+        db.query(
+            Portfolio.client_id,
+            func.count(Portfolio.id),
+            func.coalesce(func.sum(Portfolio.total_value), 0.0),
+        )
+        .group_by(Portfolio.client_id)
+        .all()
+    )
+    portfolio_by_client: Dict[int, Tuple[int, float]] = {
+        int(client_id): (int(count or 0), float(total_value or 0.0))
+        for client_id, count, total_value in portfolio_rows
+    }
+
+    alert_agg_rows = (
+        db.query(
+            Alert.client_id,
+            func.sum(case((Alert.status == AlertStatus.OPEN, 1), else_=0)),
+            func.sum(
+                case(
+                    (
+                        and_(
+                            Alert.human_review_required.is_(True),
+                            Alert.status.in_([AlertStatus.OPEN, AlertStatus.ESCALATED]),
+                        ),
+                        1,
+                    ),
+                    else_=0,
+                )
+            ),
+            func.max(Alert.created_at),
+        )
+        .group_by(Alert.client_id)
+        .all()
+    )
+    alerts_by_client: Dict[int, Tuple[int, int, datetime | None]] = {
+        int(client_id): (
+            min(1, int(open_count or 0)),
+            min(1, int(review_count or 0)),
+            last_alert_at,
+        )
+        for client_id, open_count, review_count, last_alert_at in alert_agg_rows
+    }
+
+    latest_alert_rows = (
+        db.query(Alert.client_id, Alert.event_title, Alert.created_at)
+        .order_by(Alert.client_id.asc(), Alert.created_at.desc())
+        .all()
+    )
+    latest_event_by_client: Dict[int, str] = {}
+    for client_id, event_title, _created_at in latest_alert_rows:
+        cid = int(client_id)
+        if cid not in latest_event_by_client:
+            latest_event_by_client[cid] = str(event_title)
+
+    client_rows: List[MonitoringClientRow] = []
+    for client in clients:
+        portfolios_count, total_aum = portfolio_by_client.get(client.id, (0, 0.0))
+        open_alerts, queued_for_review, last_alert_at = alerts_by_client.get(
+            client.id, (0, 0, None)
+        )
+
+        # Deterministic basis-point move for demo daily PNL visualization.
+        daily_move_bps = ((client.id * 29) % 181) - 90  # [-90, +90]
+        daily_pnl = float(total_aum) * (float(daily_move_bps) / 10000.0)
+        daily_pnl_pct = float(daily_move_bps) / 100.0
+        ytd_performance_bps = ((client.id * 83) % 2201) - 400  # [-400, +1800]
+        ytd_performance_pct = float(ytd_performance_bps) / 100.0
+
+        client_rows.append(
+            MonitoringClientRow(
+                client_id=client.id,
+                client_name=client.name,
+                email=client.email,
+                segment=client.segment,
+                risk_profile=client.risk_profile,
+                account_tier=getattr(client, "account_tier", None),
+                client_since_year=client.created_at.year,
+                portfolios_count=portfolios_count,
+                total_aum=round(float(total_aum), 2),
+                daily_pnl=round(daily_pnl, 2),
+                daily_pnl_pct=round(daily_pnl_pct, 2),
+                ytd_performance_pct=round(ytd_performance_pct, 2),
+                open_alerts=open_alerts,
+                queued_for_review=queued_for_review,
+                last_alert_at=last_alert_at,
+                last_alert_event=latest_event_by_client.get(client.id),
+            )
+        )
+
+    priority_rank = case(
+        (Alert.priority == Priority.HIGH, 0),
+        (Alert.priority == Priority.MEDIUM, 1),
+        (Alert.priority == Priority.LOW, 2),
+        else_=99,
+    )
+    queued_alerts: List[Alert] = (
+        db.query(Alert)
+        .options(joinedload(Alert.client), joinedload(Alert.portfolio))
+        .filter(Alert.status.in_([AlertStatus.OPEN, AlertStatus.ESCALATED]))
+        .order_by(
+            case((Alert.human_review_required.is_(True), 0), else_=1),
+            priority_rank.asc(),
+            Alert.created_at.desc(),
+        )
+        .limit(60)
+        .all()
+    )
+
+    queued_cases: List[MonitoringQueuedCase] = []
+    for alert in queued_alerts:
+        client = alert.client or client_map.get(alert.client_id)
+        portfolio = alert.portfolio
+        if client is None or portfolio is None:
+            continue
+        queued_cases.append(
+            MonitoringQueuedCase(
+                alert_id=alert.id,
+                client_id=client.id,
+                client_name=client.name,
+                portfolio_name=portfolio.name,
+                priority=alert.priority,
+                status=alert.status,
+                confidence=int(alert.confidence),
+                human_review_required=bool(alert.human_review_required),
+                event_title=alert.event_title,
+                created_at=alert.created_at,
+            )
+        )
+
+    return MonitoringUniverseDetail(
+        generated_at=generated_at,
+        clients=client_rows,
+        queued_cases=queued_cases,
     )
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Dict, Protocol
 
-from models import AIOutput
+from models import AIOutput, FollowUpDraftContent, TranscriptSummary
 
 
 class AIProvider(Protocol):
@@ -12,6 +12,12 @@ class AIProvider(Protocol):
     name: str
 
     def score_portfolio(self, metrics: Dict, context: Dict) -> AIOutput:
+        ...
+
+    def generate_follow_up_draft(self, alert_context: Dict) -> FollowUpDraftContent:
+        ...
+
+    def summarize_transcript(self, transcript: str, context: Dict) -> TranscriptSummary:
         ...
 
 

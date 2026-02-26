@@ -1,11 +1,16 @@
-import { fetchMonitoringSummary } from "../../lib/api";
+import MonitoringUniverseExplorer from "../../components/MonitoringUniverseExplorer";
+import { fetchMonitoringDetail, fetchMonitoringSummary } from "../../lib/api";
 
 export default async function MonitoringUniversePage() {
   let summary = null;
+  let detail = null;
   let error: string | null = null;
 
   try {
-    summary = await fetchMonitoringSummary();
+    [summary, detail] = await Promise.all([
+      fetchMonitoringSummary(),
+      fetchMonitoringDetail()
+    ]);
   } catch (e) {
     error = (e as Error).message;
   }
@@ -39,8 +44,12 @@ export default async function MonitoringUniversePage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <MetricCard label="Clients" value={summary.total_clients} />
+        <MetricCard
+          label={`Clients added (${new Date().getFullYear()})`}
+          value={summary.clients_created_this_year}
+        />
         <MetricCard label="Portfolios" value={summary.total_portfolios} />
         <MetricCard
           label="Avg alerts per run"
@@ -61,6 +70,13 @@ export default async function MonitoringUniversePage() {
                 key={p}
                 label={p}
                 value={summary.alerts_by_priority[p]}
+                colorClass={
+                  p === "HIGH"
+                    ? "bg-red-500"
+                    : p === "MEDIUM"
+                      ? "bg-amber-400"
+                      : "bg-emerald-500"
+                }
                 total={Object.values(summary.alerts_by_priority).reduce(
                   (acc, v) => acc + v,
                   0
@@ -79,6 +95,15 @@ export default async function MonitoringUniversePage() {
                 key={s}
                 label={s}
                 value={summary.alerts_by_status[s]}
+                colorClass={
+                  s === "OPEN"
+                    ? "bg-red-500"
+                    : s === "ESCALATED"
+                      ? "bg-orange-500"
+                      : s === "REVIEWED"
+                        ? "bg-emerald-500"
+                        : "bg-slate-400"
+                }
                 total={Object.values(summary.alerts_by_status).reduce(
                   (acc, v) => acc + v,
                   0
@@ -88,6 +113,17 @@ export default async function MonitoringUniversePage() {
           </div>
         </div>
       </section>
+
+      {detail ? (
+        <MonitoringUniverseExplorer
+          clients={detail.clients}
+          queuedCases={detail.queued_cases}
+        />
+      ) : (
+        <div className="card border-orange-200 bg-orange-50 p-4 text-sm text-orange-900">
+          Client explorer is temporarily unavailable.
+        </div>
+      )}
     </div>
   );
 }
@@ -104,10 +140,12 @@ function MetricCard({ label, value }: { label: string; value: number | string })
 function BarRow({
   label,
   value,
+  colorClass,
   total
 }: {
   label: string;
   value: number;
+  colorClass: string;
   total: number;
 }) {
   const pct = total ? (value / total) * 100 : 0;
@@ -121,7 +159,7 @@ function BarRow({
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-ws-green rounded-full"
+          className={`h-full rounded-full ${colorClass}`}
           style={{ width: `${pct}%` }}
         />
       </div>

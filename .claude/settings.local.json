@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd C:\\\\Users\\\\doggy\\\\Wealthsimple Operator\\\\wealthsimple-operator\\\\backend:*)",
+      "Bash(cd:*)",
+      "Bash(tail:*)",
+      "Bash(cd \"C:/Users/doggy/Wealthsimple Operator/wealthsimple-operator/backend\" && python -c \"\nfrom db import SessionLocal\nfrom models import MeetingNote\n\nsession = SessionLocal\\(\\)\nnotes = session.query\\(MeetingNote\\).limit\\(3\\).all\\(\\)\nprint\\(f'Found {len\\(notes\\)} meeting notes'\\)\nfor note in notes[:1]:\n    print\\(f'  - {note.title} \\(ID: {note.id}, has transcript: {note.call_transcript is not None}\\)'\\)\nsession.close\\(\\)\n\" 2>&1)",
+      "Bash(cd \"C:/Users/doggy/Wealthsimple Operator/wealthsimple-operator/backend\" && python -c \"\nfrom db import SessionLocal\nfrom models import MeetingNote\n\nsession = SessionLocal\\(\\)\nnotes = session.query\\(MeetingNote\\).filter\\(MeetingNote.call_transcript != None\\).limit\\(1\\).all\\(\\)\nif notes:\n    note = notes[0]\n    print\\(f'Found note with transcript:'\\)\n    print\\(f'  Title: {note.title}'\\)\n    print\\(f'  Type: {note.meeting_type}'\\)\n    print\\(f'  Has AI Summary: {note.ai_summary is not None}'\\)\n    print\\(f'  AI Provider: {note.ai_provider_used}'\\)\n    print\\(f'  Action Items: {len\\(note.ai_action_items or []\\)} items'\\)\nelse:\n    print\\('No notes with transcripts found'\\)\nsession.close\\(\\)\n\" 2>&1)",
+      "Bash(cd \"C:/Users/doggy/Wealthsimple Operator/wealthsimple-operator/backend\" && python -c \"\nfrom routes.meeting_notes import router\nfrom models import MeetingNote\nprint\\('OK: All imports successful'\\)\nprint\\(f'Router has {len\\(router.routes\\)} routes'\\)\n\" 2>&1)",
+      "Bash(grep:*)"
+    ]
+  }
+}
