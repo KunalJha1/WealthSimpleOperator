@@ -4,6 +4,7 @@ import os
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
+from urllib.parse import unquote
 
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 
@@ -11,10 +12,27 @@ from db_utils import create_sqlite_engine
 
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent / "operator.db"
-SQLALCHEMY_DATABASE_URL = os.getenv(
-    "SQLALCHEMY_DATABASE_URL",
-    f"sqlite:///{DEFAULT_DB_PATH.as_posix()}",
-)
+
+
+def _resolve_database_url() -> str:
+    configured_url = os.getenv("SQLALCHEMY_DATABASE_URL")
+    if not configured_url:
+        return f"sqlite:///{DEFAULT_DB_PATH.as_posix()}"
+
+    if not configured_url.startswith("sqlite:///"):
+        return configured_url
+
+    sqlite_path = unquote(configured_url.replace("sqlite:///", "", 1))
+    db_path = Path(sqlite_path)
+
+    if db_path.is_absolute():
+        return configured_url
+
+    canonical_path = (Path(__file__).resolve().parent / db_path).resolve()
+    return f"sqlite:///{canonical_path.as_posix()}"
+
+
+SQLALCHEMY_DATABASE_URL = _resolve_database_url()
 
 engine = create_sqlite_engine(
     SQLALCHEMY_DATABASE_URL,

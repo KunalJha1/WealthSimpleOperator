@@ -4,7 +4,8 @@
 - `backend/`: FastAPI + SQLAlchemy service (`main.py`, `routes/`, `models.py`, `operator_engine.py`, `ai/`).
 - `frontend/`: Next.js App Router UI (`app/`, `components/`, `lib/`).
 - `data/`: generated artifacts (for example `seed_output.json`, `client_insights.json`).
-- Root files: `.env.example`, `README.md`, SQLite database (`operator.db`).
+- Root files: `.env.example`, `README.md`.
+- Runtime SQLite database: `backend/operator.db`.
 
 ## Build, Test, and Development Commands
 - Backend setup/run:
