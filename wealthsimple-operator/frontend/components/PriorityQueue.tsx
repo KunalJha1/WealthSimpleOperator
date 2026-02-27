@@ -317,7 +317,7 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
 
             return (
               <div
-                key={alert.id}
+                key={`${alert.id}-${alert.portfolio.id}`}
                 role="button"
                 tabIndex={0}
                 className={`w-full text-left card p-4 transition-colors cursor-pointer ${
@@ -333,6 +333,11 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <PriorityPill priority={alert.priority} />
+                  {alert.scenario && (
+                    <div className="text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                      {alert.scenario.replace(/_/g, " ")}
+                    </div>
+                  )}
                   <div className="text-sm font-medium text-gray-900">
                     {formatPortfolioCode(alert.portfolio.id)}
                   </div>

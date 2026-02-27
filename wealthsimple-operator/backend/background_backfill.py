@@ -82,6 +82,11 @@ def parse_args() -> argparse.Namespace:
         default="background_backfill",
         help="Audit actor label for generated runs.",
     )
+    parser.add_argument(
+        "--unique-summaries",
+        action="store_true",
+        help="Generate richer, more detailed and unique summaries (higher Gemini temperature, more detailed prompt).",
+    )
     return parser.parse_args()
 
 
@@ -141,7 +146,7 @@ def main() -> None:
 
             def _run_operator_scan():
                 with SessionLocal() as db:
-                    return run_operator(db=db, provider=provider, actor=args.actor)
+                    return run_operator(db=db, provider=provider, actor=args.actor, unique_summaries=args.unique_summaries)
 
             summary = run_with_retry(_run_operator_scan)
             operator_elapsed = time.perf_counter() - operator_started

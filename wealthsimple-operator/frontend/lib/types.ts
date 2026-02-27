@@ -42,6 +42,7 @@ export interface AlertSummary {
   event_title: string;
   summary: string;
   status: AlertStatus;
+  scenario?: string | null;
   client: ClientSummary;
   portfolio: PortfolioSummary;
 }
@@ -53,6 +54,7 @@ export interface AlertDetail extends AlertSummary {
   suggested_next_step: string;
   decision_trace_steps: DecisionTraceStep[];
   change_detection: ChangeDetectionItem[];
+  scenario?: string | null;
   concentration_score: number;
   drift_score: number;
   volatility_proxy: number;
@@ -195,7 +197,6 @@ export interface MonitoringUniverseSummary {
   alerts_by_priority: Record<Priority, number>;
   alerts_by_status: Record<AlertStatus, number>;
   total_runs: number;
-  average_alerts_per_run: number;
   percent_alerts_human_review_required: number;
 }
 
@@ -228,6 +229,7 @@ export interface MonitoringQueuedCase {
   confidence: number;
   human_review_required: boolean;
   event_title: string;
+  scenario?: string | null;
   created_at: string;
 }
 

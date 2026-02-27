@@ -304,6 +304,7 @@ export default function OperatorPage() {
       await streamAlerts(alertsRes.items);
       setAuditPreview(auditRes.items);
       setMonitoringSummary(monitoringRes);
+      setNextAutoScanAt(Date.now() + AUTO_SCAN_INTERVAL_MS);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -355,14 +356,7 @@ export default function OperatorPage() {
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
-            AI Portfolio Operations Triage System
-          </div>
-          <h1 className="mt-1 text-xl font-semibold text-gray-900">
-            Wealthsimple Operator Console
-          </h1>
-        </div>
+        <div></div>
         <div className="flex flex-col items-end gap-1">
           <div className="group relative">
             <Button onClick={() => void handleRun(true)} disabled={running}>
@@ -401,16 +395,9 @@ export default function OperatorPage() {
           <HeaderStat
             label="Next Scheduled Run"
             value={
-              <div className="flex flex-col items-start gap-1">
-                <span className="inline-flex items-baseline gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 shadow-sm">
-                  <span className="text-lg font-bold text-emerald-700 font-mono">
-                    {nextScanCountdown}
-                  </span>
-                  <span className="text-xs font-medium text-emerald-600">
-                    remaining
-                  </span>
-                </span>
-              </div>
+              <span className="text-sm font-semibold text-gray-900">
+                {nextScanCountdown} <span className="text-xs font-normal text-ws-muted">remaining</span>
+              </span>
             }
           />
           <HeaderStat

@@ -126,10 +126,22 @@ export default function RiskBrief({
   const learningStats = buildOperatorLearningStats(alert);
   const [showClientProfile, setShowClientProfile] = useState(false);
 
-  function handleScheduleFollowUp() {
+  function notify(message: string) {
     if (typeof window !== "undefined") {
-      window.alert("Follow-up scheduled for this portfolio (demo only).");
+      window.alert(message);
     }
+  }
+
+  function handleScheduleFollowUp() {
+    notify("Follow-up scheduled for this portfolio (demo only).");
+  }
+
+  function handleScheduleMeeting() {
+    notify(`Meeting scheduled for ${alert.client.name}. Calendar invitation sent.`);
+  }
+
+  function handleSendEmail() {
+    notify(`Email draft created for ${alert.client.name}. Opened in your email client.`);
   }
 
   return (
@@ -236,12 +248,12 @@ export default function RiskBrief({
             <Button
               type="button"
               variant="secondary"
-              className="mt-3 inline-flex text-xs px-3 py-1.5"
+              className="mt-3 inline-flex text-xs px-3 py-1.5 w-full justify-center"
               disabled={updating}
               onClick={() => setShowClientProfile(true)}
             >
               <UserRound className="mr-1.5 h-4 w-4" aria-hidden="true" />
-              View client details
+              Full Profile
             </Button>
           </div>
 
@@ -311,6 +323,14 @@ export default function RiskBrief({
               </table>
             )}
           </div>
+
+          {alert.scenario && (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-blue-900">Scenario match</div>
+              <div className="text-sm text-blue-900 font-medium">{alert.scenario.replace(/_/g, " ")}</div>
+              <div className="text-xs text-blue-700">This alert was matched to a specific client scenario detected from meeting notes.</div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -405,9 +425,9 @@ export default function RiskBrief({
 
       </section>
       {showClientProfile && (
-        <div className="fixed inset-0 z-40 flex justify-center bg-black/50 backdrop-blur-sm overflow-y-auto px-4 py-10">
-          <div className="relative w-full max-w-5xl rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+          <div className="relative w-full max-w-5xl max-h-[90vh] rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4 shrink-0">
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
                   Client details
@@ -418,14 +438,16 @@ export default function RiskBrief({
               </div>
               <button
                 type="button"
-                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
+                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50 shrink-0"
                 onClick={() => setShowClientProfile(false)}
               >
                 Close
               </button>
             </div>
-            <div className="p-5 md:p-6">
-              <ClientDetailsPanel alert={alert} />
+            <div className="overflow-y-auto flex-1">
+              <div className="p-5 md:p-6">
+                <ClientDetailsPanel alert={alert} />
+              </div>
             </div>
           </div>
         </div>
@@ -551,6 +573,11 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
   const [localNotes, setLocalNotes] = useState(profile.recent_meeting_notes);
   const [activeNoteTab, setActiveNoteTab] = useState<Record<number, "notes" | "transcript" | "ai_summary">>({});
   const [summarizing, setSummarizing] = useState<Record<number, boolean>>({});
+  const [localGoals, setLocalGoals] = useState(profile.financial_goals);
+  const [showAddGoalForm, setShowAddGoalForm] = useState(false);
+  const [newGoal, setNewGoal] = useState({ goal: "", target_date: "", status: "In Progress", target_amount: "" });
+  const [showNoteForm, setShowNoteForm] = useState(false);
+  const [newNote, setNewNote] = useState({ title: "", note: "" });
 
   const allocationRows = [
     { label: "Equities", value: profile.current_asset_allocation.equities_pct, color: "bg-gray-900" },
@@ -567,10 +594,18 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
     { label: "Cash", value: profile.current_asset_allocation.cash_pct, color: "bg-gray-400" }
   ];
 
-  function notify(message: string) {
+  function notifyUser(message: string) {
     if (typeof window !== "undefined") {
-      window.alert(`${message} (demo only).`);
+      window.alert(message);
     }
+  }
+
+  function handleScheduleMeeting() {
+    notifyUser(`Meeting scheduled for ${alert.client.name}. Calendar invitation sent.`);
+  }
+
+  function handleSendEmail() {
+    notifyUser(`Email draft created for ${alert.client.name}. Opened in your email client.`);
   }
 
   async function handleSummarize(noteId: number | undefined) {
@@ -582,10 +617,48 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
         prev.map(n => n.id === noteId ? { ...n, ...res.note } : n)
       );
     } catch (err) {
-      notify(`Failed to summarize: ${err instanceof Error ? err.message : String(err)}`);
+      notifyUser(`Failed to summarize: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setSummarizing(prev => ({ ...prev, [noteId]: false }));
     }
+  }
+
+  function handleAddNote() {
+    if (!newNote.title.trim() || !newNote.note.trim()) {
+      notifyUser("Please fill in both title and note");
+      return;
+    }
+    const addedNote = {
+      id: Date.now(),
+      title: newNote.title,
+      date: new Date().toISOString().slice(0, 10),
+      note: newNote.note,
+      action_required: [],
+      meeting_type: "meeting" as const,
+      has_transcript: false,
+      call_transcript: ""
+    };
+    setLocalNotes(prev => [addedNote, ...prev]);
+    setNewNote({ title: "", note: "" });
+    setShowNoteForm(false);
+    notifyUser("Note added successfully!");
+  }
+
+  function handleAddGoal() {
+    if (!newGoal.goal.trim() || !newGoal.target_date.trim() || !newGoal.target_amount.trim()) {
+      notifyUser("Please fill in all fields");
+      return;
+    }
+    const addedGoal = {
+      goal: newGoal.goal,
+      target_date: newGoal.target_date,
+      status: newGoal.status as "In Progress" | "On Track" | "Complete",
+      target_amount: newGoal.target_amount
+    };
+    setLocalGoals(prev => [addedGoal, ...prev]);
+    setNewGoal({ goal: "", target_date: "", status: "In Progress", target_amount: "" });
+    setShowAddGoalForm(false);
+    notifyUser("Goal added successfully!");
   }
 
   return (
@@ -679,9 +752,70 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
         </div>
 
         <div className="space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Financial Goals</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Financial Goals</h4>
+            <button
+              type="button"
+              onClick={() => setShowAddGoalForm(!showAddGoalForm)}
+              className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+            >
+              + Add Goal
+            </button>
+          </div>
+
+          {showAddGoalForm && (
+            <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-3 space-y-2">
+              <input
+                type="text"
+                placeholder="Goal name (e.g., Home Purchase)"
+                value={newGoal.goal}
+                onChange={(e) => setNewGoal(prev => ({ ...prev, goal: e.target.value }))}
+                className="w-full rounded border border-emerald-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-500"
+              />
+              <input
+                type="text"
+                placeholder="Target date (e.g., Late 2026)"
+                value={newGoal.target_date}
+                onChange={(e) => setNewGoal(prev => ({ ...prev, target_date: e.target.value }))}
+                className="w-full rounded border border-emerald-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-500"
+              />
+              <input
+                type="text"
+                placeholder="Target amount (e.g., $350,000)"
+                value={newGoal.target_amount}
+                onChange={(e) => setNewGoal(prev => ({ ...prev, target_amount: e.target.value }))}
+                className="w-full rounded border border-emerald-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-500"
+              />
+              <select
+                value={newGoal.status}
+                onChange={(e) => setNewGoal(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full rounded border border-emerald-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-emerald-500"
+              >
+                <option value="In Progress">In Progress</option>
+                <option value="On Track">On Track</option>
+                <option value="Complete">Complete</option>
+              </select>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleAddGoal}
+                  className="flex-1 rounded bg-emerald-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
+                >
+                  Add Goal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddGoalForm(false)}
+                  className="flex-1 rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3 text-xs text-gray-900">
-            {profile.financial_goals.map((goal) => {
+            {localGoals.map((goal, idx) => {
               const isComplete = goal.status === "Complete";
               const isOnTrack = goal.status === "On Track";
               const statusClasses = isComplete
@@ -694,45 +828,45 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
 
               return (
                 <div
-                  key={`${goal.goal}-${goal.target_date}`}
-                  className="rounded-xl border border-ws-border bg-gradient-to-r from-purple-50/60 via-white to-purple-50/60 p-3 md:p-4 space-y-2"
+                  key={`${goal.goal}-${goal.target_date}-${idx}`}
+                  className="rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-3 md:p-4 space-y-3 hover:border-gray-300 transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="text-xs font-semibold text-gray-900">{goal.goal}</div>
-                      <div className="mt-0.5 text-[11px] text-ws-muted">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-gray-900">{goal.goal}</div>
+                      <div className="mt-1 text-[11px] text-ws-muted">
                         Target: {goal.target_date}
                       </div>
                     </div>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClasses}`}
+                      className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap ${statusClasses}`}
                     >
                       {goal.status}
                     </span>
                   </div>
                   {goal.target_amount && (
-                    <div className="text-sm font-medium">{goal.target_amount}</div>
+                    <div className="text-sm font-semibold text-gray-900">{goal.target_amount}</div>
                   )}
                   {goal.current_vs_target && (
-                    <div className="text-sm font-medium">{goal.current_vs_target}</div>
+                    <div className="text-sm font-semibold text-gray-900">{goal.current_vs_target}</div>
                   )}
                   {typeof goal.progress_pct === "number" && (
-                    <div className="mt-2 space-y-1">
-                      <div className="h-1.5 w-full rounded-full bg-gray-200">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-ws-muted">Progress</span>
+                        <span className="text-[11px] font-semibold text-gray-900">{goal.progress_pct}%</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
-                          className={`h-1.5 rounded-full ${barColor}`}
+                          className={`h-2 rounded-full transition-all ${barColor}`}
                           style={{
                             width: `${Math.min(100, Math.max(0, goal.progress_pct))}%`
                           }}
                         />
                       </div>
-                      <div className="text-[11px] text-ws-muted">
-                        {goal.progress_pct}% complete
-                        {goal.goal === "Retirement Savings" && " • 15 years remaining"}
-                      </div>
                     </div>
                   )}
-                  {goal.amount && <div className="text-sm font-medium">{goal.amount}</div>}
+                  {goal.amount && <div className="text-sm font-semibold text-gray-900">{goal.amount}</div>}
                 </div>
               );
             })}
@@ -741,7 +875,51 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Recent Meeting Notes</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold uppercase tracking-wide text-ws-muted">Recent Meeting Notes</h3>
+          <button
+            type="button"
+            onClick={() => setShowNoteForm(!showNoteForm)}
+            className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline"
+          >
+            + Add Note
+          </button>
+        </div>
+
+        {showNoteForm && (
+          <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-3 space-y-2">
+            <input
+              type="text"
+              placeholder="Meeting title"
+              value={newNote.title}
+              onChange={(e) => setNewNote(prev => ({ ...prev, title: e.target.value }))}
+              className="w-full rounded border border-blue-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-500"
+            />
+            <textarea
+              placeholder="Meeting notes"
+              value={newNote.note}
+              onChange={(e) => setNewNote(prev => ({ ...prev, note: e.target.value }))}
+              className="w-full rounded border border-blue-300 bg-white px-2 py-1.5 text-xs outline-none focus:border-blue-500 min-h-20"
+            />
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleAddNote}
+                className="flex-1 rounded bg-blue-600 px-2 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+              >
+                Add Note
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowNoteForm(false)}
+                className="flex-1 rounded border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           {localNotes.map((note) => {
             const hasTranscript = note.has_transcript && note.call_transcript;
@@ -861,18 +1039,37 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {profile.actions.map((action, idx) => (
+      <div className="border-t border-ws-border pt-4">
+        <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted mb-3">Quick Actions</div>
+        <div className="grid gap-2 md:grid-cols-3">
           <Button
-            key={action}
             type="button"
-            variant={idx < 2 ? "secondary" : "ghost"}
-            className="text-xs px-3 py-1.5"
-            onClick={() => notify(`${action} triggered`)}
+            variant="secondary"
+            className="text-xs px-3 py-2 flex items-center justify-center gap-2 bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            onClick={handleScheduleMeeting}
           >
-            {action}
+            <span>📅</span>
+            Schedule Meeting
           </Button>
-        ))}
+          <Button
+            type="button"
+            variant="secondary"
+            className="text-xs px-3 py-2 flex items-center justify-center gap-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+            onClick={handleSendEmail}
+          >
+            <span>✉️</span>
+            Send Email
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="text-xs px-3 py-2 flex items-center justify-center gap-2 bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+            onClick={() => notify(`Task added to follow-up queue`)}
+          >
+            <span>✓</span>
+            Create Task
+          </Button>
+        </div>
       </div>
     </div>
   );

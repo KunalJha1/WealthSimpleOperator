@@ -44,17 +44,13 @@ export default async function MonitoringUniversePage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard label="Clients" value={summary.total_clients} />
         <MetricCard
           label={`Clients added (${new Date().getFullYear()})`}
           value={summary.clients_created_this_year}
         />
         <MetricCard label="Portfolios" value={summary.total_portfolios} />
-        <MetricCard
-          label="Avg alerts per run"
-          value={summary.average_alerts_per_run.toFixed(1)}
-        />
         <MetricCard
           label="% alerts needing human review"
           value={`${summary.percent_alerts_human_review_required.toFixed(1)}%`}

@@ -10,12 +10,18 @@ const inter = Inter({
 
 export const metadata = {
   title: "Wealthsimple Operator Console",
-  description: "Internal portfolio monitoring and triage console for wealth advisors."
+  description: "Internal portfolio monitoring and triage console for wealth advisors.",
+  icons: {
+    icon: "/FAVICON.svg"
+  }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/FAVICON.svg" type="image/svg+xml" />
+      </head>
       <body
         className={`${inter.variable} font-sans bg-white text-gray-900 antialiased`}
       >

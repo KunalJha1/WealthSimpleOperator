@@ -22,7 +22,7 @@ class MockAIProvider:
 
     name = "mock"
 
-    def score_portfolio(self, metrics: Dict, context: Dict) -> AIOutput:
+    def score_portfolio(self, metrics: Dict, context: Dict, unique_mode: bool = False) -> AIOutput:
         concentration = float(metrics.get("concentration_score", 0.0))
         drift = float(metrics.get("drift_score", 0.0))
         volatility = float(metrics.get("volatility_proxy", 0.0))
