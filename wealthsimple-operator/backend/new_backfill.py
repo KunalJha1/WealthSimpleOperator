@@ -436,6 +436,24 @@ def run_backfill(unique_summaries: bool = False, limit: int = None):
                 print(f"     ERROR: {e}\n")
                 continue
 
+        # Apply confidence distribution to all generated alerts
+        # 30% low (40-60), 30% medium (60-80), 40% high (80-98)
+        if alerts_created > 0:
+            generated_alerts = db.query(Alert).filter_by(run_id=run.id).all()
+            confidence_distribution = []
+            for _ in range(len(generated_alerts)):
+                confidence_seed = random.random()
+                if confidence_seed < 0.3:
+                    confidence_distribution.append(random.randint(40, 60))
+                elif confidence_seed < 0.6:
+                    confidence_distribution.append(random.randint(60, 80))
+                else:
+                    confidence_distribution.append(random.randint(80, 98))
+            random.shuffle(confidence_distribution)
+
+            for idx, alert in enumerate(generated_alerts):
+                alert.confidence = confidence_distribution[idx]
+
         # Final save
         db.flush()
         run.alerts_created = alerts_created

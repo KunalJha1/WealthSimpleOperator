@@ -1238,6 +1238,23 @@ def seed_custom_portfolios_with_alerts(session: Session) -> None:
 
             alert_idx += 1
 
+    # Apply confidence distribution to all seeded alerts (overrides Gemini values)
+    # 30% low (40-60), 30% medium (60-80), 40% high (80-98)
+    seeded_alerts = session.query(Alert).filter_by(run_id=run.id).all()
+    confidence_distribution = []
+    for _ in range(len(seeded_alerts)):
+        confidence_seed = random.random()
+        if confidence_seed < 0.3:
+            confidence_distribution.append(random.randint(40, 60))
+        elif confidence_seed < 0.6:
+            confidence_distribution.append(random.randint(60, 80))
+        else:
+            confidence_distribution.append(random.randint(80, 98))
+    random.shuffle(confidence_distribution)
+
+    for idx, alert in enumerate(seeded_alerts):
+        alert.confidence = confidence_distribution[idx]
+
     run.alerts_created = portfolios_with_alerts
     session.flush()
 
