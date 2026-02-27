@@ -31,25 +31,60 @@ def get_provider() -> AIProvider:
     """Return the configured AI provider instance.
 
     Logic:
-    - If GEMINI_API_KEY is missing/empty or PROVIDER=mock -> Mock provider.
-    - Otherwise try Gemini provider, falling back to Mock on import/config issues.
+    - PROVIDER=gemma_with_groq_fallback -> Gemma (primary) + Groq (fallback)
+    - PROVIDER=gemini -> Gemini only
+    - PROVIDER=groq -> Groq only
+    - PROVIDER=mock -> Mock provider (default)
     """
 
     from .mock_provider import MockAIProvider  # local import to avoid cycles
 
-    provider_env = os.getenv("PROVIDER", "mock").lower()
+    provider_env = os.getenv("PROVIDER", "mock").lower().strip()
     gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+    groq_key = os.getenv("GROQ_API_KEY", "").strip()
 
-    use_mock = provider_env == "mock" or not gemini_key
+    # Gemma + Groq fallback (recommended for production demo)
+    if provider_env == "gemma_with_groq_fallback":
+        if not gemini_key or not groq_key:
+            print(
+                "[WARNING] gemma_with_groq_fallback requires both GEMINI_API_KEY and GROQ_API_KEY. "
+                "Falling back to mock provider."
+            )
+            return MockAIProvider()
+        try:
+            from .gemma_groq_provider import GemmaGroqFallbackProvider
 
-    if use_mock:
-        return MockAIProvider()
+            return GemmaGroqFallbackProvider(gemma_api_key=gemini_key, groq_api_key=groq_key)
+        except Exception as e:
+            print(f"[WARNING] GemmaGroqFallback initialization failed: {e}. Using mock provider.")
+            return MockAIProvider()
 
-    try:
-        from .gemini_provider import GeminiAIProvider
+    # Gemini only
+    if provider_env == "gemini":
+        if not gemini_key:
+            print("[WARNING] PROVIDER=gemini requires GEMINI_API_KEY. Falling back to mock provider.")
+            return MockAIProvider()
+        try:
+            from .gemini_provider import GeminiAIProvider
 
-        return GeminiAIProvider(api_key=gemini_key)
-    except Exception:
-        # In any failure scenario, prefer resilience and default to mock.
-        return MockAIProvider()
+            return GeminiAIProvider(api_key=gemini_key)
+        except Exception as e:
+            print(f"[WARNING] Gemini initialization failed: {e}. Using mock provider.")
+            return MockAIProvider()
+
+    # Groq only
+    if provider_env == "groq":
+        if not groq_key:
+            print("[WARNING] PROVIDER=groq requires GROQ_API_KEY. Falling back to mock provider.")
+            return MockAIProvider()
+        try:
+            from .groq_provider import GroqAIProvider
+
+            return GroqAIProvider(api_key=groq_key)
+        except Exception as e:
+            print(f"[WARNING] Groq initialization failed: {e}. Using mock provider.")
+            return MockAIProvider()
+
+    # Default: mock
+    return MockAIProvider()
 

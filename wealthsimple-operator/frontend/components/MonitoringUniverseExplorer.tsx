@@ -1,11 +1,12 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
-import { fetchAlert } from "../lib/api";
+import { fetchAlert, postAlertAction } from "../lib/api";
 import { AlertDetail, MonitoringClientRow, MonitoringQueuedCase } from "../lib/types";
 import { ClientDetailsPanel } from "./RiskBrief";
+import RiskBrief from "./RiskBrief";
 
-type SortKey =
+type ClientsSortKey =
   | "client_name"
   | "client_since_year"
   | "total_aum"
@@ -15,6 +16,14 @@ type SortKey =
   | "open_alerts"
   | "queued_for_review"
   | "last_alert_at";
+
+type QueuedSortKey =
+  | "priority"
+  | "client_name"
+  | "portfolio_name"
+  | "status"
+  | "confidence"
+  | "created_at";
 
 type SortDirection = "asc" | "desc";
 
@@ -35,12 +44,35 @@ function formatDate(value: string | null): string {
   if (!value) return "-";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "-";
-  return parsed.toLocaleString();
+  return parsed.toLocaleString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
 }
 
-function sortValue(row: MonitoringClientRow, key: SortKey): string | number {
+function sortClientValue(row: MonitoringClientRow, key: ClientsSortKey): string | number {
   if (key === "client_name") return row.client_name.toLowerCase();
   if (key === "last_alert_at") return row.last_alert_at ? new Date(row.last_alert_at).getTime() : 0;
+  return row[key];
+}
+
+function sortQueuedValue(row: MonitoringQueuedCase, key: QueuedSortKey): string | number {
+  if (key === "client_name") return row.client_name.toLowerCase();
+  if (key === "portfolio_name") return row.portfolio_name.toLowerCase();
+  if (key === "created_at") return new Date(row.created_at).getTime();
+  if (key === "priority") {
+    const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+    return priorityOrder[row.priority] ?? 99;
+  }
+  if (key === "status") {
+    const statusOrder: Record<string, number> = { OPEN: 0, ESCALATED: 1, REVIEWED: 2, FALSE_POSITIVE: 3 };
+    return statusOrder[row.status] ?? 99;
+  }
   return row[key];
 }
 
@@ -52,11 +84,14 @@ export default function MonitoringUniverseExplorer({
   queuedCases: MonitoringQueuedCase[];
 }) {
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("total_aum");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [clientsSortKey, setClientsSortKey] = useState<ClientsSortKey>("total_aum");
+  const [clientsSortDirection, setClientsSortDirection] = useState<SortDirection>("desc");
+  const [queuedSortKey, setQueuedSortKey] = useState<QueuedSortKey>("priority");
+  const [queuedSortDirection, setQueuedSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedAlert, setSelectedAlert] = useState<AlertDetail | null>(null);
-  const [, setLoadingAlert] = useState(false);
+  const [loadingAlert, setLoadingAlert] = useState(false);
+  const [updatingAlert, setUpdatingAlert] = useState(false);
   const PAGE_SIZE = 20;
 
   const filteredAndPagedClients = useMemo(() => {
@@ -73,10 +108,10 @@ export default function MonitoringUniverseExplorer({
         });
 
     const sorted = [...rows].sort((a, b) => {
-      const left = sortValue(a, sortKey);
-      const right = sortValue(b, sortKey);
+      const left = sortClientValue(a, clientsSortKey);
+      const right = sortClientValue(b, clientsSortKey);
       const result = left < right ? -1 : left > right ? 1 : 0;
-      return sortDirection === "asc" ? result : -result;
+      return clientsSortDirection === "asc" ? result : -result;
     });
 
     const start = (currentPage - 1) * PAGE_SIZE;
@@ -84,33 +119,90 @@ export default function MonitoringUniverseExplorer({
     const paged = sorted.slice(start, end);
 
     return { all: sorted, paged, total: sorted.length };
-  }, [clients, search, sortKey, sortDirection, currentPage]);
+  }, [clients, search, clientsSortKey, clientsSortDirection, currentPage]);
 
-  function toggleSort(key: SortKey) {
-    if (sortKey !== key) {
-      setSortKey(key);
-      setSortDirection("desc");
+  const sortedQueuedCases = useMemo(() => {
+    return [...queuedCases].sort((a, b) => {
+      const left = sortQueuedValue(a, queuedSortKey);
+      const right = sortQueuedValue(b, queuedSortKey);
+      const result = left < right ? -1 : left > right ? 1 : 0;
+      return queuedSortDirection === "asc" ? result : -result;
+    });
+  }, [queuedCases, queuedSortKey, queuedSortDirection]);
+
+  function toggleClientsSort(key: ClientsSortKey) {
+    if (clientsSortKey !== key) {
+      setClientsSortKey(key);
+      setClientsSortDirection("desc");
       return;
     }
-    setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+    setClientsSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+  }
+
+  function toggleQueuedSort(key: QueuedSortKey) {
+    if (queuedSortKey !== key) {
+      setQueuedSortKey(key);
+      setQueuedSortDirection("asc");
+      return;
+    }
+    setQueuedSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
   }
 
   async function handleClientClick(clientId: number) {
     try {
       setLoadingAlert(true);
-      // Find the first alert for this client in the queued cases
-      const alertId = queuedCases.find(c => c.client_id === clientId)?.alert_id;
+      // Fetch client's most recent alert from the API
+      const params = new URLSearchParams({ limit: "100" });
+      const alertsResponse = await fetch(`http://localhost:8000/alerts?${params.toString()}`, { cache: "no-store" });
+
+      let alertId: number | undefined;
+      if (alertsResponse.ok) {
+        const data = await alertsResponse.json();
+        const clientAlert = data.items?.find((a: AlertDetail) => a.client.id === clientId);
+        alertId = clientAlert?.id;
+      }
+
+      // Fallback to queued cases if not found in general alerts
       if (!alertId) {
-        // If no queued alert, just show a notification
-        alert(`Client has no open alerts`);
+        alertId = queuedCases.find(c => c.client_id === clientId)?.alert_id;
+      }
+
+      if (!alertId) {
+        alert(`Client has no recent alerts to review`);
         return;
       }
       const alertDetail = await fetchAlert(alertId);
       setSelectedAlert(alertDetail);
     } catch (err) {
-      alert(`Failed to load client details: ${err instanceof Error ? err.message : String(err)}`);
+      alert(`Failed to load alert: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoadingAlert(false);
+    }
+  }
+
+  async function handleQueuedCaseClick(alertId: number) {
+    try {
+      setLoadingAlert(true);
+      const alertDetail = await fetchAlert(alertId);
+      setSelectedAlert(alertDetail);
+    } catch (err) {
+      alert(`Failed to load alert: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoadingAlert(false);
+    }
+  }
+
+  async function handleAlertAction(action: "reviewed" | "escalate" | "false_positive") {
+    if (!selectedAlert) return;
+    try {
+      setUpdatingAlert(true);
+      const result = await postAlertAction(selectedAlert.id, action);
+      setSelectedAlert(result.alert);
+      alert(`Alert ${action === "false_positive" ? "marked as false positive" : action === "escalate" ? "escalated" : "marked as reviewed"}`);
+    } catch (err) {
+      alert(`Failed to update alert: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setUpdatingAlert(false);
     }
   }
 
@@ -122,6 +214,11 @@ export default function MonitoringUniverseExplorer({
       case "generation": return "bg-amber-100 text-amber-800";
       default: return "bg-gray-100 text-gray-800";
     }
+  }
+
+  function SortArrow({ active, direction }: { active: boolean; direction: SortDirection }) {
+    if (!active) return <span className="ml-1 text-gray-300">↕</span>;
+    return <span className="ml-1">{direction === "asc" ? "↑" : "↓"}</span>;
   }
 
   return (
@@ -148,32 +245,50 @@ export default function MonitoringUniverseExplorer({
             <thead>
               <tr className="border-b border-ws-border text-left text-xs uppercase tracking-wide text-ws-muted">
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("client_name")}>Client</button>
+                  <button type="button" onClick={() => toggleClientsSort("client_name")} className="flex items-center">
+                    Client <SortArrow active={clientsSortKey === "client_name"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">Account</th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("client_since_year")}>Since</button>
+                  <button type="button" onClick={() => toggleClientsSort("client_since_year")} className="flex items-center">
+                    Since <SortArrow active={clientsSortKey === "client_since_year"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("total_aum")}>AUM</button>
+                  <button type="button" onClick={() => toggleClientsSort("total_aum")} className="flex items-center">
+                    AUM <SortArrow active={clientsSortKey === "total_aum"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("daily_pnl")}>Daily PNL</button>
+                  <button type="button" onClick={() => toggleClientsSort("daily_pnl")} className="flex items-center">
+                    Daily PNL <SortArrow active={clientsSortKey === "daily_pnl"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("daily_pnl_pct")}>Daily %</button>
+                  <button type="button" onClick={() => toggleClientsSort("daily_pnl_pct")} className="flex items-center">
+                    Daily % <SortArrow active={clientsSortKey === "daily_pnl_pct"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("ytd_performance_pct")}>YTD %</button>
+                  <button type="button" onClick={() => toggleClientsSort("ytd_performance_pct")} className="flex items-center">
+                    YTD % <SortArrow active={clientsSortKey === "ytd_performance_pct"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("open_alerts")}>Open alerts</button>
+                  <button type="button" onClick={() => toggleClientsSort("open_alerts")} className="flex items-center">
+                    Open alerts <SortArrow active={clientsSortKey === "open_alerts"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("queued_for_review")}>Queued review</button>
+                  <button type="button" onClick={() => toggleClientsSort("queued_for_review")} className="flex items-center">
+                    Queued review <SortArrow active={clientsSortKey === "queued_for_review"} direction={clientsSortDirection} />
+                  </button>
                 </th>
                 <th className="px-2 py-2">
-                  <button type="button" onClick={() => toggleSort("last_alert_at")}>Last alert</button>
+                  <button type="button" onClick={() => toggleClientsSort("last_alert_at")} className="flex items-center">
+                    Last alert <SortArrow active={clientsSortKey === "last_alert_at"} direction={clientsSortDirection} />
+                  </button>
                 </th>
               </tr>
             </thead>
@@ -248,24 +363,48 @@ export default function MonitoringUniverseExplorer({
       <section className="card p-4 space-y-3">
         <div className="page-title">Queued cases to review</div>
         <div className="page-subtitle">
-          Prioritized open and escalated alerts needing review attention.
+          Prioritized open and escalated alerts needing review attention. Click any case to review the risk brief.
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-ws-border text-left text-xs uppercase tracking-wide text-ws-muted">
-                <th className="px-2 py-2">Priority</th>
-                <th className="px-2 py-2">Client</th>
-                <th className="px-2 py-2">Portfolio</th>
+                <th className="px-2 py-2">
+                  <button type="button" onClick={() => toggleQueuedSort("priority")} className="flex items-center">
+                    Priority <SortArrow active={queuedSortKey === "priority"} direction={queuedSortDirection} />
+                  </button>
+                </th>
+                <th className="px-2 py-2">
+                  <button type="button" onClick={() => toggleQueuedSort("client_name")} className="flex items-center">
+                    Client <SortArrow active={queuedSortKey === "client_name"} direction={queuedSortDirection} />
+                  </button>
+                </th>
+                <th className="px-2 py-2">
+                  <button type="button" onClick={() => toggleQueuedSort("portfolio_name")} className="flex items-center">
+                    Portfolio <SortArrow active={queuedSortKey === "portfolio_name"} direction={queuedSortDirection} />
+                  </button>
+                </th>
                 <th className="px-2 py-2">Case</th>
-                <th className="px-2 py-2">Status</th>
-                <th className="px-2 py-2">Confidence</th>
-                <th className="px-2 py-2">Created</th>
+                <th className="px-2 py-2">
+                  <button type="button" onClick={() => toggleQueuedSort("status")} className="flex items-center">
+                    Status <SortArrow active={queuedSortKey === "status"} direction={queuedSortDirection} />
+                  </button>
+                </th>
+                <th className="px-2 py-2">
+                  <button type="button" onClick={() => toggleQueuedSort("confidence")} className="flex items-center">
+                    Confidence <SortArrow active={queuedSortKey === "confidence"} direction={queuedSortDirection} />
+                  </button>
+                </th>
+                <th className="px-2 py-2">
+                  <button type="button" onClick={() => toggleQueuedSort("created_at")} className="flex items-center">
+                    Created <SortArrow active={queuedSortKey === "created_at"} direction={queuedSortDirection} />
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {queuedCases.map((item) => (
-                <tr key={item.alert_id} className="border-b border-gray-100">
+              {sortedQueuedCases.map((item) => (
+                <tr key={item.alert_id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => handleQueuedCaseClick(item.alert_id)}>
                   <td className="px-2 py-2 font-medium">
                     <span
                       className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
@@ -308,12 +447,12 @@ export default function MonitoringUniverseExplorer({
       </section>
 
       {selectedAlert && (
-        <div className="fixed inset-0 z-40 flex justify-center bg-black/50 backdrop-blur-sm overflow-y-auto px-4 py-10">
-          <div className="relative w-full max-w-5xl rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-6xl max-h-[90vh] rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4 shrink-0">
               <div className="space-y-0.5">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
-                  Client details
+                  Alert review
                 </div>
                 <div className="text-sm font-medium text-gray-900">
                   {selectedAlert.client.name}
@@ -321,14 +460,16 @@ export default function MonitoringUniverseExplorer({
               </div>
               <button
                 type="button"
-                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
+                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50 shrink-0"
                 onClick={() => setSelectedAlert(null)}
               >
                 Close
               </button>
             </div>
-            <div className="p-5 md:p-6">
-              {selectedAlert && <ClientDetailsPanel alert={selectedAlert} />}
+            <div className="overflow-y-auto flex-1">
+              <div className="p-5 md:p-6">
+                <RiskBrief alert={selectedAlert} onAction={handleAlertAction} updating={updatingAlert} />
+              </div>
             </div>
           </div>
         </div>

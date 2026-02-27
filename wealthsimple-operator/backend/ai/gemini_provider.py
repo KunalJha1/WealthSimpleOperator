@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import random
 import time
 from typing import Dict
 
@@ -17,9 +18,13 @@ from ai.prompt_builder import build_prompt
 logger = logging.getLogger(__name__)
 
 
-def generate_with_retry(call_fn, max_retries=5):
-    """Retry with exponential backoff for rate limit errors."""
-    delay = 2.0
+def generate_with_retry(call_fn, max_retries=8):
+    """Retry with exponential backoff and jitter for rate limit errors.
+
+    Uses longer starting delay (8s) and random jitter to avoid overwhelming
+    the API quota and to spread requests over time, similar to build_ai_summary.py.
+    """
+    delay = 8.0
     for attempt in range(max_retries):
         try:
             return call_fn()
@@ -27,8 +32,9 @@ def generate_with_retry(call_fn, max_retries=5):
             msg = str(e)
             logger.warning("API error on attempt %d/%d: %s", attempt + 1, max_retries, msg)
             if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-                logger.warning("Rate limited. Retrying in %.1fs...", delay)
-                time.sleep(delay)
+                jittered_delay = delay + random.random()
+                logger.warning("Rate limited. Retrying in %.1fs...", jittered_delay)
+                time.sleep(jittered_delay)
                 delay = min(delay * 2, 20)
                 continue
             raise
@@ -61,13 +67,13 @@ class GeminiAIProvider:
             self._strict_mode,
         )
 
-    def score_portfolio(self, metrics: Dict, context: Dict) -> AIOutput:
+    def score_portfolio(self, metrics: Dict, context: Dict, unique_mode: bool = False) -> AIOutput:
         last_metrics = context.get("last_metrics") or {}
 
-        prompt = build_prompt(metrics=metrics, last_metrics=last_metrics, context=context)
+        prompt = build_prompt(metrics=metrics, last_metrics=last_metrics, context=context, unique_mode=unique_mode)
 
         try:
-            response = self._generate_content_with_retry(prompt)
+            response = self._generate_content_with_retry(prompt, temperature=0.8 if unique_mode else 0.6)
             raw_text = response.text or ""
             parsed = self._parse_json(raw_text)
             return AIOutput.model_validate(parsed)
@@ -152,9 +158,9 @@ class GeminiAIProvider:
             text = "\n".join(lines).strip()
         return json.loads(text)
 
-    def _generate_content_with_retry(self, prompt: str):
+    def _generate_content_with_retry(self, prompt: str, temperature: float = 0.6):
         generation_config = types.GenerateContentConfig(
-            temperature=0.6,
+            temperature=temperature,
             response_mime_type="application/json",
         )
         resp = generate_with_retry(

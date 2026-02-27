@@ -165,6 +165,7 @@ class Alert(Base):
     drift_score: Mapped[float] = mapped_column(Float, nullable=False)
     volatility_proxy: Mapped[float] = mapped_column(Float, nullable=False)
     risk_score: Mapped[float] = mapped_column(Float, nullable=False)
+    scenario: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
 
     run: Mapped[Run] = relationship("Run", back_populates="alerts")
     portfolio: Mapped[Portfolio] = relationship("Portfolio", back_populates="alerts")
@@ -311,6 +312,7 @@ class AlertSummary(BaseModel):
     event_title: str
     summary: str
     status: AlertStatus
+    scenario: Optional[str] = None
     client: ClientSummary
     portfolio: PortfolioSummary
 
@@ -328,6 +330,7 @@ class AlertDetail(BaseModel):
     decision_trace_steps: List[DecisionTraceStep]
     change_detection: List[ChangeDetectionItem]
     status: AlertStatus
+    scenario: Optional[str] = None
     concentration_score: float
     drift_score: float
     volatility_proxy: float
@@ -383,7 +386,6 @@ class MonitoringUniverseSummary(BaseModel):
     alerts_by_priority: Dict[Priority, int]
     alerts_by_status: Dict[AlertStatus, int]
     total_runs: int
-    average_alerts_per_run: float
     percent_alerts_human_review_required: float
 
 
