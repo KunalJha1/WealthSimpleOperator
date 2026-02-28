@@ -286,3 +286,91 @@ export interface SimulationSummary {
   ai_checklist: string[];
   impacted_portfolios: SimulationPortfolioImpact[];
 }
+
+export interface RebalancingLineItem {
+  ticker: string;
+  asset_class: string;
+  current_weight: number;
+  suggested_weight: number;
+  delta_weight: number;
+  action: string;
+}
+
+export interface RebalancingSuggestion {
+  alert_id: number;
+  generated_at: string;
+  current_equity_pct: number;
+  target_equity_pct: number;
+  current_fixed_income_pct: number;
+  target_fixed_income_pct: number;
+  current_cash_pct: number;
+  target_cash_pct: number;
+  line_items: RebalancingLineItem[];
+  ai_rationale: string;
+  requires_human_approval: boolean;
+}
+
+export type ReallocationPlanStatus = "PLANNED" | "QUEUED" | "APPROVED" | "EXECUTED";
+
+export interface ReallocationTrade {
+  ticker: string;
+  asset_class: string;
+  action: string;
+  amount: number;
+  estimated_units: number;
+  settlement_days: number;
+  estimated_gain_realized: number;
+  estimated_tax_cost: number;
+}
+
+export interface ReallocationAlternative {
+  name: string;
+  estimated_tax_impact: number;
+  estimated_liquidity_days: number;
+  volatility_after: number;
+  rejected_reason: string;
+}
+
+export interface ReallocationPlan {
+  plan_id: number;
+  alert_id: number;
+  status: ReallocationPlanStatus;
+  generated_at: string;
+  target_cash_amount: number;
+  current_cash_amount: number;
+  additional_cash_needed: number;
+  estimated_realized_gains: number;
+  estimated_tax_impact: number;
+  volatility_before: number;
+  volatility_after: number;
+  volatility_reduction_pct: number;
+  liquidity_days: number;
+  ai_rationale: string;
+  assumptions: Record<string, unknown>;
+  trades: ReallocationTrade[];
+  alternatives_considered: ReallocationAlternative[];
+  requires_human_approval: boolean;
+  simulated_execution: boolean;
+  queued_at: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  executed_at: string | null;
+  execution_reference: string | null;
+}
+
+export interface PlaybookAction {
+  rank: number;
+  client_name: string;
+  portfolio_name: string;
+  action_type: string;
+  urgency: string;
+  draft_email_subject: string;
+  draft_email_body: string;
+}
+
+export interface PlaybookSummary {
+  scenario: SimulationScenario;
+  severity: SimulationSeverity;
+  actions: PlaybookAction[];
+  ai_rationale: string;
+}

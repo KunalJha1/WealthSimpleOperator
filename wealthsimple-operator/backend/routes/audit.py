@@ -14,7 +14,6 @@ from models import (
     AlertStatus,
     AuditEvent,
     AuditEventEntry,
-    AuditEventType,
     Priority,
 )
 
@@ -69,9 +68,8 @@ def list_audit_events(
 
     if event_type:
         raw_types = {e.strip().upper() for e in event_type.split(",") if e.strip()}
-        type_enums = [AuditEventType(v) for v in raw_types if v in AuditEventType.__members__]
-        if type_enums:
-            conditions.append(AuditEvent.event_type.in_(type_enums))
+        if raw_types:
+            conditions.append(AuditEvent.event_type.in_(raw_types))
 
     if from_date:
         conditions.append(AuditEvent.created_at >= from_date)

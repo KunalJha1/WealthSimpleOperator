@@ -1,10 +1,10 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
-import { fetchAlert, postAlertAction } from "../lib/api";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { fetchAlert, fetchAlerts } from "../lib/api";
 import { AlertDetail, MonitoringClientRow, MonitoringQueuedCase } from "../lib/types";
 import { ClientDetailsPanel } from "./RiskBrief";
-import RiskBrief from "./RiskBrief";
 
 type ClientsSortKey =
   | "client_name"
@@ -76,6 +76,81 @@ function sortQueuedValue(row: MonitoringQueuedCase, key: QueuedSortKey): string 
   return row[key];
 }
 
+function buildFallbackDetailFromClientRow(row: MonitoringClientRow): AlertDetail {
+  const confidence = Math.max(
+    55,
+    Math.min(95, 62 + row.open_alerts * 7 + row.queued_for_review * 4)
+  );
+  const driftScore = Math.max(1.2, Math.min(6.8, Math.abs(row.daily_pnl_pct) * 2.4));
+  const concentrationScore = Math.max(1.4, Math.min(7.6, (row.total_aum / 1_000_000) * 0.9));
+  const volatilityProxy = Math.max(1.1, Math.min(8.2, Math.abs(row.daily_pnl_pct) * 3.1));
+  const riskScore = Math.max(
+    1.5,
+    Math.min(9.2, (driftScore + concentrationScore + volatilityProxy) / 3)
+  );
+
+  return {
+    id: -(row.client_id * 1000 + row.client_since_year),
+    created_at: row.last_alert_at ?? new Date().toISOString(),
+    priority:
+      row.queued_for_review > 0 || row.open_alerts >= 2
+        ? "HIGH"
+        : row.open_alerts === 1
+          ? "MEDIUM"
+          : "LOW",
+    confidence,
+    event_title: row.last_alert_event ?? "Monitoring overview (no active alerts)",
+    summary:
+      row.open_alerts > 0
+        ? `Client currently has ${row.open_alerts} open alert${row.open_alerts === 1 ? "" : "s"} in the monitoring universe.`
+        : "Client has no active alerts right now. Showing profile details from monitoring data.",
+    status: "OPEN",
+    scenario: null,
+    client: {
+      id: row.client_id,
+      name: row.client_name,
+      email: row.email,
+      segment: row.segment,
+      risk_profile: row.risk_profile
+    },
+    portfolio: {
+      id: row.client_id,
+      name: `${row.client_name} Portfolio`,
+      total_value: row.total_aum,
+      target_equity_pct: 60,
+      target_fixed_income_pct: 35,
+      target_cash_pct: 5
+    },
+    reasoning_bullets: [
+      "Monitoring row opened without a linked active alert.",
+      `Daily movement is ${formatPct(row.daily_pnl_pct)} and YTD performance is ${formatPct(row.ytd_performance_pct)}.`,
+      `Queue pressure: ${row.queued_for_review} case(s) awaiting review.`
+    ],
+    human_review_required: row.queued_for_review > 0,
+    suggested_next_step:
+      row.open_alerts > 0 ? "Review open alerts for this client." : "Continue routine monitoring.",
+    decision_trace_steps: [
+      { step: "Universe Scan", detail: "Client selected from monitoring universe table." },
+      {
+        step: "Alert Lookup",
+        detail: "No specific alert selected; generated profile-only client detail."
+      },
+      {
+        step: "Advisor View",
+        detail: "Displayed client details so advisor can review context without an active case."
+      }
+    ],
+    change_detection: [
+      { metric: "daily_pnl_pct", from: "0.00%", to: formatPct(row.daily_pnl_pct) },
+      { metric: "ytd_performance_pct", from: "0.00%", to: formatPct(row.ytd_performance_pct) }
+    ],
+    concentration_score: concentrationScore,
+    drift_score: driftScore,
+    volatility_proxy: volatilityProxy,
+    risk_score: riskScore
+  };
+}
+
 export default function MonitoringUniverseExplorer({
   clients,
   queuedCases
@@ -89,9 +164,9 @@ export default function MonitoringUniverseExplorer({
   const [queuedSortKey, setQueuedSortKey] = useState<QueuedSortKey>("priority");
   const [queuedSortDirection, setQueuedSortDirection] = useState<SortDirection>("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedAlert, setSelectedAlert] = useState<AlertDetail | null>(null);
-  const [loadingAlert, setLoadingAlert] = useState(false);
-  const [updatingAlert, setUpdatingAlert] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<AlertDetail | null>(null);
+  const [showClientDetails, setShowClientDetails] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
   const PAGE_SIZE = 20;
 
   const filteredAndPagedClients = useMemo(() => {
@@ -148,61 +223,49 @@ export default function MonitoringUniverseExplorer({
     setQueuedSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
   }
 
-  async function handleClientClick(clientId: number) {
+  function formatPortfolioCode(id: number): string {
+    const code = (10000 + id).toString();
+    return `Portfolio PTF-${code}`;
+  }
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  async function openClientProfileForAlert(alertId: number) {
+    const detail = await fetchAlert(alertId);
+    setSelectedDetail(detail);
+    setShowClientDetails(true);
+  }
+
+  async function handleClientClick(clientRow: MonitoringClientRow) {
     try {
-      setLoadingAlert(true);
-      // Fetch client's most recent alert from the API
-      const params = new URLSearchParams({ limit: "100" });
-      const alertsResponse = await fetch(`http://localhost:8000/alerts?${params.toString()}`, { cache: "no-store" });
-
-      let alertId: number | undefined;
-      if (alertsResponse.ok) {
-        const data = await alertsResponse.json();
-        const clientAlert = data.items?.find((a: AlertDetail) => a.client.id === clientId);
-        alertId = clientAlert?.id;
-      }
-
-      // Fallback to queued cases if not found in general alerts
-      if (!alertId) {
-        alertId = queuedCases.find(c => c.client_id === clientId)?.alert_id;
-      }
-
-      if (!alertId) {
-        alert(`Client has no recent alerts to review`);
+      const queuedAlertId = queuedCases.find((c) => c.client_id === clientRow.client_id)?.alert_id;
+      if (queuedAlertId) {
+        await openClientProfileForAlert(queuedAlertId);
         return;
       }
-      const alertDetail = await fetchAlert(alertId);
-      setSelectedAlert(alertDetail);
+
+      const alertsResponse = await fetchAlerts(new URLSearchParams({ limit: "100" }));
+      const matchedAlert = alertsResponse.items.find((a) => a.client.id === clientRow.client_id);
+      if (matchedAlert) {
+        await openClientProfileForAlert(matchedAlert.id);
+        return;
+      }
+
+      setSelectedDetail(buildFallbackDetailFromClientRow(clientRow));
+      setShowClientDetails(true);
     } catch (err) {
-      alert(`Failed to load alert: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setLoadingAlert(false);
+      setSelectedDetail(buildFallbackDetailFromClientRow(clientRow));
+      setShowClientDetails(true);
     }
   }
 
   async function handleQueuedCaseClick(alertId: number) {
     try {
-      setLoadingAlert(true);
-      const alertDetail = await fetchAlert(alertId);
-      setSelectedAlert(alertDetail);
+      await openClientProfileForAlert(alertId);
     } catch (err) {
       alert(`Failed to load alert: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setLoadingAlert(false);
-    }
-  }
-
-  async function handleAlertAction(action: "reviewed" | "escalate" | "false_positive") {
-    if (!selectedAlert) return;
-    try {
-      setUpdatingAlert(true);
-      const result = await postAlertAction(selectedAlert.id, action);
-      setSelectedAlert(result.alert);
-      alert(`Alert ${action === "false_positive" ? "marked as false positive" : action === "escalate" ? "escalated" : "marked as reviewed"}`);
-    } catch (err) {
-      alert(`Failed to update alert: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setUpdatingAlert(false);
     }
   }
 
@@ -297,7 +360,7 @@ export default function MonitoringUniverseExplorer({
                 <tr
                   key={row.client_id}
                   className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleClientClick(row.client_id)}
+                  onClick={() => handleClientClick(row)}
                 >
                   <td className="px-2 py-2">
                     <div className="font-medium text-gray-900">{row.client_name}</div>
@@ -446,36 +509,35 @@ export default function MonitoringUniverseExplorer({
         </div>
       </section>
 
-      {selectedAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-6xl max-h-[90vh] rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4 shrink-0">
-              <div className="space-y-0.5">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
-                  Alert review
+      {portalReady && showClientDetails && selectedDetail
+        ? createPortal(
+            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
+              <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-2xl bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                      Client details
+                    </div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {selectedDetail.client.name} - {formatPortfolioCode(selectedDetail.portfolio.id)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
+                    onClick={() => setShowClientDetails(false)}
+                  >
+                    Close
+                  </button>
                 </div>
-                <div className="text-sm font-medium text-gray-900">
-                  {selectedAlert.client.name}
+                <div className="p-5 md:p-6">
+                  <ClientDetailsPanel alert={selectedDetail} />
                 </div>
               </div>
-              <button
-                type="button"
-                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50 shrink-0"
-                onClick={() => setSelectedAlert(null)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="overflow-y-auto flex-1">
-              <div className="p-5 md:p-6">
-                <RiskBrief alert={selectedAlert} onAction={handleAlertAction} updating={updatingAlert} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
-
-

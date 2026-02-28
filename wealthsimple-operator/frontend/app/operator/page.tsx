@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/Buttons";
 import PriorityQueue from "../../components/PriorityQueue";
 import AuditTable from "../../components/AuditTable";
@@ -8,7 +8,6 @@ import {
   fetchAuditLog,
   fetchHealth,
   fetchAlerts,
-  fetchAlert,
   fetchMonitoringSummary,
   runOperator
 } from "../../lib/api";
@@ -21,15 +20,21 @@ import type {
   RunSummary,
   Priority
 } from "../../lib/types";
+import {
+  advanceNextRunAt,
+  FIRST_RELEASE_DELAY_MS,
+  getOrInitNextRunAt,
+  clearScheduleSessionBootstrap
+} from "../../lib/operatorSchedule";
 
 const PRIORITY_RANK: Record<Priority, number> = {
   HIGH: 0,
   MEDIUM: 1,
   LOW: 2
 };
-const NEXT_SCHEDULED_RUN_MINUTES = 3;
-const AUTO_SCAN_ENABLED = false;
-const AUTO_SCAN_INTERVAL_MS = NEXT_SCHEDULED_RUN_MINUTES * 60 * 1000;
+const AUTO_SCAN_ENABLED = true;
+const INITIAL_QUEUE_SIZE = 50;
+const DEFERRED_QUEUE_SIZE = 5;
 
 type SessionActionMetrics = {
   reviewed: number;
@@ -80,15 +85,19 @@ function sortAlertsByPriority(alerts: AlertSummary[]): AlertSummary[] {
   });
 }
 
-function hasUpdatedRiskBrief(detail: Awaited<ReturnType<typeof fetchAlert>>): boolean {
-  return Boolean(
-    detail.summary &&
-      detail.summary.trim().length > 0 &&
-      detail.reasoning_bullets.length > 0 &&
-      detail.decision_trace_steps.length > 0 &&
-      detail.change_detection.length >= 0 &&
-      detail.client_profile_view
-  );
+function dedupeAlertsById(alerts: AlertSummary[]): AlertSummary[] {
+  const seen = new Set<number>();
+  const unique: AlertSummary[] = [];
+  for (const alert of alerts) {
+    if (seen.has(alert.id)) continue;
+    seen.add(alert.id);
+    unique.push(alert);
+  }
+  return unique;
+}
+
+function dedupeIds(ids: number[]): number[] {
+  return Array.from(new Set(ids));
 }
 
 function minutesAgoLabel(timestamp: string | null): string {
@@ -118,8 +127,18 @@ export default function OperatorPage() {
   const [cachedPerformance, setCachedPerformance] = useState<PerformanceSnapshot>(
     DEFAULT_PERFORMANCE
   );
-  const [nextAutoScanAt, setNextAutoScanAt] = useState<number>(Date.now() + AUTO_SCAN_INTERVAL_MS);
+  const [recentAlertIds, setRecentAlertIds] = useState<number[]>([]);
+  const [nextAutoScanAt, setNextAutoScanAt] = useState<number>(() => {
+    if (typeof window === "undefined") {
+      return Date.now() + FIRST_RELEASE_DELAY_MS;
+    }
+    return getOrInitNextRunAt();
+  });
   const [nowMs, setNowMs] = useState<number>(Date.now());
+  const streamVersionRef = useRef(0);
+  const streamTimeoutsRef = useRef<number[]>([]);
+  const autoRunInFlightRef = useRef(false);
+  const deferredAlertsRef = useRef<AlertSummary[]>([]);
 
   const highPriorityCount = useMemo(
     () => alerts.filter((alert) => alert.priority === "HIGH").length,
@@ -239,6 +258,17 @@ export default function OperatorPage() {
     return () => window.clearInterval(id);
   }, []);
 
+  function clearPendingStreamTimeouts() {
+    streamTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    streamTimeoutsRef.current = [];
+  }
+
+  useEffect(() => {
+    return () => {
+      clearPendingStreamTimeouts();
+    };
+  }, []);
+
   function handleQueueAlertAction(payload: {
     id: number;
     action: "reviewed" | "escalate" | "false_positive";
@@ -264,47 +294,68 @@ export default function OperatorPage() {
     }));
   }
 
+  function seedDeferredAlerts(alertPool: AlertSummary[]) {
+    deferredAlertsRef.current = sortAlertsByPriority(alertPool).slice(
+      INITIAL_QUEUE_SIZE,
+      INITIAL_QUEUE_SIZE + DEFERRED_QUEUE_SIZE
+    );
+  }
+
+  function releaseNextDeferredAlert() {
+    const next = deferredAlertsRef.current.shift();
+    if (!next) return;
+    const released: AlertSummary = {
+      ...next,
+      priority: "HIGH",
+      created_at: new Date().toISOString()
+    };
+    setAlerts((prev) => dedupeAlertsById(sortAlertsByPriority([released, ...prev])));
+    setRecentAlertIds((currentIds) => dedupeIds([released.id, ...currentIds]));
+  }
+
+  function handleAlertOpened(id: number) {
+    setRecentAlertIds((prev) => prev.filter((alertId) => alertId !== id));
+  }
+
   async function streamAlerts(newAlerts: AlertSummary[]) {
+    const streamVersion = streamVersionRef.current + 1;
+    streamVersionRef.current = streamVersion;
+    clearPendingStreamTimeouts();
+
     if (!newAlerts.length) {
       setAlerts([]);
-      return;
+      return [] as AlertSummary[];
     }
-
-    const detailChecks = await Promise.allSettled(
-      newAlerts.map(async (alert) => {
-        const detail = await fetchAlert(alert.id);
-        return { alert, eligible: hasUpdatedRiskBrief(detail) };
-      })
-    );
-
-    const eligibleAlerts = detailChecks
-      .filter((res): res is PromiseFulfilledResult<{ alert: AlertSummary; eligible: boolean }> => res.status === "fulfilled")
-      .filter((res) => res.value.eligible)
-      .map((res) => res.value.alert);
-
-    const sorted = sortAlertsByPriority(eligibleAlerts);
+    const sorted = dedupeAlertsById(sortAlertsByPriority(newAlerts));
 
     setAlerts([]);
     sorted.forEach((alert, index) => {
-      setTimeout(() => {
-        setAlerts((prev) => [...prev, alert]);
+      const timeoutId = window.setTimeout(() => {
+        if (streamVersionRef.current !== streamVersion) return;
+        setAlerts((prev) => {
+          if (prev.some((item) => item.id === alert.id)) return prev;
+          return dedupeAlertsById(sortAlertsByPriority([alert, ...prev]));
+        });
       }, index * 120);
+      streamTimeoutsRef.current.push(timeoutId);
     });
+    return sorted;
   }
 
   async function loadInitial() {
     try {
       const [healthRes, alertsRes, auditRes, monitoringRes] = await Promise.all([
         fetchHealth(),
-        fetchAlerts(new URLSearchParams({ limit: "20" })),
+        fetchAlerts(new URLSearchParams({ limit: "55" })),
         fetchAuditLog(new URLSearchParams({ limit: "10" })),
         fetchMonitoringSummary()
       ]);
       setHealth(healthRes);
-      await streamAlerts(alertsRes.items);
+      const sortedAlerts = dedupeAlertsById(sortAlertsByPriority(alertsRes.items));
+      await streamAlerts(sortedAlerts.slice(0, INITIAL_QUEUE_SIZE));
+      seedDeferredAlerts(sortedAlerts);
       setAuditPreview(auditRes.items);
       setMonitoringSummary(monitoringRes);
-      setNextAutoScanAt(Date.now() + AUTO_SCAN_INTERVAL_MS);
     } catch (e) {
       setError((e as Error).message);
     }
@@ -323,40 +374,70 @@ export default function OperatorPage() {
       setRunSummary(summary);
 
       // Fetch updated alerts from the backend
-      const alertsRes = await fetchAlerts(new URLSearchParams({ limit: "50" }));
-      await streamAlerts(alertsRes.items);
+      const alertsRes = await fetchAlerts(new URLSearchParams({ limit: "55" }));
+      const sortedAlerts = dedupeAlertsById(sortAlertsByPriority(alertsRes.items));
+      await streamAlerts(sortedAlerts.slice(0, INITIAL_QUEUE_SIZE));
+      seedDeferredAlerts(sortedAlerts);
+      setRecentAlertIds([]);
 
       // Refresh monitoring summary
-      const monitoringRes = await fetchMonitoringSummary();
+      const [monitoringRes, healthRes] = await Promise.all([
+        fetchMonitoringSummary(),
+        fetchHealth()
+      ]);
       setMonitoringSummary(monitoringRes);
+      setHealth(healthRes);
 
       // Refresh audit log
       const auditRes = await fetchAuditLog(new URLSearchParams({ limit: "10" }));
       setAuditPreview(auditRes.items);
 
-      setNextAutoScanAt(Date.now() + AUTO_SCAN_INTERVAL_MS);
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      const next = advanceNextRunAt();
+      setNextAutoScanAt(next);
       setRunning(false);
     }
   }
 
   useEffect(() => {
-    if (!health || !AUTO_SCAN_ENABLED) return;
-    setNextAutoScanAt(Date.now() + AUTO_SCAN_INTERVAL_MS);
-    const id = window.setInterval(() => {
-      if (document.visibilityState !== "visible" || running) return;
-      setNextAutoScanAt(Date.now() + AUTO_SCAN_INTERVAL_MS);
-      void handleRun(true);
-    }, AUTO_SCAN_INTERVAL_MS);
-    return () => window.clearInterval(id);
-  }, [health, running]);
+    if (!AUTO_SCAN_ENABLED) return;
+    if (nowMs < nextAutoScanAt) return;
+    if (running || autoRunInFlightRef.current) return;
+    autoRunInFlightRef.current = true;
+    releaseNextDeferredAlert();
+    const next = advanceNextRunAt();
+    setNextAutoScanAt(next);
+    void fetchHealth()
+      .then((healthRes) => setHealth(healthRes))
+      .catch(() => {
+        // ignore transient health refresh errors during scheduled tick
+      })
+      .finally(() => {
+        autoRunInFlightRef.current = false;
+      });
+  }, [nowMs, nextAutoScanAt, running]);
+
+  useEffect(() => {
+    const clearBootstrapOnUnload = () => {
+      clearScheduleSessionBootstrap();
+    };
+    window.addEventListener("beforeunload", clearBootstrapOnUnload);
+    return () => {
+      window.removeEventListener("beforeunload", clearBootstrapOnUnload);
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div></div>
+        <div>
+          <h1 className="page-title">Operator Console</h1>
+          <p className="page-subtitle">
+            Monitor your entire portfolio universe for drift, concentration, and risk anomalies in real-time.
+          </p>
+        </div>
         <div className="flex flex-col items-end gap-1">
           <div className="group relative">
             <Button onClick={() => void handleRun(true)} disabled={running}>
@@ -370,7 +451,7 @@ export default function OperatorPage() {
               )}
             </Button>
             <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-72 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 opacity-0 shadow-md transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-              Runing on default this button will run the automatic operator mode to scan all portfolios inside of the universe
+              This button will run the automatic operator mode to scan all portfolios in your monitoring universe.
             </div>
           </div>
         </div>
@@ -503,14 +584,42 @@ export default function OperatorPage() {
         </div>
       )}
 
-      <div className="text-xs text-ws-muted">
-        Session actions: reviewed {sessionMetrics.reviewed} | escalated {sessionMetrics.escalated} | false
-        positives {sessionMetrics.falsePositive} | drafts {sessionMetrics.followUpDraftsCreated} |
-        approved {sessionMetrics.followUpDraftsApproved} | rejected {sessionMetrics.followUpDraftsRejected}
-      </div>
+      <section className="card p-4 md:p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted mb-3">
+          Session Actions
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 md:gap-4">
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.reviewed}</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">Reviewed</div>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.escalated}</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">Escalated</div>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.falsePositive}</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">False Positives</div>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.followUpDraftsCreated}</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">Drafts</div>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.followUpDraftsApproved}</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">Approved</div>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.followUpDraftsRejected}</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">Rejected</div>
+          </div>
+        </div>
+      </section>
 
       <PriorityQueue
         alerts={alerts}
+        recentAlertIds={recentAlertIds}
+        onAlertOpen={handleAlertOpened}
         onAlertAction={handleQueueAlertAction}
         onFollowUpDraftEvent={handleFollowUpDraftEvent}
       />

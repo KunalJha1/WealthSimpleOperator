@@ -46,12 +46,26 @@ class AuditEventType(str, Enum):
     FOLLOW_UP_DRAFT_CREATED = "FOLLOW_UP_DRAFT_CREATED"
     FOLLOW_UP_DRAFT_APPROVED = "FOLLOW_UP_DRAFT_APPROVED"
     FOLLOW_UP_DRAFT_REJECTED = "FOLLOW_UP_DRAFT_REJECTED"
+    REBALANCE_SUGGESTION_CREATED = "REBALANCE_SUGGESTION_CREATED"
+    REBALANCE_SUGGESTION_APPROVED = "REBALANCE_SUGGESTION_APPROVED"
+    PLAYBOOK_GENERATED = "PLAYBOOK_GENERATED"
+    REALLOCATION_PLAN_CREATED = "REALLOCATION_PLAN_CREATED"
+    REALLOCATION_PLAN_QUEUED = "REALLOCATION_PLAN_QUEUED"
+    REALLOCATION_PLAN_APPROVED = "REALLOCATION_PLAN_APPROVED"
+    REALLOCATION_PLAN_EXECUTED = "REALLOCATION_PLAN_EXECUTED"
 
 
 class FollowUpDraftStatus(str, Enum):
     PENDING_APPROVAL = "PENDING_APPROVAL"
     APPROVED_READY = "APPROVED_READY"
     REJECTED = "REJECTED"
+
+
+class ReallocationPlanStatus(str, Enum):
+    PLANNED = "PLANNED"
+    QUEUED = "QUEUED"
+    APPROVED = "APPROVED"
+    EXECUTED = "EXECUTED"
 
 
 class MeetingNoteType(str, Enum):
@@ -203,6 +217,40 @@ class FollowUpDraft(Base):
     client: Mapped[Client] = relationship("Client")
 
 
+class ReallocationPlan(Base):
+    __tablename__ = "reallocation_plans"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    alert_id: Mapped[int] = mapped_column(ForeignKey("alerts.id"), nullable=False, index=True)
+    status: Mapped[ReallocationPlanStatus] = mapped_column(
+        SAEnum(ReallocationPlanStatus), nullable=False, default=ReallocationPlanStatus.PLANNED, index=True
+    )
+    target_cash_amount: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
+    current_cash_amount: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
+    additional_cash_needed: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
+    estimated_realized_gains: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
+    estimated_tax_impact: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
+    volatility_before: Mapped[float] = mapped_column(Float, nullable=False)
+    volatility_after: Mapped[float] = mapped_column(Float, nullable=False)
+    volatility_reduction_pct: Mapped[float] = mapped_column(Float, nullable=False)
+    liquidity_days: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
+    trades: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    alternatives_considered: Mapped[List[Dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    assumptions: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    ai_rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    queued_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    approved_by: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    executed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    execution_reference: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    alert: Mapped[Alert] = relationship("Alert")
+
+
 class MeetingNote(Base):
     __tablename__ = "meeting_notes"
 
@@ -234,9 +282,8 @@ class AuditEvent(Base):
     run_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("runs.id"), nullable=True, index=True
     )
-    event_type: Mapped[AuditEventType] = mapped_column(
-        SAEnum(AuditEventType), nullable=False, index=True
-    )
+    # Keep as String to avoid runtime crashes when newer/unknown event types exist in DB.
+    event_type: Mapped[str] = mapped_column(String, nullable=False, index=True)
     actor: Mapped[str] = mapped_column(String, nullable=False, default="operator_demo")
     details: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
@@ -373,7 +420,7 @@ class AuditEventEntry(BaseModel):
     id: int
     alert_id: Optional[int]
     run_id: Optional[int]
-    event_type: AuditEventType
+    event_type: str
     actor: str
     details: Dict[str, Any]
     created_at: datetime
@@ -505,4 +552,90 @@ class MeetingNoteCreate(BaseModel):
     note_body: str
     meeting_type: MeetingNoteType = MeetingNoteType.MEETING
     call_transcript: Optional[str] = None
+
+
+class RebalancingLineItem(BaseModel):
+    ticker: str
+    asset_class: str
+    current_weight: float
+    suggested_weight: float
+    delta_weight: float
+    action: str
+
+
+class RebalancingSuggestion(BaseModel):
+    alert_id: int
+    generated_at: datetime
+    current_equity_pct: float
+    target_equity_pct: float
+    current_fixed_income_pct: float
+    target_fixed_income_pct: float
+    current_cash_pct: float
+    target_cash_pct: float
+    line_items: List[RebalancingLineItem]
+    ai_rationale: str
+    requires_human_approval: bool = True
+
+
+class ReallocationTrade(BaseModel):
+    ticker: str
+    asset_class: str
+    action: str
+    amount: float
+    estimated_units: float
+    settlement_days: int
+    estimated_gain_realized: float
+    estimated_tax_cost: float
+
+
+class ReallocationAlternative(BaseModel):
+    name: str
+    estimated_tax_impact: float
+    estimated_liquidity_days: int
+    volatility_after: float
+    rejected_reason: str
+
+
+class ReallocationPlanView(BaseModel):
+    plan_id: int
+    alert_id: int
+    status: ReallocationPlanStatus
+    generated_at: datetime
+    target_cash_amount: float
+    current_cash_amount: float
+    additional_cash_needed: float
+    estimated_realized_gains: float
+    estimated_tax_impact: float
+    volatility_before: float
+    volatility_after: float
+    volatility_reduction_pct: float
+    liquidity_days: int
+    ai_rationale: str
+    assumptions: Dict[str, Any]
+    trades: List[ReallocationTrade]
+    alternatives_considered: List[ReallocationAlternative]
+    requires_human_approval: bool = True
+    simulated_execution: bool = True
+    queued_at: Optional[datetime] = None
+    approved_at: Optional[datetime] = None
+    approved_by: Optional[str] = None
+    executed_at: Optional[datetime] = None
+    execution_reference: Optional[str] = None
+
+
+class PlaybookAction(BaseModel):
+    rank: int
+    client_name: str
+    portfolio_name: str
+    action_type: str
+    urgency: str
+    draft_email_subject: str
+    draft_email_body: str
+
+
+class PlaybookSummary(BaseModel):
+    scenario: SimulationScenario
+    severity: SimulationSeverity
+    actions: List[PlaybookAction]
+    ai_rationale: str
 

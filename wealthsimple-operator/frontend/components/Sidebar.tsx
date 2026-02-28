@@ -9,7 +9,9 @@ import {
   Globe2,
   ClipboardList,
   Settings as SettingsIcon,
-  LineChart
+  LineChart,
+  FileText,
+  Scale
 } from "lucide-react";
 
 type NavItem = {
@@ -21,6 +23,8 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: "/operator", label: "Operator Console", icon: Activity },
   { href: "/monitoring-universe", label: "Monitoring Universe", icon: Globe2 },
+  { href: "/auto-reallocation", label: "Auto-Reallocation", icon: Scale },
+  { href: "/meeting-notes", label: "Meeting Notes", icon: FileText },
   { href: "/audit-log", label: "Audit Log", icon: ClipboardList },
   { href: "/settings", label: "Settings", icon: SettingsIcon }
 ];
@@ -87,9 +91,9 @@ export default function Sidebar() {
         </Link>
       </nav>
       <div className="px-4 py-4 border-t border-ws-border text-xs text-ws-muted">
-        AI responsibility: monitoring/triage only.
+        AI responsibility: triage + simulated reallocation plan generation/queueing.
         <br />
-        Human responsibility: investment decisions.
+        Human responsibility: approval and execution authority.
       </div>
     </aside>
   );

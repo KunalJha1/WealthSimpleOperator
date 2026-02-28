@@ -13,7 +13,10 @@ import {
   MeetingNote,
   MeetingNotesListResponse,
   SummarizeTranscriptResponse,
-  MeetingNoteCreate
+  MeetingNoteCreate,
+  RebalancingSuggestion,
+  ReallocationPlan,
+  PlaybookSummary
 } from "./types";
 
 const API_BASE =
@@ -225,3 +228,64 @@ export async function createMeetingNote(
   return handle<MeetingNote>(res);
 }
 
+export async function fetchRebalancingSuggestion(
+  alertId: number
+): Promise<RebalancingSuggestion> {
+  const res = await fetch(`${API_BASE}/alerts/${alertId}/rebalance-suggestion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store"
+  });
+  return handle<RebalancingSuggestion>(res);
+}
+
+export async function fetchSimulationPlaybook(input: {
+  scenario: SimulationScenario;
+  severity: SimulationSeverity;
+  portfolio_ids: number[];
+}): Promise<PlaybookSummary> {
+  const res = await fetch(`${API_BASE}/simulations/playbook`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+    cache: "no-store"
+  });
+  return handle<PlaybookSummary>(res);
+}
+
+export async function generateReallocationPlan(
+  alertId: number,
+  targetCashAmount = 266000
+): Promise<ReallocationPlan> {
+  const res = await fetch(`${API_BASE}/alerts/${alertId}/reallocation-plan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target_cash_amount: targetCashAmount }),
+    cache: "no-store"
+  });
+  return handle<ReallocationPlan>(res);
+}
+
+export async function queueReallocationPlan(planId: number): Promise<ReallocationPlan> {
+  const res = await fetch(`${API_BASE}/alerts/reallocation-plans/${planId}/queue`, {
+    method: "POST",
+    cache: "no-store"
+  });
+  return handle<ReallocationPlan>(res);
+}
+
+export async function approveReallocationPlan(planId: number): Promise<ReallocationPlan> {
+  const res = await fetch(`${API_BASE}/alerts/reallocation-plans/${planId}/approve`, {
+    method: "POST",
+    cache: "no-store"
+  });
+  return handle<ReallocationPlan>(res);
+}
+
+export async function executeReallocationPlan(planId: number): Promise<ReallocationPlan> {
+  const res = await fetch(`${API_BASE}/alerts/reallocation-plans/${planId}/execute`, {
+    method: "POST",
+    cache: "no-store"
+  });
+  return handle<ReallocationPlan>(res);
+}
