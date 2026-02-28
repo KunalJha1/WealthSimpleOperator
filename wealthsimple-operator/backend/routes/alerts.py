@@ -126,7 +126,9 @@ def _plan_to_view(plan: ReallocationPlan) -> ReallocationPlanView:
     )
 
 
-def _draft_to_view(draft: FollowUpDraft) -> FollowUpDraftView:
+def _draft_to_view(draft: FollowUpDraft | None) -> FollowUpDraftView:
+    if draft is None:
+        raise HTTPException(status_code=404, detail="Follow-up draft not found")
     return FollowUpDraftView(
         id=draft.id,
         alert_id=draft.alert_id,
@@ -195,6 +197,9 @@ def list_alerts(
     for a in alerts:
         client = a.client
         portfolio = a.portfolio
+        if client is None or portfolio is None:
+            # Skip orphaned records to keep /alerts resilient against legacy/incomplete rows.
+            continue
         client_summary = ClientSummary(
             id=client.id,
             name=client.name,

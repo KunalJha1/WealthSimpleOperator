@@ -250,19 +250,51 @@ export default function RiskBrief({
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <div className="rounded-xl border-[0.5px] border-gray-200 bg-gray-50 p-4 space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">AI confidence</div>
-                <div className="text-sm text-ws-muted">Model confidence score for this alert</div>
+          <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 via-blue-50 to-white p-5 space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-blue-700 mb-1">AI Confidence</div>
+                <div className="text-[11px] text-blue-600">Detection certainty score</div>
               </div>
-              <div className="text-3xl font-semibold text-gray-900">{confidence}%</div>
+              <div className="flex items-baseline gap-1">
+                <div className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+                  {confidence}
+                </div>
+                <div className="text-lg font-semibold text-blue-600">%</div>
+              </div>
             </div>
-            <div className="h-2 rounded-full bg-gray-200">
-              <div
-                className="h-2 rounded-full bg-gray-900"
-                style={{ width: `${Math.max(confidence, 3)}%` }}
-              />
+
+            {/* Progress bar with color-coding */}
+            <div className="space-y-2">
+              <div className="h-2.5 rounded-full bg-blue-100 overflow-hidden shadow-inner">
+                <div
+                  className="h-2.5 rounded-full shadow-lg transition-all duration-500"
+                  style={{
+                    width: `${Math.max(confidence, 2)}%`,
+                    background:
+                      confidence >= 80
+                        ? "linear-gradient(to right, #10b981, #059669)"
+                        : confidence >= 60
+                          ? "linear-gradient(to right, #f59e0b, #f97316)"
+                          : "linear-gradient(to right, #ef4444, #dc2626)"
+                  }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] font-medium text-blue-600 uppercase tracking-wide">
+                <span>Low</span>
+                <span
+                  className={`px-2 py-0.5 rounded-full font-bold ${
+                    confidence >= 80
+                      ? "bg-emerald-100 text-emerald-700"
+                      : confidence >= 60
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-red-100 text-red-700"
+                  }`}
+                >
+                  {confidence >= 80 ? "High" : confidence >= 60 ? "Medium" : "Low"}
+                </span>
+                <span>High</span>
+              </div>
             </div>
           </div>
 
