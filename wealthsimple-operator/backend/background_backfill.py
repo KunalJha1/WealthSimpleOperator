@@ -114,7 +114,7 @@ def main() -> None:
         raise ValueError("--insights-limit must be >= 1")
 
     # Load backend/.env so PROVIDER/GEMINI_API_KEY are respected.
-    env_path = Path(__file__).resolve().parents[1] / ".env"
+    env_path = Path(__file__).with_name(".env")
     load_dotenv(dotenv_path=env_path, override=True)
     
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

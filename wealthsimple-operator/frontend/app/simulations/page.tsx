@@ -4,11 +4,12 @@
 import { useMemo, useState } from "react";
 
 import { Button } from "../../components/Buttons";
-import { runSimulation } from "../../lib/api";
+import { runSimulation, fetchSimulationPlaybook } from "../../lib/api";
 import type {
   SimulationScenario,
   SimulationSeverity,
-  SimulationSummary
+  SimulationSummary,
+  PlaybookSummary
 } from "../../lib/types";
 
 const DEFAULT_SCENARIO: SimulationScenario = "interest_rate_shock";
@@ -22,6 +23,9 @@ export default function SimulationsPage() {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedTable, setExpandedTable] = useState(false);
+  const [playbook, setPlaybook] = useState<PlaybookSummary | null>(null);
+  const [playbookLoading, setPlaybookLoading] = useState(false);
+  const [playbookError, setPlaybookError] = useState<string | null>(null);
 
   const impactOverview = useMemo(() => {
     if (!result || result.total_portfolios === 0) {
@@ -42,6 +46,7 @@ export default function SimulationsPage() {
     setSelectedScenario(scenario);
     setRunning(true);
     setError(null);
+    setPlaybook(null);
     try {
       const summary = await runSimulation({ scenario, severity });
       setResult(summary);
@@ -49,6 +54,28 @@ export default function SimulationsPage() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function handleGeneratePlaybook() {
+    if (!result) return;
+    setPlaybookLoading(true);
+    setPlaybookError(null);
+    try {
+      const offTrajectoryPortfolios = result.impacted_portfolios
+        .filter((p) => p.off_trajectory)
+        .map((p) => p.portfolio.id);
+
+      const playbookResult = await fetchSimulationPlaybook({
+        scenario: result.scenario,
+        severity: result.severity,
+        portfolio_ids: offTrajectoryPortfolios
+      });
+      setPlaybook(playbookResult);
+    } catch (e) {
+      setPlaybookError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPlaybookLoading(false);
     }
   }
 
@@ -193,8 +220,12 @@ export default function SimulationsPage() {
               </div>
             )}
           </div>
-          <Button variant="secondary" disabled={!result}>
-            Configure defensive playbook
+          <Button
+            variant="secondary"
+            disabled={!result || playbookLoading}
+            onClick={() => void handleGeneratePlaybook()}
+          >
+            {playbookLoading ? "Generating..." : "Configure defensive playbook"}
           </Button>
         </div>
 
@@ -379,6 +410,103 @@ export default function SimulationsPage() {
           </div>
         )}
       </section>
+
+      {playbook && (
+        <section className="card p-4 md:p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                Defensive Playbook
+              </div>
+              <p className="mt-1 text-sm text-gray-700">{playbook.ai_rationale}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPlaybook(null)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="border-t border-gray-200 pt-4">
+            <div className="space-y-3">
+              {playbook.actions.map((action, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-lg border border-gray-200 bg-white p-3 hover:border-gray-300 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
+                          {action.rank}
+                        </span>
+                        <div className="font-semibold text-gray-900">
+                          {action.client_name}
+                        </div>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                          {action.portfolio_name}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-700 mt-2">
+                        <span className="font-medium">{action.action_type}</span>
+                        {" — "}
+                        <span
+                          className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
+                            action.urgency === "Urgent"
+                              ? "border-red-200 bg-red-50 text-red-700"
+                              : action.urgency === "High"
+                              ? "border-amber-200 bg-amber-50 text-amber-700"
+                              : "border-gray-200 bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          {action.urgency}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-sm font-medium text-blue-700 hover:text-blue-800">
+                      View draft email
+                    </summary>
+                    <div className="mt-3 space-y-2 text-xs">
+                      <div>
+                        <div className="font-semibold text-gray-700 mb-1">Subject</div>
+                        <div className="p-2 bg-gray-50 rounded border border-gray-200 text-gray-800">
+                          {action.draft_email_subject}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-700 mb-1">Body</div>
+                        <div className="p-2 bg-gray-50 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                          {action.draft_email_body}
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+            <div className="text-xs font-semibold text-blue-900 mb-1">
+              Playbook Approval
+            </div>
+            <p className="text-xs text-blue-800 leading-relaxed">
+              Review all draft actions and email templates above. Customize as needed for tax efficiency and client circumstances. Approve individual drafts or adjust before sending. Full human responsibility for final client outreach decisions.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {playbookError && (
+        <div className="card border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          Failed to generate playbook: {playbookError}
+        </div>
+      )}
     </div>
   );
 }

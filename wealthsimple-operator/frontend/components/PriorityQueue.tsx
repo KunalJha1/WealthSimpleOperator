@@ -1,22 +1,30 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { AlertDetail, AlertSummary, FollowUpDraft } from "../lib/types";
+import { createPortal } from "react-dom";
+import type { AlertDetail, AlertSummary, FollowUpDraft, ReallocationPlan } from "../lib/types";
 import {
+  approveReallocationPlan,
   approveFollowUpDraft,
   createFollowUpDraft,
+  executeReallocationPlan,
   fetchAlert,
   fetchFollowUpDraft,
+  generateReallocationPlan,
+  rejectFollowUpDraft,
   postAlertAction,
-  rejectFollowUpDraft
+  queueReallocationPlan
 } from "../lib/api";
 import { PriorityPill } from "./StatusPills";
 import { Button } from "./Buttons";
 import { ClientDetailsPanel } from "./RiskBrief";
+import { RebalancingSuggestionPanel } from "./RebalancingSuggestion";
 import { AlertTriangle, ArrowUpRight, UserRound } from "lucide-react";
 
 interface PriorityQueueProps {
   alerts: AlertSummary[];
+  recentAlertIds?: number[];
+  onAlertOpen?: (id: number) => void;
   onAlertAction?: (payload: {
     id: number;
     action: "reviewed" | "escalate" | "false_positive";
@@ -118,7 +126,13 @@ function minutesSince(value: string): number {
   return Math.max(1, Math.round(diff / 60000));
 }
 
-export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEvent }: PriorityQueueProps) {
+export default function PriorityQueue({
+  alerts,
+  recentAlertIds = [],
+  onAlertOpen,
+  onAlertAction,
+  onFollowUpDraftEvent
+}: PriorityQueueProps) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(5);
   const [selectedDetail, setSelectedDetail] = useState<AlertDetail | null>(null);
@@ -132,6 +146,11 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftActionLoading, setDraftActionLoading] = useState<null | "create" | "approve" | "reject" | "regenerate">(null);
   const [draftMessage, setDraftMessage] = useState<string | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
+  const [reallocationPlan, setReallocationPlan] = useState<ReallocationPlan | null>(null);
+  const [reallocationLoading, setReallocationLoading] = useState(false);
+  const [planActionLoading, setPlanActionLoading] = useState<null | "queue" | "approve" | "execute">(null);
+  const [planMessage, setPlanMessage] = useState<string | null>(null);
 
   const selected = useMemo(
     () => alerts.find((a) => a.id === selectedId) ?? null,
@@ -142,6 +161,12 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
     () => alerts.slice(0, visibleCount),
     [alerts, visibleCount]
   );
+  const recentSet = useMemo(() => new Set(recentAlertIds), [recentAlertIds]);
+
+  function openAlert(id: number) {
+    setSelectedId(id);
+    onAlertOpen?.(id);
+  }
 
   useEffect(() => {
     if (selectedId == null) {
@@ -151,12 +176,20 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
       setActionMessage(null);
       setFollowUpDraft(null);
       setDraftMessage(null);
+      setReallocationPlan(null);
+      setReallocationLoading(false);
+      setPlanActionLoading(null);
+      setPlanMessage(null);
       return;
     }
 
     let cancelled = false;
     setDetailLoading(true);
     setDetailError(null);
+    setReallocationPlan(null);
+    setReallocationLoading(false);
+    setPlanActionLoading(null);
+    setPlanMessage(null);
 
     fetchAlert(selectedId)
       .then((detail) => {
@@ -192,6 +225,10 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
       cancelled = true;
     };
   }, [selectedId]);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   async function handleCreateFollowUpDraft(forceRegenerate = false) {
     if (!selected) return;
@@ -278,6 +315,66 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
     }
   }
 
+  async function handleGenerateReallocationPlan() {
+    if (!selectedDetail) return;
+    setReallocationLoading(true);
+    setPlanMessage(null);
+    try {
+      const plan = await generateReallocationPlan(selectedDetail.id, 266000);
+      setReallocationPlan(plan);
+      setPlanMessage("AI plan generated. Review assumptions, then queue for execution prep.");
+    } catch (e) {
+      setPlanMessage((e as Error).message);
+    } finally {
+      setReallocationLoading(false);
+    }
+  }
+
+  async function handleQueuePlan() {
+    if (!reallocationPlan) return;
+    setPlanActionLoading("queue");
+    setPlanMessage(null);
+    try {
+      const updated = await queueReallocationPlan(reallocationPlan.plan_id);
+      setReallocationPlan(updated);
+      setPlanMessage("Plan queued. Human approval is now required.");
+    } catch (e) {
+      setPlanMessage((e as Error).message);
+    } finally {
+      setPlanActionLoading(null);
+    }
+  }
+
+  async function handleApprovePlan() {
+    if (!reallocationPlan) return;
+    setPlanActionLoading("approve");
+    setPlanMessage(null);
+    try {
+      const updated = await approveReallocationPlan(reallocationPlan.plan_id);
+      setReallocationPlan(updated);
+      setPlanMessage("Human approval recorded. Plan is ready for simulated execution.");
+    } catch (e) {
+      setPlanMessage((e as Error).message);
+    } finally {
+      setPlanActionLoading(null);
+    }
+  }
+
+  async function handleExecutePlan() {
+    if (!reallocationPlan) return;
+    setPlanActionLoading("execute");
+    setPlanMessage(null);
+    try {
+      const updated = await executeReallocationPlan(reallocationPlan.plan_id);
+      setReallocationPlan(updated);
+      setPlanMessage(`Execution simulated and logged (${updated.execution_reference ?? "no reference"}).`);
+    } catch (e) {
+      setPlanMessage((e as Error).message);
+    } finally {
+      setPlanActionLoading(null);
+    }
+  }
+
   // When an alert is selected, scroll the risk brief panel into view
   useEffect(() => {
     if (!selectedId || !detailRef.current) return;
@@ -308,6 +405,7 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
         <div className="space-y-3">
           {visibleAlerts.map((alert) => {
             const active = selected?.id === alert.id;
+            const isRecent = recentSet.has(alert.id);
             const priorityAccent =
               alert.priority === "HIGH"
                 ? "border-red-500 shadow-[0_0_0_1px_rgba(248,113,113,0.45)]"
@@ -320,19 +418,28 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
                 key={`${alert.id}-${alert.portfolio.id}`}
                 role="button"
                 tabIndex={0}
-                className={`w-full text-left card p-4 transition-colors cursor-pointer ${
+                className={`w-full text-left card p-4 cursor-pointer transition-all duration-300 ${
                   active ? `${priorityAccent} bg-gray-50` : "hover:border-gray-400"
+                } ${
+                  isRecent
+                    ? "border-sky-300 bg-sky-50/40 ring-1 ring-sky-200/80 animate-pulse"
+                    : ""
                 }`}
-                onClick={() => setSelectedId(alert.id)}
+                onClick={() => openAlert(alert.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setSelectedId(alert.id);
+                    openAlert(alert.id);
                   }
                 }}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <PriorityPill priority={alert.priority} />
+                  {isRecent && (
+                    <div className="text-xs font-semibold px-2 py-1 rounded-full border border-sky-200 bg-sky-100 text-sky-700">
+                      RECENT
+                    </div>
+                  )}
                   {alert.scenario && (
                     <div className="text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                       {alert.scenario.replace(/_/g, " ")}
@@ -352,11 +459,10 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
                 <div className="mt-4">
                   <Button
                     type="button"
-                    variant="secondary"
-                    className="w-full text-sm font-semibold !border-black !text-black !bg-white hover:!bg-gray-100 hover:!text-black"
+                    className="w-full text-sm font-semibold"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedId(alert.id);
+                      openAlert(alert.id);
                     }}
                   >
                     View Brief
@@ -385,6 +491,7 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
           ref={detailRef}
           className="card p-4 space-y-4 self-start border-gray-200 bg-gray-50"
         >
+          <div key={selected?.id ?? "empty-brief"} className="brief-enter">
           {!selected ? (
             <div className="flex flex-col items-center justify-center space-y-3 py-10 text-center max-w-sm mx-auto">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-gray-400">
@@ -654,7 +761,7 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
 
               <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-gray-900">Follow-up Draft Agent</div>
+                  <div className="text-sm font-semibold text-gray-900">Proposed Client Email</div>
                   {followUpDraft && (
                     <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${
                       followUpDraft.status === "PENDING_APPROVAL"
@@ -670,6 +777,9 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
                           : "Rejected"}
                     </span>
                   )}
+                </div>
+                <div className="text-[11px] text-gray-700">
+                  A proposed email which can be sent after advisor review and approval.
                 </div>
                 {followUpDraft ? (
                   <div className="space-y-2 text-xs">
@@ -701,7 +811,7 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
                         <>
                           <Button
                             type="button"
-                            className="text-xs px-2 py-1"
+                            className="text-xs px-2 py-1 bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700"
                             disabled={draftActionLoading !== null}
                             onClick={() => void handleApproveFollowUpDraft()}
                           >
@@ -734,6 +844,19 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
                   </div>
                 )}
               </div>
+
+              {selectedDetail && selectedDetail.priority === "HIGH" && selectedDetail.drift_score > 5 && (
+                <RebalancingSuggestionPanel
+                  plan={reallocationPlan}
+                  loading={reallocationLoading}
+                  actionLoading={planActionLoading}
+                  onGenerate={() => void handleGenerateReallocationPlan()}
+                  onQueue={() => void handleQueuePlan()}
+                  onApprove={() => void handleApprovePlan()}
+                  onExecute={() => void handleExecutePlan()}
+                  message={planMessage}
+                />
+              )}
 
               <div className="flex gap-2">
                 <Button
@@ -776,66 +899,41 @@ export default function PriorityQueue({ alerts, onAlertAction, onFollowUpDraftEv
                   False Positive
                 </Button>
               </div>
-              {showClientDetails && selectedDetail && (
-                <div className="fixed inset-0 z-40 flex justify-center bg-black/50 backdrop-blur-sm overflow-y-auto px-4 py-10">
-                  <div className="relative w-full max-w-5xl rounded-2xl bg-white shadow-2xl">
-                    <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
-                      <div className="space-y-0.5">
-                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
-                          Client details
-                        </div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {selectedDetail.client.name} -{" "}
-                          {formatPortfolioCode(selectedDetail.portfolio.id)}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
-                        onClick={() => setShowClientDetails(false)}
-                      >
-                        Close
-                      </button>
-                    </div>
-                    <div className="p-5 md:p-6">
-                      <ClientDetailsPanel alert={selectedDetail} />
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
-        </div>
-      </div>
-      {showClientDetails && selectedDetail && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
-          <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
-              <div className="space-y-0.5">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
-                  Client details
-                </div>
-                <div className="text-sm font-medium text-gray-900">
-                  {selectedDetail.client.name} -{" "}
-                  {formatPortfolioCode(selectedDetail.portfolio.id)}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
-                onClick={() => setShowClientDetails(false)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="p-5 md:p-6">
-              <ClientDetailsPanel alert={selectedDetail} />
-            </div>
           </div>
         </div>
-      )}
+      </div>
+      {portalReady && showClientDetails && selectedDetail
+        ? createPortal(
+            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
+              <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-2xl bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                      Client details
+                    </div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {selectedDetail.client.name} -{" "}
+                      {formatPortfolioCode(selectedDetail.portfolio.id)}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-full border border-ws-border bg-white px-4 py-1.5 text-xs font-medium text-ws-muted shadow-sm hover:bg-gray-50"
+                    onClick={() => setShowClientDetails(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="p-5 md:p-6">
+                  <ClientDetailsPanel alert={selectedDetail} />
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </section>
   );
 }
-
-
