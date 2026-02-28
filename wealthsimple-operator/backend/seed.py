@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import re
 import time
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -95,7 +96,92 @@ SCENARIOS = [
         "description": "Client has leveraged position at risk of margin call in volatile market",
         "timeline_days": [0, 7, 21],
     },
+    {
+        "key": "CONCENTRATED_STOCK_POSITION",
+        "label": "Concentrated Stock Position",
+        "description": "Single equity position has grown beyond concentration limits and dominates portfolio risk",
+        "timeline_days": [0, 14, 45],
+    },
+    {
+        "key": "BUSINESS_EXIT_LIQUIDITY_EVENT",
+        "label": "Business Exit Liquidity Event",
+        "description": "Client is expecting proceeds from a business sale and needs staged capital deployment",
+        "timeline_days": [0, 21, 60],
+    },
+    {
+        "key": "CROSS_BORDER_RELOCATION",
+        "label": "Cross-Border Relocation",
+        "description": "Client is relocating internationally and needs tax and currency-aware portfolio adjustments",
+        "timeline_days": [0, 30, 75],
+    },
+    {
+        "key": "CHARITABLE_GIVING_STRATEGY",
+        "label": "Charitable Giving Strategy",
+        "description": "Client wants to donate appreciated securities and optimize tax-efficient giving",
+        "timeline_days": [0, 20, 50],
+    },
+    {
+        "key": "ESTATE_FREEZE_PLANNING",
+        "label": "Estate Freeze Planning",
+        "description": "Client is implementing estate freeze and intergenerational transfer strategy",
+        "timeline_days": [0, 28, 70],
+    },
+    {
+        "key": "INTEREST_RATE_REFINANCE_WINDOW",
+        "label": "Interest Rate Refinance Window",
+        "description": "Rate changes create refinancing decisions that alter liquidity needs and risk posture",
+        "timeline_days": [0, 10, 35],
+    },
+    {
+        "key": "DIVORCE_SETTLEMENT_REBALANCE",
+        "label": "Divorce Settlement Rebalance",
+        "description": "Post-settlement assets need portfolio restructuring and updated risk alignment",
+        "timeline_days": [0, 21, 55],
+    },
+    {
+        "key": "RSU_VESTING_TAX_MANAGEMENT",
+        "label": "RSU Vesting Tax Management",
+        "description": "Upcoming RSU vesting introduces concentration and tax withholding planning needs",
+        "timeline_days": [0, 14, 42],
+    },
+    {
+        "key": "PENSION_COMMUTATION_DECISION",
+        "label": "Pension Commutation Decision",
+        "description": "Client is deciding between pension commutation and annuitized income options",
+        "timeline_days": [0, 18, 48],
+    },
+    {
+        "key": "CURRENCY_HEDGE_REVIEW",
+        "label": "Currency Hedge Review",
+        "description": "Foreign asset exposure has increased and requires updated currency hedging policy",
+        "timeline_days": [0, 12, 36],
+    },
+    {
+        "key": "PRIVATE_MARKET_LIQUIDITY_LOCKUP",
+        "label": "Private Market Liquidity Lockup",
+        "description": "Increased private allocation creates liquidity and cashflow mismatch risk",
+        "timeline_days": [0, 25, 65],
+    },
+    {
+        "key": "CRITICAL_ILLNESS_CONTINGENCY",
+        "label": "Critical Illness Contingency",
+        "description": "Medical contingency planning requires short-term liquidity and defensive allocation",
+        "timeline_days": [0, 9, 30],
+    },
+    {
+        "key": "DRAWDOWN_SEQUENCE_RISK",
+        "label": "Drawdown Sequence Risk",
+        "description": "Early retirement withdrawals increase sequence-of-returns risk under current allocation",
+        "timeline_days": [0, 16, 46],
+    },
+    {
+        "key": "ALTERNATIVE_ASSET_OVEREXPOSURE",
+        "label": "Alternative Asset Overexposure",
+        "description": "Alternatives sleeve has expanded beyond mandate and needs rebalancing discipline",
+        "timeline_days": [0, 20, 58],
+    },
 ]
+SCENARIO_KEYS_PROMPT = "|".join(s["key"] for s in SCENARIOS)
 
 # Segments and risk profiles
 SEGMENTS = ["Core", "Affluent", "HNW", "UHNW"]
@@ -172,6 +258,84 @@ def generate_with_retry(call_fn, max_retries=8):
             raise
 
 
+def _extract_json_object(raw_text: str) -> Dict[str, Any]:
+    """Parse model output into dict, even if wrapped with extra text/fences."""
+    text = raw_text.strip()
+    if text.startswith("```"):
+        text = "\n".join(
+            [line for line in text.splitlines() if not line.strip().startswith("```")]
+        ).strip()
+
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        maybe = text[start : end + 1]
+        parsed = json.loads(maybe)
+        if isinstance(parsed, dict):
+            return parsed
+    raise ValueError("Could not parse model output as JSON object")
+
+
+def _normalize_transcript_text(call_transcript: Any) -> str:
+    """Convert transcript payload into clean plain text dialogue."""
+    transcript: str
+    if isinstance(call_transcript, list):
+        lines = []
+        for entry in call_transcript:
+            if isinstance(entry, dict):
+                speaker = str(entry.get("speaker", "Unknown")).strip()
+                dialogue = str(entry.get("dialogue", "")).strip()
+                if dialogue:
+                    lines.append(f"{speaker}: {dialogue}")
+            else:
+                text = str(entry).strip()
+                if text:
+                    lines.append(text)
+        transcript = "\n".join(lines)
+    elif isinstance(call_transcript, str):
+        text = call_transcript.strip()
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return _normalize_transcript_text(parsed)
+            if isinstance(parsed, dict):
+                nested = parsed.get("call_transcript") or parsed.get("transcript") or parsed
+                return _normalize_transcript_text(nested)
+        except Exception:
+            pass
+        transcript = text
+    else:
+        transcript = str(call_transcript).strip()
+
+    # If transcript is malformed "quoted lines" block without commas, recover quoted lines.
+    if ('"' in transcript) and ("\n" in transcript) and ("Advisor:" not in transcript and "Client:" not in transcript):
+        quoted_lines = re.findall(r'"([^"\n]+)"', transcript)
+        if quoted_lines:
+            transcript = "\n".join(line.strip() for line in quoted_lines if line.strip())
+
+    # Strip scene markers and screenplay-style headings.
+    cleaned_lines: List[str] = []
+    for line in transcript.splitlines():
+        stripped = line.strip().strip("()")
+        if not stripped:
+            continue
+        upper = stripped.upper()
+        if upper in {"[SCENE START]", "[SCENE END]"}:
+            continue
+        if re.match(r"^(INT|EXT)\.\s+.+\s+-\s+(DAY|NIGHT|EVENING|MORNING)$", upper):
+            continue
+        cleaned_lines.append(stripped)
+
+    return "\n".join(cleaned_lines).strip()
+
+
 # ============================================================================
 # Core Gemini-powered generation
 # ============================================================================
@@ -209,7 +373,7 @@ def generate_client_universe_with_gemini(
     ...
   ],
   "has_alert": <true or false with 30% probability>,
-  "scenario": "<if has_alert, one of: EDUCATION_WITHDRAWAL|TAX_LOSS_HARVESTING|HOME_PURCHASE|RETIREMENT_DRAWDOWN|INHERITANCE_WINDFALL|MARGIN_CALL_RISK, else null>"
+  "scenario": "<if has_alert, one of: {SCENARIO_KEYS_PROMPT}, else null>"
 }}
 
 Requirements:
@@ -308,6 +472,7 @@ Requirements:
 - Realistic Canadian context (RRSP, TFSA, tax strategies, etc.)
 - Specific details (names, amounts, dates)
 - Action items and next steps
+- DO NOT include screenplay markers or scene headings (no "INT.", "EXT.", "[Sound ...]").
 
 Return ONLY JSON (no markdown):
 {{
@@ -328,60 +493,9 @@ Return ONLY JSON (no markdown):
         if not response or not response.text:
             raise ValueError("Empty response from Gemini")
 
-        raw_text = response.text.strip()
-        if raw_text.startswith("```"):
-            raw_text = "\n".join(
-                [
-                    line
-                    for line in raw_text.splitlines()
-                    if not line.strip().startswith("```")
-                ]
-            ).strip()
-
-        parsed = json.loads(raw_text)
-        note_body = parsed.get("note_body", "")
-        call_transcript = parsed.get("call_transcript", "")
-
-        # Convert transcript to plain text if it's a list of dialogue entries
-        if isinstance(call_transcript, list):
-            # Format as plain dialogue
-            lines = []
-            for entry in call_transcript:
-                if isinstance(entry, dict):
-                    speaker = entry.get("speaker", "Unknown")
-                    dialogue = entry.get("dialogue", "")
-                    lines.append(f"{speaker}: {dialogue}")
-                else:
-                    lines.append(str(entry))
-            call_transcript = "\n".join(lines)
-        elif isinstance(call_transcript, str):
-            # Check if it's a JSON string and try to parse it
-            try:
-                parsed = json.loads(call_transcript)
-                if isinstance(parsed, list):
-                    lines = []
-                    for entry in parsed:
-                        if isinstance(entry, dict):
-                            speaker = entry.get("speaker", "Unknown")
-                            dialogue = entry.get("dialogue", "")
-                            lines.append(f"{speaker}: {dialogue}")
-                        else:
-                            lines.append(str(entry))
-                    call_transcript = "\n".join(lines)
-            except (json.JSONDecodeError, ValueError):
-                # Not JSON, keep as is
-                pass
-        else:
-            call_transcript = str(call_transcript)
-
-        # Clean up scene markers and formatting
-        call_transcript = (
-            call_transcript.replace("[SCENE START]", "")
-            .replace("[SCENE END]", "")
-            .replace("[scene start]", "")
-            .replace("[scene end]", "")
-            .strip()
-        )
+        parsed = _extract_json_object(response.text)
+        note_body = str(parsed.get("note_body", "")).strip()
+        call_transcript = _normalize_transcript_text(parsed.get("call_transcript", ""))
 
         return note_body, call_transcript
     except Exception as e:
@@ -588,7 +702,7 @@ def _create_positions_for_portfolio(
             session.add(position)
 
 
-def seed_client_universes(session: Session, count: int = 50, use_gemini: bool = True) -> None:
+def seed_client_universes(session: Session, count: int = 70, use_gemini: bool = True) -> None:
     """
     Seed complete client universes.
 
@@ -770,6 +884,20 @@ def seed_client_universes(session: Session, count: int = 50, use_gemini: bool = 
                         "RETIREMENT_DRAWDOWN": f"{client_name} has recently transitioned from an accumulation phase to retirement drawdown. The portfolio structure is not optimized for generating sustainable income while managing sequence of returns risk. We recommend restructuring to include a 2-3 year cash reserve, laddered fixed income, and a balanced equity allocation for long-term growth.",
                         "INHERITANCE_WINDFALL": f"{client_name} recently received an inheritance of approximately {_format_approx_amount(100, 1000)}. The current portfolio structure is not designed to efficiently absorb and deploy capital of this magnitude. A systematic deployment plan over 6-12 months can help optimize average entry prices and manage market timing risk.",
                         "MARGIN_CALL_RISK": f"{client_name}'s leveraged position is at elevated risk given current market conditions. Recent volatility has brought the margin ratio dangerously close to triggering a forced liquidation. Immediate action to reduce leverage by {_format_approx_amount(50, 300)} is critical to protect the portfolio from forced sales at unfavorable prices.",
+                        "CONCENTRATED_STOCK_POSITION": f"{client_name}'s largest holding has appreciated to a level that now represents a disproportionate share of total portfolio risk. This concentration creates downside vulnerability if the single name experiences a drawdown. We recommend a staged de-risking plan to reduce exposure by {_format_approx_amount(30, 180)} while managing taxes and preserving long-term growth objectives.",
+                        "BUSINESS_EXIT_LIQUIDITY_EVENT": f"{client_name} is preparing for a business sale that is expected to generate significant liquidity in the coming quarters. Without a structured deployment plan, idle cash drag and timing risk could materially affect long-term outcomes. We recommend a phased investment policy with short-term reserves and scheduled deployment of {_format_approx_amount(200, 1500)} into diversified mandates.",
+                        "CROSS_BORDER_RELOCATION": f"{client_name} is planning a cross-border relocation, introducing new tax residency and currency-management considerations. The current portfolio is not optimized for withholding tax exposure, account-structure portability, or FX volatility. A transition plan should reposition assets and build a currency hedge framework ahead of relocation timelines.",
+                        "CHARITABLE_GIVING_STRATEGY": f"{client_name} intends to make a meaningful charitable contribution in the near term and is evaluating donation methods. Donating appreciated securities could improve after-tax outcomes versus donating cash, but requires coordinated asset selection and timing. We recommend pre-identifying eligible lots and a gifting schedule to maximize impact while preserving portfolio balance.",
+                        "ESTATE_FREEZE_PLANNING": f"{client_name} has begun estate freeze and intergenerational transfer planning, which changes liquidity and tax priorities across account types. Current allocations may not align with upcoming trust, corporate-share, and succession structures. We recommend re-segmenting assets by horizon and risk budget to support the estate strategy while maintaining portfolio resilience.",
+                        "INTEREST_RATE_REFINANCE_WINDOW": f"Recent rate movements have created a refinance decision point for {client_name}, affecting monthly cash flow and liquidity buffers. The existing portfolio does not currently reflect the revised short-term cash requirements and rate sensitivity. We recommend a temporary liquidity sleeve and targeted rebalancing to support financing decisions without compromising core long-term allocation.",
+                        "DIVORCE_SETTLEMENT_REBALANCE": f"{client_name} has completed a divorce settlement and now requires a full post-settlement portfolio redesign. Asset ownership, liquidity timing, and updated goals have materially changed risk capacity and drawdown requirements. We recommend re-mapping accounts into a new strategic allocation and building a near-term liquidity buffer of {_format_approx_amount(30, 160)}.",
+                        "RSU_VESTING_TAX_MANAGEMENT": f"{client_name} has significant RSU vesting events approaching over the next two quarters, creating concentration and tax withholding complexity. Without a plan, post-vest exposure could exceed risk limits and increase tax drag. We recommend a staged sell policy with explicit tax-lot handling and systematic diversification of {_format_approx_amount(40, 220)}.",
+                        "PENSION_COMMUTATION_DECISION": f"{client_name} is evaluating whether to commute a defined-benefit pension or accept lifetime annuitized payments. This decision materially impacts longevity risk, liquidity flexibility, and required portfolio return assumptions. We recommend scenario testing both paths and preparing an allocation policy tied to the chosen income structure.",
+                        "CURRENCY_HEDGE_REVIEW": f"{client_name}'s foreign equity exposure has risen materially, increasing sensitivity to CAD currency swings. The current hedge ratio may no longer align with risk objectives or spending currency needs. We recommend re-establishing a target hedge corridor and rebalancing FX exposure using a phased implementation schedule.",
+                        "PRIVATE_MARKET_LIQUIDITY_LOCKUP": f"{client_name} has increased private-market allocations with multi-year lockups, reducing portfolio liquidity flexibility. Upcoming cash needs may now conflict with the current lockup profile and distribution timelines. We recommend a liquidity stress test and rebalancing public sleeves to create an accessible reserve of {_format_approx_amount(60, 260)}.",
+                        "CRITICAL_ILLNESS_CONTINGENCY": f"{client_name} is implementing a critical illness contingency plan requiring higher short-term liquidity and reduced drawdown risk. Current allocation assumes longer horizons and may not support sudden cash needs. We recommend a defensive rebalance with a dedicated contingency reserve and lower volatility positioning.",
+                        "DRAWDOWN_SEQUENCE_RISK": f"{client_name} has entered early drawdown, and current withdrawal rates make the portfolio vulnerable to sequence-of-returns shocks. A market decline in the next 12-24 months could materially impair sustainability. We recommend a bucket strategy with near-term cash/fixed-income funding and adjusted equity risk budgets.",
+                        "ALTERNATIVE_ASSET_OVEREXPOSURE": f"{client_name}'s alternatives sleeve has grown beyond policy limits due to strong performance and new commitments. The resulting allocation drift reduces transparency and complicates liquidity forecasting. We recommend a disciplined rebalance program to bring alternatives back within mandate while preserving long-term diversification benefits.",
                     }
 
                     # Generate realistic "change detection" from state
@@ -991,11 +1119,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Seed database with complete client universes using Gemini-powered generation."
     )
-    parser.add_argument("--clients", type=int, default=50, help="Number of clients to generate")
+    parser.add_argument("--clients", type=int, default=70, help="Number of clients to generate")
+    parser.set_defaults(gemini_enabled=True)
     parser.add_argument(
         "--gemini-enabled",
         action="store_true",
-        help="Enable Gemini for unique generation (requires GEMINI_API_KEY)",
+        dest="gemini_enabled",
+        help="Enable Gemini for unique generation (default: enabled).",
+    )
+    parser.add_argument(
+        "--no-gemini",
+        action="store_false",
+        dest="gemini_enabled",
+        help="Disable Gemini and use fallback generation.",
     )
     args = parser.parse_args()
 
