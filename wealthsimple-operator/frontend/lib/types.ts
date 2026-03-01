@@ -374,3 +374,77 @@ export interface PlaybookSummary {
   actions: PlaybookAction[];
   ai_rationale: string;
 }
+
+// Contact Scheduler Types
+export interface ContactScheduleEntry {
+  client_id: number;
+  client_name: string;
+  email: string;
+  segment: string;
+  urgency: "OVERDUE" | "DUE_SOON" | "UPCOMING";
+  alert_count: number;
+  highest_priority: Priority;
+  days_since_contact: number;
+  suggested_action: string;
+  suggested_channel: string;
+}
+
+export interface ContactScheduleResponse {
+  entries: ContactScheduleEntry[];
+  overdue_count: number;
+  due_soon_count: number;
+  upcoming_count: number;
+}
+
+// Tax-Loss Harvesting Types
+export interface TaxLossOpportunity {
+  portfolio_id: number;
+  portfolio_name: string;
+  client_name: string;
+  client_id: number;
+  ticker: string;
+  asset_class: string;
+  position_value: number;
+  unrealized_loss: number;
+  tax_savings_estimate: number;
+  cost_basis_per_unit: number;
+  current_price: number;
+  estimated_units: number;
+  wash_sale_risk: boolean;
+  replacement_ticker?: string;
+}
+
+export interface TaxLossResponse {
+  opportunities: TaxLossOpportunity[];
+  total_harvestable_loss: number;
+  total_tax_savings: number;
+  portfolios_with_opportunities: number;
+}
+
+// Risk Dashboard Types
+export interface RiskClientRow {
+  client_id: number;
+  client_name: string;
+  segment: string;
+  risk_profile: string;
+  portfolio_id: number;
+  portfolio_name: string;
+  total_value: number;
+  current_risk: number;
+  previous_risk?: number | null;
+  trend: "RISING" | "FALLING" | "STABLE";
+  trend_pct?: number | null;
+  predicted_30d_risk: number;
+  days_without_review: number;
+  latest_priority?: string | null;
+  latest_alert_status?: string | null;
+}
+
+export interface RiskDashboardResponse {
+  rows: RiskClientRow[];
+  avg_current_risk: number;
+  avg_predicted_risk: number;
+  rising_count: number;
+  high_risk_count: number;
+  total_clients: number;
+}

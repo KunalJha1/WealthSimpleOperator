@@ -24,7 +24,8 @@ import {
   advanceNextRunAt,
   FIRST_RELEASE_DELAY_MS,
   getOrInitNextRunAt,
-  clearScheduleSessionBootstrap
+  clearScheduleSessionBootstrap,
+  persistNextRunAt
 } from "../../lib/operatorSchedule";
 
 const PRIORITY_RANK: Record<Priority, number> = {
@@ -33,8 +34,8 @@ const PRIORITY_RANK: Record<Priority, number> = {
   LOW: 2
 };
 const AUTO_SCAN_ENABLED = true;
-const INITIAL_QUEUE_SIZE = 50;
-const DEFERRED_QUEUE_SIZE = 5;
+const INITIAL_QUEUE_SIZE = 8;
+const DEFERRED_QUEUE_SIZE = 3;
 
 type SessionActionMetrics = {
   reviewed: number;
@@ -55,6 +56,7 @@ type PerformanceSnapshot = {
 
 const SESSION_METRICS_KEY = "operator_session_action_metrics_v1";
 const PERFORMANCE_CACHE_KEY = "operator_performance_cache_v1";
+const RECENT_ALERT_IDS_KEY = "operator_recent_alert_ids_v1";
 const DEFAULT_PERFORMANCE: PerformanceSnapshot = {
   detectionAccuracy: 96.2,
   falsePositiveRate: 3.1,
@@ -127,7 +129,15 @@ export default function OperatorPage() {
   const [cachedPerformance, setCachedPerformance] = useState<PerformanceSnapshot>(
     DEFAULT_PERFORMANCE
   );
-  const [recentAlertIds, setRecentAlertIds] = useState<number[]>([]);
+  const [recentAlertIds, setRecentAlertIds] = useState<number[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = window.localStorage.getItem(RECENT_ALERT_IDS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [nextAutoScanAt, setNextAutoScanAt] = useState<number>(() => {
     if (typeof window === "undefined") {
       return Date.now() + FIRST_RELEASE_DELAY_MS;
@@ -254,6 +264,10 @@ export default function OperatorPage() {
   }, [performance]);
 
   useEffect(() => {
+    window.localStorage.setItem(RECENT_ALERT_IDS_KEY, JSON.stringify(recentAlertIds));
+  }, [recentAlertIds]);
+
+  useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
@@ -295,20 +309,28 @@ export default function OperatorPage() {
   }
 
   function seedDeferredAlerts(alertPool: AlertSummary[]) {
-    deferredAlertsRef.current = sortAlertsByPriority(alertPool).slice(
+    const sorted = sortAlertsByPriority(alertPool);
+    const deferred = sorted.slice(
       INITIAL_QUEUE_SIZE,
       INITIAL_QUEUE_SIZE + DEFERRED_QUEUE_SIZE
     );
+    deferredAlertsRef.current = deferred;
+    console.log("[DEBUG] seedDeferredAlerts: total alerts:", alertPool.length, "deferred queue size:", deferred.length, "alerts:", deferred.map(a => a.id));
   }
 
   function releaseNextDeferredAlert() {
     const next = deferredAlertsRef.current.shift();
-    if (!next) return;
+    console.log("[DEBUG] releaseNextDeferredAlert: deferred queue size before shift:", deferredAlertsRef.current.length + 1, "alert:", next?.id);
+    if (!next) {
+      console.log("[DEBUG] No more deferred alerts available");
+      return;
+    }
     const released: AlertSummary = {
       ...next,
       priority: "HIGH",
       created_at: new Date().toISOString()
     };
+    console.log("[DEBUG] Released alert:", released.id, released.client.name);
     setAlerts((prev) => dedupeAlertsById(sortAlertsByPriority([released, ...prev])));
     setRecentAlertIds((currentIds) => dedupeIds([released.id, ...currentIds]));
   }
@@ -346,7 +368,7 @@ export default function OperatorPage() {
     try {
       const [healthRes, alertsRes, auditRes, monitoringRes] = await Promise.all([
         fetchHealth(),
-        fetchAlerts(new URLSearchParams({ limit: "55" })),
+        fetchAlerts(new URLSearchParams({ limit: "100" })),
         fetchAuditLog(new URLSearchParams({ limit: "10" })),
         fetchMonitoringSummary()
       ]);
@@ -374,7 +396,7 @@ export default function OperatorPage() {
       setRunSummary(summary);
 
       // Fetch updated alerts from the backend
-      const alertsRes = await fetchAlerts(new URLSearchParams({ limit: "55" }));
+      const alertsRes = await fetchAlerts(new URLSearchParams({ limit: "100" }));
       const sortedAlerts = dedupeAlertsById(sortAlertsByPriority(alertsRes.items));
       await streamAlerts(sortedAlerts.slice(0, INITIAL_QUEUE_SIZE));
       seedDeferredAlerts(sortedAlerts);
@@ -395,8 +417,10 @@ export default function OperatorPage() {
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      const next = advanceNextRunAt();
-      setNextAutoScanAt(next);
+      // First deferred alert releases in 60s, subsequent ones every 3min
+      const firstReleaseTime = Date.now() + FIRST_RELEASE_DELAY_MS;
+      setNextAutoScanAt(firstReleaseTime);
+      persistNextRunAt(firstReleaseTime);
       setRunning(false);
     }
   }
@@ -405,9 +429,11 @@ export default function OperatorPage() {
     if (!AUTO_SCAN_ENABLED) return;
     if (nowMs < nextAutoScanAt) return;
     if (running || autoRunInFlightRef.current) return;
+    console.log("[DEBUG] Auto-scan effect triggered: releasing deferred alert");
     autoRunInFlightRef.current = true;
     releaseNextDeferredAlert();
     const next = advanceNextRunAt();
+    console.log("[DEBUG] Updated nextAutoScanAt to:", new Date(next).toISOString());
     setNextAutoScanAt(next);
     void fetchHealth()
       .then((healthRes) => setHealth(healthRes))
@@ -512,42 +538,42 @@ export default function OperatorPage() {
         {"  "}Queue size: <span className="font-semibold text-gray-900">{alerts.length}</span>
       </div>
 
-      <section className="card p-4 md:p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="text-[13px] font-medium text-gray-900">
-            Operator Performance Metrics
+      {runSummary && (
+        <section className="card p-4 md:p-5 space-y-3 border-l-4 border-blue-500">
+          <div className="flex items-center justify-between">
+            <div className="text-[13px] font-medium text-gray-900">
+              Latest Scan Results
+            </div>
+            <div className="text-[11px] text-ws-muted">From last operator run</div>
           </div>
-          <div className="text-[11px] text-ws-muted">Cached metrics always available</div>
-        </div>
-        <div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             <PerformanceMetric
-              label="Detection Accuracy"
-              value={`${cachedPerformance.detectionAccuracy.toFixed(1)}%`}
-              sublabel="+0.3% this week"
-              valueClassName="text-emerald-600"
-            />
-            <PerformanceMetric
-              label="False Positive Rate"
-              value={`${cachedPerformance.falsePositiveRate.toFixed(1)}%`}
-              sublabel="Within target threshold"
+              label="Total Alerts"
+              value={runSummary.created_alerts_count.toString()}
+              sublabel="Triaged by AI"
               valueClassName="text-gray-900"
             />
             <PerformanceMetric
-              label="Avg Detection Latency"
-              value={`${cachedPerformance.avgDetectionLatency.toFixed(1)}s`}
-              sublabel="Real-time monitoring"
-              valueClassName="text-gray-900"
+              label="High Priority"
+              value={runSummary.priority_counts.HIGH.toString()}
+              sublabel="Require review"
+              valueClassName="text-red-600"
             />
             <PerformanceMetric
-              label="Feedback Cases"
-              value={Math.round(cachedPerformance.feedbackCases).toString()}
-              sublabel="Incorporated to date"
+              label="Medium Priority"
+              value={runSummary.priority_counts.MEDIUM.toString()}
+              sublabel="Monitor closely"
+              valueClassName="text-amber-600"
+            />
+            <PerformanceMetric
+              label="Low Priority"
+              value={runSummary.priority_counts.LOW.toString()}
+              sublabel="Routine checks"
               valueClassName="text-emerald-600"
             />
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {error && (
         <div className="card border-red-200 bg-red-50 p-3 text-sm text-red-800">
@@ -601,17 +627,17 @@ export default function OperatorPage() {
             <div className="text-xs font-semibold text-gray-700">{sessionMetrics.falsePositive}</div>
             <div className="text-[10px] text-ws-muted mt-0.5">False Positives</div>
           </div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
-            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.followUpDraftsCreated}</div>
-            <div className="text-[10px] text-ws-muted mt-0.5">Drafts</div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-amber-700">{sessionMetrics.followUpDraftsCreated}</div>
+            <div className="text-[10px] text-amber-600 mt-0.5">Drafts</div>
           </div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
-            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.followUpDraftsApproved}</div>
-            <div className="text-[10px] text-ws-muted mt-0.5">Approved</div>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-emerald-700">{sessionMetrics.followUpDraftsApproved}</div>
+            <div className="text-[10px] text-emerald-600 mt-0.5">Approved</div>
           </div>
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
-            <div className="text-xs font-semibold text-gray-700">{sessionMetrics.followUpDraftsRejected}</div>
-            <div className="text-[10px] text-ws-muted mt-0.5">Rejected</div>
+          <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-center">
+            <div className="text-xs font-semibold text-red-700">{sessionMetrics.followUpDraftsRejected}</div>
+            <div className="text-[10px] text-red-600 mt-0.5">Rejected</div>
           </div>
         </div>
       </section>

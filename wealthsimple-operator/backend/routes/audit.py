@@ -47,10 +47,10 @@ def list_audit_events(
 ) -> AuditListResponse:
     query = db.query(AuditEvent)
 
-    # Join to alerts only when needed for filters.
+    # Join to alerts only when needed for filters (use left outer join to preserve run-level events).
     join_alerts = bool(priority or status)
     if join_alerts:
-        query = query.join(Alert, AuditEvent.alert_id == Alert.id)
+        query = query.outerjoin(Alert, AuditEvent.alert_id == Alert.id)
 
     conditions = []
 

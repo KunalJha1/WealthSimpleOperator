@@ -179,7 +179,6 @@ class Alert(Base):
     drift_score: Mapped[float] = mapped_column(Float, nullable=False)
     volatility_proxy: Mapped[float] = mapped_column(Float, nullable=False)
     risk_score: Mapped[float] = mapped_column(Float, nullable=False)
-    scenario: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
 
     run: Mapped[Run] = relationship("Run", back_populates="alerts")
     portfolio: Mapped[Portfolio] = relationship("Portfolio", back_populates="alerts")
@@ -359,7 +358,6 @@ class AlertSummary(BaseModel):
     event_title: str
     summary: str
     status: AlertStatus
-    scenario: Optional[str] = None
     client: ClientSummary
     portfolio: PortfolioSummary
 
@@ -377,7 +375,6 @@ class AlertDetail(BaseModel):
     decision_trace_steps: List[DecisionTraceStep]
     change_detection: List[ChangeDetectionItem]
     status: AlertStatus
-    scenario: Optional[str] = None
     concentration_score: float
     drift_score: float
     volatility_proxy: float
@@ -638,4 +635,84 @@ class PlaybookSummary(BaseModel):
     severity: SimulationSeverity
     actions: List[PlaybookAction]
     ai_rationale: str
+
+
+# ---------- Contact Scheduler Schemas ----------
+
+
+class ContactScheduleEntry(BaseModel):
+    client_id: int
+    client_name: str
+    email: str
+    segment: str
+    urgency: str  # OVERDUE | DUE_SOON | UPCOMING
+    alert_count: int
+    highest_priority: str  # HIGH | MEDIUM | LOW
+    days_since_contact: int
+    suggested_action: str
+    suggested_channel: str
+
+
+class ContactScheduleResponse(BaseModel):
+    entries: List[ContactScheduleEntry]
+    overdue_count: int
+    due_soon_count: int
+    upcoming_count: int
+
+
+# ---------- Tax-Loss Harvesting Schemas ----------
+
+
+class TaxLossOpportunity(BaseModel):
+    portfolio_id: int
+    portfolio_name: str
+    client_name: str
+    client_id: int
+    ticker: str
+    asset_class: str
+    position_value: float
+    unrealized_loss: float
+    tax_savings_estimate: float
+    cost_basis_per_unit: float
+    current_price: float
+    estimated_units: float
+    wash_sale_risk: bool
+    replacement_ticker: Optional[str] = None
+
+
+class TaxLossResponse(BaseModel):
+    opportunities: List[TaxLossOpportunity]
+    total_harvestable_loss: float
+    total_tax_savings: float
+    portfolios_with_opportunities: int
+
+
+# ---------- Risk Dashboard Schemas ----------
+
+
+class RiskClientRow(BaseModel):
+    client_id: int
+    client_name: str
+    segment: str
+    risk_profile: str
+    portfolio_id: int
+    portfolio_name: str
+    total_value: float
+    current_risk: float
+    previous_risk: Optional[float] = None
+    trend: str  # RISING | FALLING | STABLE
+    trend_pct: Optional[float] = None
+    predicted_30d_risk: float
+    days_without_review: int
+    latest_priority: Optional[str] = None
+    latest_alert_status: Optional[str] = None
+
+
+class RiskDashboardResponse(BaseModel):
+    rows: List[RiskClientRow]
+    avg_current_risk: float
+    avg_predicted_risk: float
+    rising_count: int
+    high_risk_count: int
+    total_clients: int
 

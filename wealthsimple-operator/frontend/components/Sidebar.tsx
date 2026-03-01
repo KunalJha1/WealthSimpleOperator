@@ -11,7 +11,10 @@ import {
   Settings as SettingsIcon,
   LineChart,
   FileText,
-  Scale
+  Scale,
+  CalendarClock,
+  Scissors,
+  TrendingUp
 } from "lucide-react";
 
 type NavItem = {
@@ -22,9 +25,13 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/operator", label: "Operator Console", icon: Activity },
-  { href: "/monitoring-universe", label: "Monitoring Universe", icon: Globe2 },
-  { href: "/auto-reallocation", label: "Auto-Reallocation", icon: Scale },
+  { href: "/auto-reallocation", label: "Auto Reallocation", icon: Scale },
   { href: "/meeting-notes", label: "Meeting Notes", icon: FileText },
+  { href: "/monitoring-universe", label: "Monitoring Universe", icon: Globe2 },
+  { href: "/simulations", label: "Scenario Lab", icon: LineChart },
+  { href: "/contact-scheduler", label: "Contact Scheduler", icon: CalendarClock },
+  { href: "/tax-loss-harvesting", label: "Tax-Loss Harvesting", icon: Scissors },
+  { href: "/risk-dashboard", label: "Risk Dashboard", icon: TrendingUp },
   { href: "/audit-log", label: "Audit Log", icon: ClipboardList },
   { href: "/settings", label: "Settings", icon: SettingsIcon }
 ];
@@ -74,27 +81,7 @@ export default function Sidebar() {
             </Link>
           );
         })}
-        <div className="mt-5 pt-4 border-t border-gray-100 text-[11px] font-semibold uppercase tracking-[0.18em] text-ws-muted">
-          Simulations
-        </div>
-        <Link
-          href="/simulations"
-          className={clsx(
-            "flex items-center px-3 py-2 rounded-lg text-sm gap-2",
-            pathname === "/simulations" || pathname?.startsWith("/simulations/")
-              ? "bg-ws-ink text-white font-medium"
-              : "text-gray-700 hover:bg-gray-100"
-          )}
-        >
-          <LineChart className="w-4 h-4" aria-hidden="true" />
-          <span>Scenario lab</span>
-        </Link>
       </nav>
-      <div className="px-4 py-4 border-t border-ws-border text-xs text-ws-muted">
-        AI responsibility: triage + simulated reallocation plan generation/queueing.
-        <br />
-        Human responsibility: approval and execution authority.
-      </div>
     </aside>
   );
 }

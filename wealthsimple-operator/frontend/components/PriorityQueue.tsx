@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import type { AlertDetail, AlertSummary, FollowUpDraft, ReallocationPlan } from "../lib/types";
 import {
@@ -18,8 +19,7 @@ import {
 import { PriorityPill } from "./StatusPills";
 import { Button } from "./Buttons";
 import { ClientDetailsPanel } from "./RiskBrief";
-import { RebalancingSuggestionPanel } from "./RebalancingSuggestion";
-import { AlertTriangle, ArrowUpRight, UserRound } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, UserRound, Settings2, FileText } from "lucide-react";
 
 interface PriorityQueueProps {
   alerts: AlertSummary[];
@@ -88,6 +88,10 @@ function parseMaybeNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function capitalizeWords(str: string): string {
+  return str.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function buildChangeRows(detail: AlertDetail | null | undefined): ChangeRow[] {
   if (!detail) {
     return [];
@@ -100,8 +104,8 @@ function buildChangeRows(detail: AlertDetail | null | undefined): ChangeRow[] {
   if (changeDetection.length > 0) {
     return changeDetection.slice(0, 3).map((item) => ({
       label: item.metric.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      from: item.from,
-      to: item.to
+      from: capitalizeWords(item.from),
+      to: capitalizeWords(item.to)
     }));
   }
 
@@ -133,6 +137,7 @@ export default function PriorityQueue({
   onAlertAction,
   onFollowUpDraftEvent
 }: PriorityQueueProps) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(5);
   const [selectedDetail, setSelectedDetail] = useState<AlertDetail | null>(null);
@@ -518,10 +523,10 @@ export default function PriorityQueue({
             </div>
           ) : (
             <>
-              <div className="space-y-2.5">
+              <div className="space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-2xl font-semibold leading-none text-gray-900">Risk Brief</div>
+                    <div className="text-xl font-semibold leading-none text-gray-900">Risk Brief</div>
                     <PriorityPill priority={selected.priority} />
                   </div>
                   <button
@@ -545,30 +550,29 @@ export default function PriorityQueue({
                     </svg>
                   </button>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1.5 pb-2">
                   <div className="text-base font-semibold text-gray-900">{selected.portfolio.name}</div>
-                  <div className="text-sm font-medium text-gray-700">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">
                     {formatPortfolioCode(selected.portfolio.id)}
                   </div>
-                  <div className="text-xs text-gray-500">{selected.event_title}</div>
-                  <div className="text-xs text-ws-muted">
-                    {selected.client.name} - {segmentLabel(selected.client.segment)} -{" "}
-                    {selected.client.risk_profile}
+                  <div className="text-sm text-gray-700">{selected.event_title}</div>
+                  <div className="text-xs text-gray-600">
+                    {selected.client.name} • {segmentLabel(selected.client.segment)} • {selected.client.risk_profile}
                   </div>
                 </div>
-                <div className="rounded-[14px] bg-gradient-to-r from-violet-400 via-fuchsia-400 to-violet-400 p-[1.5px] overflow-hidden shadow-[0_0_0_1px_rgba(168,85,247,0.2)]">
-                  <div className="rounded-[12px] bg-white px-3 py-2.5">
+                <div className="rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 p-px overflow-hidden mt-1 mb-4">
+                  <div className="rounded-[13px] bg-white px-4 py-1 pb-8">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-semibold tracking-wide text-purple-800">
+                      <div className="text-xs font-semibold text-blue-800">
                         AI Confidence
                       </div>
-                      <div className="text-3xl font-semibold leading-none text-purple-800">
+                      <div className="text-2xl font-bold text-blue-700">
                         {selected.confidence.toFixed(0)}%
                       </div>
                     </div>
-                    <div className="mt-3 h-2.5 rounded-full bg-purple-100">
+                    <div className="h-3 rounded-full bg-blue-100 overflow-hidden">
                       <div
-                        className="h-2.5 rounded-full bg-purple-700"
+                        className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300"
                         style={{ width: `${Math.max(4, Math.min(100, selected.confidence))}%` }}
                       />
                     </div>
@@ -577,38 +581,38 @@ export default function PriorityQueue({
               </div>
 
               {detailError && (
-                <div className="rounded-md border border-red-200 bg-red-50 p-2 text-[11px] text-red-700">
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700 font-medium">
                   Unable to load AI details for this alert. {detailError}
                 </div>
               )}
 
               {detailLoading && !detailError && (
-                <div className="rounded-md border border-ws-border bg-white/80 p-2 text-[11px] text-ws-muted">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
                   Loading AI summary and client profile...
                 </div>
               )}
 
               {selectedDetail && !detailLoading && !detailError && (
-                <div className="space-y-5 text-sm">
-                  <div className="space-y-1">
-                    <div className="text-base font-semibold leading-6 text-gray-900">
+                <div className="mt-2 space-y-4">
+                  <div className="space-y-1.5">
+                    <div className="text-base font-semibold text-gray-900">
                       Event
                     </div>
-                    <div className="text-sm leading-6 text-gray-700">
+                    <div className="text-xs text-gray-700 leading-relaxed">
                       {selectedDetail.event_title}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <div className="text-base font-semibold leading-6 text-gray-900">
+                  <div className="space-y-1.5">
+                    <div className="text-base font-semibold text-gray-900">
                       AI Summary
                     </div>
-                    <p className="text-sm leading-6 text-gray-700">{selectedDetail.summary}</p>
+                    <p className="text-xs text-gray-700 leading-relaxed">{selectedDetail.summary}</p>
                   </div>
-                  <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 space-y-2">
-                    <div className="text-xs font-semibold text-amber-800">
-                      Priority justification
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-2">
+                    <div className="text-sm font-semibold text-amber-900">
+                      Priority Justification
                     </div>
-                    <p className="text-sm text-amber-900 leading-6">
+                    <p className="text-xs text-amber-900 leading-relaxed">
                       Ranked with {selectedDetail.priority.toLowerCase()} priority based on
                       concentration {selectedDetail.concentration_score.toFixed(1)}, drift{" "}
                       {selectedDetail.drift_score.toFixed(1)}, and volatility{" "}
@@ -616,63 +620,63 @@ export default function PriorityQueue({
                       {selectedDetail.risk_score.toFixed(1)} / 10.
                     </p>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <div className="text-sm font-semibold text-gray-900">AI Reasoning</div>
-                      <div className="text-[10px] text-ws-muted">AI-generated reasoning</div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-base font-semibold text-gray-900">AI Reasoning</div>
+                      <div className="text-xs text-gray-500">AI-generated</div>
                     </div>
-                    <ol className="space-y-2 text-sm text-gray-800">
+                    <ol className="space-y-1.5 text-xs text-gray-800">
                       {selectedDetail.reasoning_bullets.map((bullet, idx) => (
                         <li key={`${idx}-${bullet}`} className="flex gap-2">
-                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[11px] font-medium text-gray-700">
+                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-medium text-gray-700">
                             {idx + 1}
                           </span>
-                          <span>{bullet}</span>
+                          <span className="pt-0.5">{bullet}</span>
                         </li>
                       ))}
                     </ol>
                   </div>
-                  <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-2.5">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 mt-2">
                     <div className="text-base font-semibold text-gray-900">Client Profile</div>
                     {(() => {
                       const extras = buildClientProfileExtras(selectedDetail);
                       return (
-                        <dl className="mt-1 space-y-1 text-sm text-gray-800">
-                          <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Name</dt>
-                            <dd className="font-semibold text-gray-900">
+                        <dl className="space-y-2.5 text-xs">
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-gray-600 font-semibold">Name</dt>
+                            <dd className="font-semibold text-gray-900 text-right">
                               {selectedDetail.client.name}
                             </dd>
                           </div>
-                          <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Risk Tolerance</dt>
-                            <dd className="text-gray-900">
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-gray-600 font-semibold">Risk Tolerance</dt>
+                            <dd className="text-gray-900 text-right">
                               {selectedDetail.client.risk_profile}
                             </dd>
                           </div>
-                          <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Investment Horizon</dt>
-                            <dd className="text-gray-900">{extras.investmentHorizon}</dd>
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-gray-600 font-semibold">Investment Horizon</dt>
+                            <dd className="text-gray-900 text-right">{extras.investmentHorizon}</dd>
                           </div>
-                          <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Last Advisor Review</dt>
-                            <dd className="text-gray-900">{extras.lastAdvisorReviewLabel}</dd>
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-gray-600 font-semibold">Last Advisor Review</dt>
+                            <dd className="text-gray-900 text-right">{extras.lastAdvisorReviewLabel}</dd>
                           </div>
-                          <div className="flex justify-between gap-3">
-                            <dt className="text-ws-muted">Advisor Assigned</dt>
-                            <dd className="text-gray-900">{extras.advisorName}</dd>
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-gray-600 font-semibold">Advisor Assigned</dt>
+                            <dd className="text-gray-900 text-right">{extras.advisorName}</dd>
                           </div>
                         </dl>
                       );
                     })()}
-                    <div className="pt-1">
+                    <div className="pt-2">
                       <Button
                         type="button"
                         variant="secondary"
-                        className="text-base px-4 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                        className="w-full text-xs px-3 py-1.5 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
                         onClick={() => setShowClientDetails(true)}
                       >
-                        <UserRound className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                        <UserRound className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                         View Client Details
                       </Button>
                     </div>
@@ -680,18 +684,22 @@ export default function PriorityQueue({
                 </div>
               )}
 
+              {selectedDetail && (
+                <div className="mt-6"></div>
+              )}
+
               {selectedDetail ? (
                 <div className="space-y-4">
-                  <div className="rounded-2xl border border-teal-100 bg-teal-50/40 p-4">
-                    <div className="text-[1.05rem] font-semibold text-gray-900">Change Detection</div>
-                    <div className="mt-3 space-y-2 text-sm">
+                  <div className="rounded-xl border border-teal-200 bg-teal-50/50 p-4">
+                    <div className="text-base font-semibold text-gray-900">Change Detection</div>
+                    <div className="mt-3 space-y-2.5 text-xs">
                       {buildChangeRows(selectedDetail).map((row, idx) => {
                         const fromNum = parseMaybeNumber(row.from);
                         const toNum = parseMaybeNumber(row.to);
                         const movedUp = fromNum != null && toNum != null ? toNum > fromNum : true;
                         return (
                           <div key={`${idx}-${row.label}`} className="flex items-center justify-between gap-3">
-                            <div className="text-gray-700">{row.label}</div>
+                            <div className="text-gray-700 font-medium">{row.label}</div>
                             <div className="flex items-center gap-2 font-medium">
                               <span className="text-gray-600">{row.from}</span>
                               <span className="text-gray-400">{"->"}</span>
@@ -703,67 +711,33 @@ export default function PriorityQueue({
                         );
                       })}
                     </div>
-                    <div className="mt-3 border-t border-teal-200 pt-2 text-xs text-gray-600">
-                      Changes detected in last operator scan ({minutesSince(selectedDetail.created_at)} minutes ago)
-                    </div>
                   </div>
 
-                  <div className="rounded-2xl border border-purple-200 bg-purple-50/30 p-4">
-                    <div className="text-[1.05rem] font-semibold text-purple-800">
-                      Operator Learning &amp; Feedback
-                    </div>
-                    <dl className="mt-3 space-y-2 text-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-gray-700">Human feedback incorporated</dt>
-                        <dd className="font-semibold text-gray-900">
-                          {40 + (selectedDetail.id % 12)} cases
-                        </dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-gray-700">False positives corrected</dt>
-                        <dd className="font-semibold text-gray-900">{8 + (selectedDetail.id % 9)}</dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <dt className="text-gray-700">Confidence calibration</dt>
-                        <dd className="rounded-full border border-teal-200 bg-teal-100 px-2.5 py-0.5 text-xs font-medium text-teal-700">
-                          Improving
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
 
-                  <div className="border-t border-gray-200 pt-3">
-                    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                  <div className="border-t border-gray-200 pt-3 mb-2">
+                    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 uppercase tracking-wider">
                       Human Review Required
                     </span>
                   </div>
 
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
-                    <div>
-                      <span className="font-medium text-gray-900">AI Responsibility:</span> Detection and triage
-                    </div>
-                    <div className="mt-1">
-                      <span className="font-medium text-gray-900">Human Responsibility:</span> Final portfolio decisions
-                    </div>
-                  </div>
                 </div>
               ) : (
-                <div className="rounded-md border border-ws-border bg-white/80 p-2 text-[11px] text-ws-muted">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
                   Loading change detection and learning metrics...
                 </div>
               )}
 
               {actionMessage && (
-                <div className="rounded-md border border-gray-200 bg-white p-2 text-xs text-gray-700">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
                   {actionMessage}
                 </div>
               )}
 
-              <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-3 space-y-2">
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-sm font-semibold text-gray-900">Proposed Client Email</div>
+                  <div className="text-base font-semibold text-gray-900">Proposed Client Email</div>
                   {followUpDraft && (
-                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${
                       followUpDraft.status === "PENDING_APPROVAL"
                         ? "border-amber-200 bg-amber-50 text-amber-700"
                         : followUpDraft.status === "APPROVED_READY"
@@ -778,30 +752,30 @@ export default function PriorityQueue({
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-gray-700">
+                <div className="text-xs text-gray-700">
                   A proposed email which can be sent after advisor review and approval.
                 </div>
                 {followUpDraft ? (
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-2.5 text-xs">
                     <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">To</div>
-                      <div className="text-gray-900">{followUpDraft.recipient_email}</div>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">To</div>
+                      <div className="text-gray-900 mt-1">{followUpDraft.recipient_email}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">Subject</div>
-                      <div className="text-gray-900">{followUpDraft.subject}</div>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">Subject</div>
+                      <div className="text-gray-900 mt-1">{followUpDraft.subject}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-wide text-ws-muted">Body</div>
-                      <div className="max-h-28 overflow-y-auto whitespace-pre-wrap rounded-md border border-gray-200 bg-white p-2 text-[11px] text-gray-800">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-gray-600">Body</div>
+                      <div className="whitespace-pre-wrap rounded-md border border-gray-200 bg-white p-3 text-xs text-gray-800 mt-1">
                         {followUpDraft.body}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2">
                       <Button
                         type="button"
                         variant="secondary"
-                        className="text-xs px-2 py-1 border border-gray-300"
+                        className="flex-1 text-xs px-3 py-1.5 border border-gray-300"
                         disabled={draftActionLoading !== null}
                         onClick={() => void handleCreateFollowUpDraft(true)}
                       >
@@ -811,16 +785,16 @@ export default function PriorityQueue({
                         <>
                           <Button
                             type="button"
-                            className="text-xs px-2 py-1 bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700"
+                            className="flex-1 text-xs px-3 py-1.5 bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700"
                             disabled={draftActionLoading !== null}
                             onClick={() => void handleApproveFollowUpDraft()}
                           >
-                            Approve Draft
+                            Approve
                           </Button>
                           <Button
                             type="button"
                             variant="ghost"
-                            className="text-xs px-2 py-1 border border-red-300 text-red-600 hover:bg-red-50"
+                            className="flex-1 text-xs px-3 py-1.5 border-2 border-red-600 text-red-600 hover:bg-red-50"
                             disabled={draftActionLoading !== null}
                             onClick={() => void handleRejectFollowUpDraft()}
                           >
@@ -831,74 +805,93 @@ export default function PriorityQueue({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-xs text-ws-muted">
+                  <div className="text-xs text-gray-600">
                     No follow-up draft yet. Use Schedule Follow-up to generate one.
                   </div>
                 )}
                 {(draftLoading || draftActionLoading !== null) && (
-                  <div className="text-[11px] text-ws-muted">Agent working on follow-up draft...</div>
+                  <div className="text-xs text-gray-600">Agent working on follow-up draft...</div>
                 )}
                 {draftMessage && (
-                  <div className="rounded-md border border-indigo-200 bg-white p-2 text-[11px] text-gray-700">
+                  <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-xs text-indigo-700">
                     {draftMessage}
                   </div>
                 )}
               </div>
 
-              {selectedDetail && selectedDetail.priority === "HIGH" && selectedDetail.drift_score > 5 && (
-                <RebalancingSuggestionPanel
-                  plan={reallocationPlan}
-                  loading={reallocationLoading}
-                  actionLoading={planActionLoading}
-                  onGenerate={() => void handleGenerateReallocationPlan()}
-                  onQueue={() => void handleQueuePlan()}
-                  onApprove={() => void handleApprovePlan()}
-                  onExecute={() => void handleExecutePlan()}
-                  message={planMessage}
-                />
-              )}
+              <div className="border-t border-gray-200 pt-4"></div>
 
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  className="flex-1 text-base"
-                  disabled={actionLoading !== null || draftActionLoading !== null}
-                  onClick={() => void handleAlertAction("reviewed")}
-                >
-                  Mark as Reviewed
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="flex-1 text-base border border-gray-300 bg-white hover:bg-gray-50"
-                  disabled={actionLoading !== null || draftActionLoading !== null}
-                  onClick={() => void handleCreateFollowUpDraft(false)}
-                >
-                  Schedule Follow-up
-                </Button>
+              <div className="space-y-3">
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    className="flex-1 text-sm py-2.5"
+                    disabled={actionLoading !== null || draftActionLoading !== null}
+                    onClick={() => void handleAlertAction("reviewed")}
+                  >
+                    Mark as Reviewed
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="flex-1 text-sm py-2.5 border border-gray-300 bg-white hover:bg-gray-50"
+                    disabled={actionLoading !== null || draftActionLoading !== null}
+                    onClick={() => void handleCreateFollowUpDraft(false)}
+                  >
+                    Schedule Follow-up
+                  </Button>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex-1 text-sm py-2.5 !border-2 !border-amber-400 !bg-white !text-amber-700 hover:!bg-amber-50"
+                    disabled={actionLoading !== null || draftActionLoading !== null}
+                    onClick={() => void handleAlertAction("escalate")}
+                  >
+                    <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    Escalate to Senior
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex-1 text-sm py-2.5 !border-2 !border-red-400 !bg-white !text-red-600 hover:!bg-red-50"
+                    disabled={actionLoading !== null || draftActionLoading !== null}
+                    onClick={() => void handleAlertAction("false_positive")}
+                  >
+                    <AlertTriangle className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    False Positive
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex-1 text-base !border-2 !border-amber-400 !bg-white !text-amber-700 hover:!bg-amber-50"
-                  disabled={actionLoading !== null || draftActionLoading !== null}
-                  onClick={() => void handleAlertAction("escalate")}
-                >
-                  <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                  Escalate to Senior
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="flex-1 text-base !border-2 !border-red-400 !bg-white !text-red-600 hover:!bg-red-50"
-                  disabled={actionLoading !== null || draftActionLoading !== null}
-                  onClick={() => void handleAlertAction("false_positive")}
-                >
-                  <AlertTriangle className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                  False Positive
-                </Button>
-              </div>
+
+              {selectedDetail && (
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
+                    Open Client In
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="text-xs px-3 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      onClick={() => router.push(`/auto-reallocation?portfolio=${selectedDetail.portfolio.id}`)}
+                    >
+                      <Settings2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                      Reallocation
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="text-xs px-3 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      onClick={() => router.push(`/meeting-notes?portfolio=${selectedDetail.portfolio.id}`)}
+                    >
+                      <FileText className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                      Meeting Notes
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
           </div>

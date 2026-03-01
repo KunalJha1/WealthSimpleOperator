@@ -16,7 +16,10 @@ import {
   MeetingNoteCreate,
   RebalancingSuggestion,
   ReallocationPlan,
-  PlaybookSummary
+  PlaybookSummary,
+  ContactScheduleResponse,
+  TaxLossResponse,
+  RiskDashboardResponse
 } from "./types";
 
 const API_BASE =
@@ -288,4 +291,25 @@ export async function executeReallocationPlan(planId: number): Promise<Reallocat
     cache: "no-store"
   });
   return handle<ReallocationPlan>(res);
+}
+
+export async function fetchContactSchedule(): Promise<ContactScheduleResponse> {
+  const res = await fetch(`${API_BASE}/contacts/schedule`, {
+    cache: "no-store"
+  });
+  return handle<ContactScheduleResponse>(res);
+}
+
+export async function fetchTaxLossOpportunities(): Promise<TaxLossResponse> {
+  const res = await fetch(`${API_BASE}/tax-loss/opportunities`, {
+    cache: "no-store"
+  });
+  return handle<TaxLossResponse>(res);
+}
+
+export async function fetchRiskDashboard(): Promise<RiskDashboardResponse> {
+  const res = await fetch(`${API_BASE}/risk-dashboard/summary`, {
+    cache: "no-store"
+  });
+  return handle<RiskDashboardResponse>(res);
 }
