@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from ai.provider import get_provider
 from db import get_db
-from models import MeetingNote, MeetingNoteCreate, MeetingNoteView, TranscriptSummary
+from models import AuditEvent, MeetingNote, MeetingNoteCreate, MeetingNoteView, TranscriptSummary
 
 
 router = APIRouter(prefix="/meeting-notes", tags=["meeting-notes"])
@@ -89,6 +89,24 @@ def create_meeting_note(
     db.add(note)
     db.commit()
     db.refresh(note)
+
+    # Log audit event
+    audit_event = AuditEvent(
+        event_type="MEETING_NOTE_CREATED",
+        actor="system",
+        alert_id=None,
+        run_id=None,
+        details={
+            "client_id": payload.client_id,
+            "note_id": note.id,
+            "title": payload.title,
+            "meeting_type": payload.meeting_type,
+            "has_transcript": bool(payload.call_transcript),
+        }
+    )
+    db.add(audit_event)
+    db.commit()
+
     return _note_to_view(note)
 
 
@@ -132,6 +150,22 @@ def summarize_transcript(
 
     db.commit()
     db.refresh(note)
+
+    # Log audit event
+    audit_event = AuditEvent(
+        event_type="MEETING_NOTE_SUMMARIZED",
+        actor="system",
+        alert_id=None,
+        run_id=None,
+        details={
+            "client_id": note.client_id,
+            "note_id": note.id,
+            "ai_provider": note.ai_provider_used,
+            "action_items_count": len(note.ai_action_items) if note.ai_action_items else 0,
+        }
+    )
+    db.add(audit_event)
+    db.commit()
 
     return SummarizeTranscriptResponse(
         note=_note_to_view(note),

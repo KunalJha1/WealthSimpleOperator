@@ -1,7 +1,8 @@
 import { ConfidencePill, PriorityPill } from "./StatusPills";
 import { Button } from "./Buttons";
 import type { AlertDetail, ClientProfileView } from "../lib/types";
-import { useState } from "react";
+import { formatCurrency } from "../lib/utils";
+import { useState, useEffect } from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -56,14 +57,6 @@ type QuickActionDraft = {
   body: string;
   footer?: string;
 };
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-CA", {
-    style: "currency",
-    currency: "CAD",
-    maximumFractionDigits: 0
-  }).format(amount);
-}
 
 function formatDateISO(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -215,13 +208,12 @@ export default function RiskBrief({
   const confidence = Math.max(0, Math.min(100, alert.confidence));
   const clientExtras = buildClientProfileExtras(alert);
   const operatorHistory = buildOperatorHistory(alert);
-  const learningStats = buildOperatorLearningStats(alert);
   const [showClientProfile, setShowClientProfile] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   function notify(message: string) {
-    if (typeof window !== "undefined") {
-      window.alert(message);
-    }
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 4000);
   }
 
   function handleScheduleFollowUp() {
@@ -460,23 +452,6 @@ export default function RiskBrief({
             </div>
           </div>
 
-          <div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Operator learning & feedback</div>
-            <dl className="mt-1 space-y-1 text-xs text-gray-800">
-              <div className="flex justify-between gap-3">
-                <dt className="text-ws-muted">Human feedback incorporated</dt>
-                <dd className="text-gray-900">{learningStats.casesIncorporated} cases</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-ws-muted">False positives corrected</dt>
-                <dd className="text-gray-900">{learningStats.falsePositivesCorrected}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-ws-muted">Confidence calibration</dt>
-                <dd className="text-gray-900">{learningStats.calibrationStatus}</dd>
-              </div>
-            </dl>
-          </div>
         </div>
       </div>
 
@@ -566,6 +541,13 @@ export default function RiskBrief({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-lg z-50 animate-in fade-in slide-in-from-bottom-2">
+          <p className="text-sm text-blue-900">{toastMessage}</p>
         </div>
       )}
     </>
@@ -722,10 +704,25 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
   const [newNote, setNewNote] = useState({ title: "", note: "" });
   const [quickActionDraft, setQuickActionDraft] = useState<QuickActionDraft | null>(null);
   const [approvalStatus, setApprovalStatus] = useState<"pending" | "approved" | "changes_requested">("pending");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [expandedTranscriptId, setExpandedTranscriptId] = useState<number | null>(null);
+
+  // Reset draft and approval status whenever alert changes (ensures fresh draft on each alert)
+  useEffect(() => {
+    setQuickActionDraft(null);
+    setApprovalStatus("pending");
+  }, [alert.id]);
 
   const sortedNotes = [...localNotes].sort((a, b) => toTimestamp(b.date) - toTimestamp(a.date));
   const transcriptNotes = sortedNotes.filter((note) => Boolean(note.call_transcript));
   const mostRecentTranscriptId = transcriptNotes[0]?.id;
+
+  // Set the most recent transcript as expanded by default
+  useEffect(() => {
+    if (transcriptNotes.length > 0 && expandedTranscriptId === null) {
+      setExpandedTranscriptId(mostRecentTranscriptId || null);
+    }
+  }, [mostRecentTranscriptId, transcriptNotes.length, expandedTranscriptId]);
 
   const allocationRows = [
     { label: "Equities", value: profile.current_asset_allocation.equities_pct, color: "bg-gray-900" },
@@ -743,9 +740,16 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
   ];
 
   function notifyUser(message: string) {
-    if (typeof window !== "undefined") {
-      window.alert(message);
-    }
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 4000);
+  }
+
+  function cleanTranscriptText(transcript: string): string {
+    // Remove timestamps like [00:00:00] and ** around speaker names
+    return transcript
+      .replace(/\[\d{2}:\d{2}:\d{2}\]\s*/g, "") // Remove [HH:MM:SS]
+      .replace(/\*\*([^*]+)\*\*/g, "$1") // Remove ** around names
+      .trim();
   }
 
   function handleQuickAction(kind: QuickActionKind) {
@@ -1091,61 +1095,78 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
               No call transcripts are available yet for this client.
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {transcriptNotes.map((note) => {
                 const noteId = note.id || 0;
                 const isMostRecentTranscript = note.id === mostRecentTranscriptId;
+                const isExpanded = expandedTranscriptId === noteId;
                 return (
                   <div
                     key={`transcript-${note.title}-${note.date}-${noteId}`}
-                    className="rounded-lg border border-blue-200 bg-white p-3 space-y-2"
+                    className="rounded-lg border border-blue-200 bg-white overflow-hidden"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
+                    {/* Accordion Header */}
+                    <button
+                      type="button"
+                      onClick={() => setExpandedTranscriptId(isExpanded ? null : noteId)}
+                      className="w-full flex items-center justify-between gap-2 p-3 hover:bg-blue-50 transition-colors"
+                    >
+                      <div className="flex-1 text-left">
                         <div className="text-xs font-semibold text-gray-900">{note.title}</div>
                         <div className="text-[11px] text-ws-muted">{note.date}</div>
                       </div>
-                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800">
-                        Full transcript
-                      </span>
-                    </div>
-                    <pre className="max-h-44 overflow-y-auto whitespace-pre-wrap rounded border border-ws-border bg-gray-50 p-2 text-[11px] text-gray-700">
-                      {note.call_transcript}
-                    </pre>
-                    {isMostRecentTranscript ? (
-                      <div className="rounded border border-emerald-200 bg-emerald-50 p-2 space-y-2">
-                        <div className="text-[11px] font-semibold text-emerald-800">AI Summary (Most Recent Call)</div>
-                        {note.ai_summary ? (
-                          <>
-                            <p className="text-xs text-emerald-900">{note.ai_summary}</p>
-                            {note.ai_action_items && note.ai_action_items.length > 0 && (
-                              <ul className="list-disc list-inside space-y-1">
-                                {note.ai_action_items.map((item, idx) => (
-                                  <li key={`${noteId}-ai-action-${idx}`} className="text-xs text-emerald-900">
-                                    {item}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            className="text-xs px-3 py-1.5"
-                            disabled={summarizing[noteId]}
-                            onClick={() => handleSummarize(noteId)}
-                          >
-                            {summarizing[noteId] && (
-                              <Loader2 className="mr-1.5 h-3 w-3 animate-spin" aria-hidden="true" />
-                            )}
-                            {summarizing[noteId] ? "Summarizing..." : "Generate AI Summary"}
-                          </Button>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-800">
+                          Transcript
+                        </span>
+                        <span className="text-gray-400 transition-transform" style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>
+                          ▼
+                        </span>
                       </div>
-                    ) : (
-                      <div className="text-[11px] text-ws-muted">
-                        AI summary is only shown for the most recent call transcript.
+                    </button>
+
+                    {/* Accordion Content */}
+                    {isExpanded && (
+                      <div className="border-t border-blue-200 p-3 space-y-3 bg-blue-50/30">
+                        <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded border border-ws-border bg-white p-2 text-[11px] text-gray-700 leading-relaxed">
+                          {cleanTranscriptText(note.call_transcript ?? "")}
+                        </pre>
+                        {isMostRecentTranscript ? (
+                          <div className="rounded border border-emerald-200 bg-emerald-50 p-2 space-y-2">
+                            <div className="text-[11px] font-semibold text-emerald-800">AI Summary (Most Recent Call)</div>
+                            {note.ai_summary ? (
+                              <>
+                                <p className="text-xs text-emerald-900">{note.ai_summary}</p>
+                                {note.ai_action_items && note.ai_action_items.length > 0 && (
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {note.ai_action_items.map((item, idx) => (
+                                      <li key={`${noteId}-ai-action-${idx}`} className="text-xs text-emerald-900">
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                className="text-xs px-3 py-1.5"
+                                disabled={summarizing[noteId]}
+                                onClick={() => handleSummarize(noteId)}
+                              >
+                                {summarizing[noteId] && (
+                                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" aria-hidden="true" />
+                                )}
+                                {summarizing[noteId] ? "Summarizing..." : "Generate AI Summary"}
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-ws-muted">
+                            AI summary is only shown for the most recent call transcript.
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1389,6 +1410,13 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
           </div>
         )}
       </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-lg z-50 animate-in fade-in slide-in-from-bottom-2">
+          <p className="text-sm text-blue-900">{toastMessage}</p>
+        </div>
+      )}
     </div>
   );
 }

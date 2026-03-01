@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 
-from ai.provider import get_provider
 from db import get_db
 from models import (
     SimulationRequest,
@@ -20,6 +21,20 @@ from models import (
     AuditEventType,
 )
 from simulation_engine import run_scenario
+
+# Cache file path
+CACHE_FILE = Path(__file__).parent.parent / ".simulation_cache.json"
+
+
+def _load_simulation_cache() -> Dict[str, Any]:
+    """Load pre-generated simulation cache if available."""
+    if not CACHE_FILE.exists():
+        return {}
+    try:
+        with open(CACHE_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
@@ -36,8 +51,18 @@ def run_simulation(
     payload: SimulationRequest,
     db: Session = Depends(get_db),
 ) -> SimulationSummary:
-    provider = get_provider()
-    return run_scenario(db=db, provider=provider, request=payload)
+    # Try to serve from pre-generated cache first
+    cache = _load_simulation_cache()
+    cache_key = f"{payload.scenario.value}_{payload.severity.value}"
+
+    if cache_key in cache and cache[cache_key]:
+        try:
+            return SimulationSummary(**cache[cache_key])
+        except Exception:
+            pass
+
+    # Fall back to on-demand generation
+    return run_scenario(db=db, request=payload)
 
 
 @router.post("/playbook", response_model=PlaybookSummary)

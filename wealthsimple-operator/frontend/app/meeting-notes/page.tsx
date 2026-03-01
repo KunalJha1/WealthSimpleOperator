@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "../../components/Buttons";
 import {
   fetchMonitoringSummary,
@@ -15,15 +16,22 @@ import type {
   MeetingNoteCreate,
   MeetingNoteType
 } from "../../lib/types";
-import { ChevronDown, ChevronUp, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, CheckCircle2, AlertCircle, Search, X } from "lucide-react";
 
 export default function MeetingNotesPage() {
+  const searchParams = useSearchParams();
+  const portfolioParam = searchParams.get("portfolio");
+
   const [clients, setClients] = useState<MonitoringClientRow[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [initialPortfolioId] = useState(portfolioParam ? parseInt(portfolioParam, 10) : null);
   const [notes, setNotes] = useState<MeetingNote[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [showNewNoteForm, setShowNewNoteForm] = useState(false);
@@ -40,11 +48,25 @@ export default function MeetingNotesPage() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [expandedTranscriptIds, setExpandedTranscriptIds] = useState<Set<number>>(new Set());
 
+  // Filter out generic client names (e.g., "Client 6", "Client 22")
+  const isGenericClientName = (name: string) => /^Client\s+\d+$/i.test(name);
+
   // Memoized selected note to ensure it updates when notes change
   const selectedNote = useMemo(
     () => notes.find((n) => n.id === selectedNoteId),
     [notes, selectedNoteId]
   );
+
+  // Memoized filtered clients for search
+  const filteredClients = useMemo(() => {
+    return clients
+      .filter((c) => !isGenericClientName(c.client_name))
+      .filter((c) =>
+        c.client_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.client_id.toString().includes(searchQuery)
+      )
+      .sort((a, b) => a.client_name.localeCompare(b.client_name));
+  }, [clients, searchQuery]);
 
   // Load clients on mount
   useEffect(() => {
@@ -56,9 +78,17 @@ export default function MeetingNotesPage() {
             m.fetchMonitoringDetail ? m.fetchMonitoringDetail() : null
           );
           if (detail?.clients) {
-            setClients(detail.clients);
-            if (detail.clients.length > 0) {
-              setSelectedClientId(detail.clients[0].client_id);
+            const filtered = detail.clients.filter((c) => !isGenericClientName(c.client_name));
+            setClients(filtered);
+            if (filtered.length > 0) {
+              // Try to select client based on portfolio param if provided
+              if (initialPortfolioId) {
+                // Try to find a client with matching portfolio
+                const matchingClient = filtered.find((c) => c.client_id === initialPortfolioId);
+                setSelectedClientId(matchingClient ? matchingClient.client_id : filtered[0].client_id);
+              } else {
+                setSelectedClientId(filtered[0].client_id);
+              }
             }
           }
         }
@@ -67,6 +97,20 @@ export default function MeetingNotesPage() {
       }
     };
     void loadClients();
+  }, [initialPortfolioId]);
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchInputRef.current &&
+        !searchInputRef.current.contains(e.target as Node)
+      ) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Load notes when client changes
@@ -153,21 +197,69 @@ export default function MeetingNotesPage() {
       {/* Client Selector and Create Note Button */}
       <div className="card p-4 md:p-5 space-y-3">
         <div className="flex flex-col md:flex-row gap-3 items-start md:items-end">
-          <div className="flex-1">
+          <div className="flex-1 w-full">
             <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted mb-2">
-              Select Client
+              Search Client
             </label>
-            <select
-              value={selectedClientId ?? ""}
-              onChange={(e) => setSelectedClientId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-            >
-              {clients.map((client) => (
-                <option key={client.client_id} value={client.client_id}>
-                  {client.client_name} ({client.portfolios_count} portfolios)
-                </option>
-              ))}
-            </select>
+            <div className="relative w-full">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <Search className="w-4 h-4" />
+              </div>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSearchDropdown(true);
+                }}
+                onFocus={() => setShowSearchDropdown(true)}
+                placeholder="Type client name..."
+                className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Autocomplete Dropdown - Part of Normal Flow */}
+            {showSearchDropdown && (
+              <div className="bg-white border border-t-0 border-gray-300 rounded-b-lg shadow-sm max-h-64 overflow-y-auto scrollbar-hide z-10 w-full">
+                {filteredClients.length === 0 ? (
+                  <div className="p-3 text-sm text-gray-500 text-center">
+                    No clients found
+                  </div>
+                ) : (
+                  filteredClients.map((client) => (
+                    <button
+                      key={client.client_id}
+                      onClick={() => {
+                        setSelectedClientId(client.client_id);
+                        setSearchQuery(client.client_name);
+                        setShowSearchDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2.5 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors ${
+                        selectedClientId === client.client_id
+                          ? "bg-blue-100"
+                          : ""
+                      }`}
+                    >
+                      <div className="font-semibold text-sm text-gray-900">
+                        {client.client_name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {client.portfolios_count} portfolios
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
           <Button onClick={() => setShowNewNoteForm(!showNewNoteForm)} variant="primary">
             {showNewNoteForm ? "Cancel" : "+ New Note"}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import type { AuditEventEntry } from "../lib/types";
 import { formatDateTime } from "../lib/utils";
 
@@ -98,7 +99,15 @@ export default function AuditTable({ items }: AuditTableProps) {
                     {toLabel(event.event_type)}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-xs text-ws-muted">{event.alert_id ?? "-"}</td>
+                <td className="px-3 py-2 text-xs text-ws-muted">
+                  {event.alert_id ? (
+                    <Link href={`/alerts/${event.alert_id}`} className="text-blue-600 hover:text-blue-700 font-medium transition">
+                      {event.alert_id}
+                    </Link>
+                  ) : (
+                    "-"
+                  )}
+                </td>
                 <td className="px-3 py-2 text-xs text-ws-muted">{event.run_id ?? "-"}</td>
                 <td className="px-3 py-2 text-xs text-ws-muted">
                   <span className="font-medium text-gray-700">{event.actor}</span>

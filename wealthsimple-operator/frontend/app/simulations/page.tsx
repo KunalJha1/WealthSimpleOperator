@@ -2,6 +2,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { X } from "lucide-react";
 
 import { Button } from "../../components/Buttons";
 import { runSimulation, fetchSimulationPlaybook } from "../../lib/api";
@@ -9,7 +10,9 @@ import type {
   SimulationScenario,
   SimulationSeverity,
   SimulationSummary,
-  PlaybookSummary
+  PlaybookSummary,
+  ClientSummary,
+  PortfolioSummary
 } from "../../lib/types";
 
 const DEFAULT_SCENARIO: SimulationScenario = "interest_rate_shock";
@@ -26,6 +29,14 @@ export default function SimulationsPage() {
   const [playbook, setPlaybook] = useState<PlaybookSummary | null>(null);
   const [playbookLoading, setPlaybookLoading] = useState(false);
   const [playbookError, setPlaybookError] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<{
+    client: ClientSummary;
+    portfolio: PortfolioSummary;
+    risk_before: number;
+    risk_after: number;
+    delta_risk: number;
+    off_trajectory: boolean;
+  } | null>(null);
 
   const impactOverview = useMemo(() => {
     if (!result || result.total_portfolios === 0) {
@@ -48,7 +59,18 @@ export default function SimulationsPage() {
     setError(null);
     setPlaybook(null);
     try {
+      // Add artificial delay to simulate backend processing (1.5-2.5 seconds)
+      const startTime = Date.now();
+      const minDelay = 1500; // milliseconds
+
       const summary = await runSimulation({ scenario, severity });
+
+      // Ensure minimum delay has elapsed for better UX
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < minDelay) {
+        await new Promise(resolve => setTimeout(resolve, minDelay - elapsedTime));
+      }
+
       setResult(summary);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -66,11 +88,22 @@ export default function SimulationsPage() {
         .filter((p) => p.off_trajectory)
         .map((p) => p.portfolio.id);
 
+      // Add artificial delay to simulate backend processing (1.2-1.8 seconds)
+      const startTime = Date.now();
+      const minDelay = 1200; // milliseconds
+
       const playbookResult = await fetchSimulationPlaybook({
         scenario: result.scenario,
         severity: result.severity,
         portfolio_ids: offTrajectoryPortfolios
       });
+
+      // Ensure minimum delay has elapsed for better UX
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < minDelay) {
+        await new Promise(resolve => setTimeout(resolve, minDelay - elapsedTime));
+      }
+
       setPlaybook(playbookResult);
     } catch (e) {
       setPlaybookError(e instanceof Error ? e.message : String(e));
@@ -343,11 +376,12 @@ export default function SimulationsPage() {
                         ).map((impact, idx) => (
                           <tr
                             key={`${impact.portfolio.id}-${impact.client.id}-${idx}`}
-                            className={
+                            onClick={() => setSelectedClient(impact)}
+                            className={`cursor-pointer transition-colors ${
                               impact.off_trajectory
-                                ? "bg-red-50/60 text-red-900"
-                                : "text-gray-900"
-                            }
+                                ? "bg-red-50/60 text-red-900 hover:bg-red-100/60"
+                                : "text-gray-900 hover:bg-gray-50"
+                            }`}
                           >
                             <td className="px-3 py-1.5">
                               <div className="font-medium">{impact.client.name}</div>
@@ -507,6 +541,221 @@ export default function SimulationsPage() {
           Failed to generate playbook: {playbookError}
         </div>
       )}
+
+      {selectedClient && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 md:p-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Client Details</h2>
+                <p className="text-xs text-ws-muted mt-1">Simulation impact analysis</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedClient(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 md:p-5 space-y-6">
+              {/* Client Header */}
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                    Client Name
+                  </div>
+                  <p className="mt-1 text-lg font-semibold text-gray-900">
+                    {selectedClient.client.name}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                      Segment
+                    </div>
+                    <p className="mt-1 text-sm text-gray-900">{selectedClient.client.segment}</p>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                      Risk Profile
+                    </div>
+                    <p className="mt-1 text-sm text-gray-900">{selectedClient.client.risk_profile}</p>
+                  </div>
+                </div>
+
+                {selectedClient.client.email && (
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                      Email
+                    </div>
+                    <p className="mt-1 text-sm text-gray-600">{selectedClient.client.email}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Portfolio Section */}
+              <div className="border-t border-gray-200 pt-6 space-y-3">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                    Portfolio Name
+                  </div>
+                  <p className="mt-1 text-lg font-semibold text-gray-900">
+                    {selectedClient.portfolio.name}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                    Portfolio Value
+                  </div>
+                  <p className="mt-1 text-lg font-semibold text-gray-900">
+                    ${selectedClient.portfolio.total_value.toLocaleString('en-US', {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted mb-2">
+                    Target Allocation
+                  </div>
+                  <div className="space-y-2">
+                    <AllocationBar
+                      label="Equity"
+                      value={selectedClient.portfolio.target_equity_pct}
+                      color="blue"
+                    />
+                    <AllocationBar
+                      label="Fixed Income"
+                      value={selectedClient.portfolio.target_fixed_income_pct}
+                      color="emerald"
+                    />
+                    <AllocationBar
+                      label="Cash"
+                      value={selectedClient.portfolio.target_cash_pct}
+                      color="amber"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Risk Impact Section */}
+              <div className="border-t border-gray-200 pt-6 space-y-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
+                  Scenario Impact
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-xs text-ws-muted font-medium">Risk Before</div>
+                    <p className="mt-2 text-xl font-semibold text-gray-900">
+                      {selectedClient.risk_before.toFixed(1)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-xs text-ws-muted font-medium">Risk Change</div>
+                    <p
+                      className={`mt-2 text-xl font-semibold ${
+                        selectedClient.delta_risk > 0
+                          ? "text-red-700"
+                          : "text-emerald-700"
+                      }`}
+                    >
+                      {selectedClient.delta_risk > 0 ? "+" : ""}
+                      {selectedClient.delta_risk.toFixed(1)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <div className="text-xs text-ws-muted font-medium">Risk After</div>
+                    <p className="mt-2 text-xl font-semibold text-gray-900">
+                      {selectedClient.risk_after.toFixed(1)}
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`rounded-lg border-2 p-3 ${
+                    selectedClient.off_trajectory
+                      ? "border-red-200 bg-red-50"
+                      : "border-emerald-200 bg-emerald-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                        selectedClient.off_trajectory
+                          ? "bg-red-100 text-red-800"
+                          : "bg-emerald-100 text-emerald-800"
+                      }`}
+                    >
+                      {selectedClient.off_trajectory ? "Off Trajectory" : "On Plan"}
+                    </div>
+                    <p
+                      className={`text-sm font-medium ${
+                        selectedClient.off_trajectory
+                          ? "text-red-900"
+                          : "text-emerald-900"
+                      }`}
+                    >
+                      {selectedClient.off_trajectory
+                        ? "This portfolio may drift from its required trajectory in this scenario."
+                        : "This portfolio remains on its required trajectory in this scenario."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="border-t border-gray-200 pt-6 flex gap-3">
+                <Button
+                  onClick={() => setSelectedClient(null)}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AllocationBar({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: "blue" | "emerald" | "amber";
+}) {
+  const colorMap = {
+    blue: "bg-blue-500",
+    emerald: "bg-emerald-500",
+    amber: "bg-amber-500",
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-24 text-xs font-medium text-gray-600">{label}</div>
+      <div className="flex-1 flex items-center gap-2">
+        <div className="flex-1 h-2 rounded-full bg-gray-200 overflow-hidden">
+          <div
+            className={`h-full ${colorMap[color]}`}
+            style={{ width: `${Math.min(value, 100)}%` }}
+          />
+        </div>
+        <div className="w-12 text-right text-xs font-medium text-gray-700">
+          {value.toFixed(1)}%
+        </div>
+      </div>
     </div>
   );
 }

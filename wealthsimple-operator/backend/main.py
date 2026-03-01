@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from ai.provider import get_provider
 from db import Base, engine, get_db
 from models import Run
-from routes import alerts, audit, meeting_notes, operator, portfolios, simulations
+from routes import alerts, audit, contacts, meeting_notes, operator, portfolios, risk_dashboard, simulations, tax_loss
 
 
 # Load backend/.env so GEMINI_API_KEY and PROVIDER are available
@@ -54,6 +54,9 @@ app.include_router(audit.router)
 app.include_router(portfolios.router)
 app.include_router(simulations.router)
 app.include_router(meeting_notes.router)
+app.include_router(contacts.router)
+app.include_router(tax_loss.router)
+app.include_router(risk_dashboard.router)
 
 
 @app.get("/health")

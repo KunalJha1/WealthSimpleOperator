@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,6 +12,20 @@ from sqlalchemy.orm import Session, joinedload
 
 from ai.provider import get_provider
 from db import get_db
+
+# Cache file path for pre-generated reallocation rationales
+REALLOCATION_CACHE_FILE = Path(__file__).parent.parent / ".reallocation_cache.json"
+
+
+def _load_reallocation_cache() -> Dict[str, str]:
+    """Load pre-generated reallocation AI rationales cache."""
+    if not REALLOCATION_CACHE_FILE.exists():
+        return {}
+    try:
+        with open(REALLOCATION_CACHE_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 from generate_client_insights import _allocation_breakdown, _build_profile_view
 from models import (
     Alert,
@@ -571,9 +587,9 @@ def generate_rebalance_suggestion(
 
     # Calculate current allocation by asset class
     total_value = float(portfolio.total_value)
-    current_equity = sum(p.value for p in positions if p.asset_class == "Equity")
-    current_fixed_income = sum(p.value for p in positions if p.asset_class == "Fixed Income")
-    current_cash = sum(p.value for p in positions if p.asset_class == "Cash")
+    current_equity = sum(float(p.value) for p in positions if p.asset_class == "Equity")
+    current_fixed_income = sum(float(p.value) for p in positions if p.asset_class == "Fixed Income")
+    current_cash = sum(float(p.value) for p in positions if p.asset_class == "Cash")
 
     current_equity_pct = (current_equity / total_value * 100) if total_value else 0
     current_fixed_income_pct = (current_fixed_income / total_value * 100) if total_value else 0
@@ -789,11 +805,19 @@ def generate_reallocation_plan(
         (sum(t["amount"] for t in trades) / additional_cash_needed * 100) if additional_cash_needed > 0 else 100.0,
         1,
     )
-    ai_rationale = (
-        f"AI selected low-gain lots first to raise ${additional_cash_needed:,.0f} for a down payment target of "
-        f"${target_cash_amount:,.0f}, while reducing volatility from {volatility_before:.2f}% to {volatility_after:.2f}%. "
-        f"Projected taxable gains are ${total_realized_gains:,.0f} with estimated tax impact of ${total_tax_impact:,.0f}."
-    )
+
+    # Try to load pre-generated AI rationale from cache
+    cache = _load_reallocation_cache()
+    cache_key = f"alert_{alert.id}"
+    ai_rationale = cache.get(cache_key)
+
+    # Fallback to default rationale if not in cache
+    if not ai_rationale:
+        ai_rationale = (
+            f"AI selected low-gain lots first to raise ${additional_cash_needed:,.0f} for a down payment target of "
+            f"${target_cash_amount:,.0f}, while reducing volatility from {volatility_before:.2f}% to {volatility_after:.2f}%. "
+            f"Projected taxable gains are ${total_realized_gains:,.0f} with estimated tax impact of ${total_tax_impact:,.0f}."
+        )
 
     assumptions = {
         "target_use_case": "Down payment reserve",

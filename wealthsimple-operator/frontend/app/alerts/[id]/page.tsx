@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import RiskBrief from "../../../components/RiskBrief";
 import {
   ConfidencePill,
@@ -12,6 +13,7 @@ import { fetchAlert, postAlertAction } from "../../../lib/api";
 import type { AlertDetail } from "../../../lib/types";
 
 export default function AlertDetailPage() {
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
   const [alert, setAlert] = useState<AlertDetail | null>(null);
@@ -65,6 +67,16 @@ export default function AlertDetailPage() {
 
   return (
     <div className="space-y-6">
+      <div className="mb-4">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium transition"
+        >
+          <ArrowLeft size={16} />
+          Back to Operator
+        </button>
+      </div>
+
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="page-title">{alert.event_title}</h1>

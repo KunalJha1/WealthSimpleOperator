@@ -1,11 +1,23 @@
 from __future__ import annotations
 
+import json
+import os
+import random
+import time
 from collections import defaultdict
 from typing import Dict, List, Set, Tuple
 
 from sqlalchemy.orm import Session, joinedload
 
-from ai.provider import AIProvider
+try:
+    from google import genai
+    from google.genai import types
+    from google.genai import errors as genai_errors
+
+    _GEMINI_AVAILABLE = True
+except ImportError:
+    _GEMINI_AVAILABLE = False
+
 from models import (
     Client,
     ClientSummary,
@@ -18,6 +30,110 @@ from models import (
     SimulationSummary,
 )
 from operator_engine import _compute_metrics
+
+
+# ============================================================================
+# Gemini API helpers for direct scenario AI calls
+# ============================================================================
+
+
+def _simulate_with_retry(call_fn, max_retries=8):
+    """Retry with exponential backoff and jitter (matches seed.py pattern)."""
+    delay = 8.0
+    for attempt in range(max_retries):
+        try:
+            return call_fn()
+        except Exception as e:
+            msg = str(e)
+            if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "503" in msg:
+                jittered_delay = delay + random.random()
+                time.sleep(jittered_delay)
+                delay = min(delay * 2, 20)
+                continue
+            raise
+
+
+def _fallback_summary() -> str:
+    """Fallback AI summary when Gemini is unavailable."""
+    return (
+        "Scenario impact computed successfully, but the AI provider is currently "
+        "unavailable to generate a narrative summary."
+    )
+
+
+def _fallback_checklist() -> list[str]:
+    """Fallback checklist when Gemini is unavailable."""
+    return [
+        "Review the list of most exposed portfolios in the scenario lab UI.",
+        "Confirm which clients have crossed internal risk or drift thresholds.",
+        "Once the AI provider is healthy again, re-run this scenario for a richer narrative.",
+    ]
+
+
+def _generate_simulation_ai_summary(
+    scenario_label: str,
+    severity: str,
+    avg_metrics: dict,
+    total_portfolios: int,
+    portfolios_off: int,
+) -> tuple[str, list[str]]:
+    """Call Gemini directly to generate scenario lab AI summary and checklist."""
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not _GEMINI_AVAILABLE or not api_key:
+        return _fallback_summary(), _fallback_checklist()
+
+    prompt = f"""You are an internal portfolio risk monitoring assistant.
+A market scenario has just been simulated. Return ONLY strict JSON with exactly these two keys:
+{{
+  "summary": "<2-3 sentence plain English summary of the scenario impact>",
+  "checklist": ["<action item 1>", "<action item 2>", "<action item 3>", "<action item 4>"]
+}}
+
+Scenario: {scenario_label}
+Severity: {severity}
+Portfolios analysed: {total_portfolios}
+Portfolios pushed off trajectory: {portfolios_off}
+Average post-scenario metrics (0-10 scale):
+  Concentration: {avg_metrics.get('concentration_score', 0):.2f}
+  Drift: {avg_metrics.get('drift_score', 0):.2f}
+  Volatility: {avg_metrics.get('volatility_proxy', 0):.2f}
+  Risk score: {avg_metrics.get('risk_score', 0):.2f}
+
+Constraints:
+- Do NOT suggest specific trades or target allocations.
+- Checklist items must be advisor-facing operational actions.
+- Plain English only, no markdown.
+"""
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = _simulate_with_retry(
+            lambda: client.models.generate_content(
+                model="gemini-2.5-flash-lite",
+                contents=prompt,
+                config=types.GenerateContentConfig(temperature=0.9),
+            )
+        )
+
+        if not response or not response.text:
+            raise ValueError("Empty response from Gemini")
+
+        raw_text = response.text.strip()
+        if raw_text.startswith("```"):
+            raw_text = "\n".join(
+                line for line in raw_text.splitlines()
+                if not line.strip().startswith("```")
+            ).strip()
+
+        parsed = json.loads(raw_text)
+        summary = str(parsed.get("summary", "")).strip()
+        checklist = [str(x) for x in parsed.get("checklist", []) if x]
+        if summary and checklist:
+            return summary, checklist
+    except Exception:
+        pass
+
+    return _fallback_summary(), _fallback_checklist()
 
 
 _SEVERITY_MULTIPLIER: Dict[SimulationSeverity, float] = {
@@ -124,7 +240,6 @@ def _apply_scenario_to_metrics(
 
 def run_scenario(
     db: Session,
-    provider: AIProvider,
     request: SimulationRequest,
 ) -> SimulationSummary:
     portfolios: List[Portfolio] = (
@@ -228,43 +343,14 @@ def run_scenario(
         key: value / n for key, value in sums_after.items()
     }
 
-    ai_context = {
-        "client": {
-            "id": 0,
-            "name": "Scenario aggregate",
-            "email": "",
-            "segment": _scenario_label(request.scenario),
-            "risk_profile": request.severity.value.title(),
-        },
-        "portfolio": {
-            "id": 0,
-            "name": _scenario_label(request.scenario),
-            "total_value": 0.0,
-            "target_equity_pct": 0.0,
-            "target_fixed_income_pct": 0.0,
-            "target_cash_pct": 0.0,
-        },
-        "last_metrics": avg_before,
-    }
-
-    # Make the AI summary path resilient so that a provider outage does not
-    # break simulations altogether.
-    try:
-        ai_output = provider.score_portfolio(metrics=avg_after, context=ai_context)
-        ai_summary = ai_output.summary
-        ai_checklist = list(ai_output.reasoning_bullets or [])
-        if ai_output.suggested_next_step:
-            ai_checklist.append(ai_output.suggested_next_step)
-    except Exception:
-        ai_summary = (
-            "Scenario impact computed successfully, but the AI provider is currently "
-            "unavailable to generate a narrative summary."
-        )
-        ai_checklist = [
-            "Review the list of most exposed portfolios in the scenario lab UI.",
-            "Confirm which clients have crossed internal risk or drift thresholds.",
-            "Once the AI provider is healthy again, re-run this scenario for a richer narrative.",
-        ]
+    # Generate AI summary using direct Gemini call (bypass broken provider)
+    ai_summary, ai_checklist = _generate_simulation_ai_summary(
+        scenario_label=_scenario_label(request.scenario),
+        severity=request.severity.value,
+        avg_metrics=avg_after,
+        total_portfolios=total_portfolios,
+        portfolios_off=portfolios_off,
+    )
 
     return SimulationSummary(
         scenario=request.scenario,

@@ -31,9 +31,9 @@ def generate_with_retry(call_fn, max_retries=8):
         except genai_errors.ClientError as e:
             msg = str(e)
             logger.warning("API error on attempt %d/%d: %s", attempt + 1, max_retries, msg)
-            if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+            if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "503" in msg:
                 jittered_delay = delay + random.random()
-                logger.warning("Rate limited. Retrying in %.1fs...", jittered_delay)
+                logger.warning("Rate limited/Overloaded. Retrying in %.1fs...", jittered_delay)
                 time.sleep(jittered_delay)
                 delay = min(delay * 2, 20)
                 continue
@@ -59,7 +59,7 @@ class GeminiAIProvider:
         }
         self._client = genai.Client(api_key=api_key)
         # Allow model override via env for reliability/cost tuning.
-        model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip() or "gemini-2.0-flash"
+        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite").strip() or "gemini-2.5-flash-lite"
         self._model_name = model_name
         logger.info(
             "Gemini provider initialized with model=%s strict=%s",
@@ -74,7 +74,7 @@ class GeminiAIProvider:
 
         try:
             response = self._generate_content_with_retry(prompt, temperature=0.8 if unique_mode else 0.6)
-            raw_text = response.text or ""
+            raw_text = response.text.strip() if response.text else ""
             parsed = self._parse_json(raw_text)
             return AIOutput.model_validate(parsed)
         except Exception as exc:
@@ -106,7 +106,7 @@ class GeminiAIProvider:
 
         try:
             response = self._generate_content_with_retry(prompt)
-            raw_text = response.text or ""
+            raw_text = response.text.strip() if response.text else ""
             parsed = self._parse_json(raw_text)
             return FollowUpDraftContent.model_validate(parsed)
         except Exception as exc:
@@ -139,7 +139,7 @@ class GeminiAIProvider:
 
         try:
             response = self._generate_content_with_retry(prompt)
-            raw_text = response.text or ""
+            raw_text = response.text.strip() if response.text else ""
             parsed = self._parse_json(raw_text)
             return TranscriptSummary.model_validate(parsed)
         except Exception as exc:
@@ -159,15 +159,11 @@ class GeminiAIProvider:
         return json.loads(text)
 
     def _generate_content_with_retry(self, prompt: str, temperature: float = 0.6):
-        generation_config = types.GenerateContentConfig(
-            temperature=temperature,
-            response_mime_type="application/json",
-        )
         resp = generate_with_retry(
             lambda: self._client.models.generate_content(
                 model=self._model_name,
-                contents=[prompt],
-                config=generation_config,
+                contents=prompt,
+                config=types.GenerateContentConfig(temperature=temperature),
             )
         )
         return resp
