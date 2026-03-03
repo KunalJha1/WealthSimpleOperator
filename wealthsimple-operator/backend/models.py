@@ -694,6 +694,8 @@ class TaxLossOpportunity(BaseModel):
     estimated_units: float
     wash_sale_risk: bool
     replacement_ticker: Optional[str] = None
+    loss_reason: str = "Market volatility impact"
+    holding_period_days: int = 365
 
 
 class TaxLossResponse(BaseModel):

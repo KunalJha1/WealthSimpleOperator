@@ -1,4 +1,4 @@
-import { ConfidencePill, PriorityPill } from "./StatusPills";
+import { ConfidencePill, PriorityPill, StatusPill } from "./StatusPills";
 import { Button } from "./Buttons";
 import type { AlertDetail, ClientProfileView } from "../lib/types";
 import { formatCurrency } from "../lib/utils";
@@ -12,9 +12,11 @@ import {
   Mail,
   ClipboardCheck,
   CheckCircle2,
-  PencilLine
+  PencilLine,
+  Phone,
+  FileText
 } from "lucide-react";
-import { summarizeTranscript } from "../lib/api";
+import { summarizeTranscript, generateEmailDraft, fetchFollowUpDraft } from "../lib/api";
 
 function segmentLabel(segment: string): string {
   if (segment === "HNW") return "High Net Worth";
@@ -228,6 +230,7 @@ export default function RiskBrief({
           <div className="flex flex-wrap items-center gap-2">
             <div className="page-title">Risk brief</div>
             <PriorityPill priority={alert.priority} />
+            <StatusPill status={alert.status} />
             <ConfidencePill confidence={alert.confidence} />
           </div>
           <div className="mt-1 text-sm font-medium text-gray-900">{formatPortfolioCode(portfolio.id)}</div>
@@ -242,72 +245,43 @@ export default function RiskBrief({
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 via-blue-50 to-white p-5 space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1">
-                <div className="text-xs font-semibold uppercase tracking-wide text-blue-700 mb-1">AI Confidence</div>
-                <div className="text-[11px] text-blue-600">Detection certainty score</div>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <div className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-                  {confidence}
+          <div className="rounded-xl bg-gradient-to-r from-blue-400 to-cyan-400 p-px overflow-hidden">
+            <div className="rounded-[13px] bg-white p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-blue-800">
+                    AI Confidence
+                  </div>
+                  <div className="text-[11px] text-blue-700">Detection certainty score</div>
                 </div>
-                <div className="text-lg font-semibold text-blue-600">%</div>
+                <div className="text-3xl font-bold text-blue-700">{confidence}%</div>
               </div>
-            </div>
-
-            {/* Progress bar with color-coding */}
-            <div className="space-y-2">
-              <div className="h-2.5 rounded-full bg-blue-100 overflow-hidden shadow-inner">
+              <div className="h-3 rounded-full bg-blue-100 overflow-hidden">
                 <div
-                  className="h-2.5 rounded-full shadow-lg bar-grow"
-                  style={{
-                    "--bar-target": `${Math.max(confidence, 2)}%`,
-                    background:
-                      confidence >= 80
-                        ? "linear-gradient(to right, #10b981, #059669)"
-                        : confidence >= 60
-                          ? "linear-gradient(to right, #f59e0b, #f97316)"
-                          : "linear-gradient(to right, #ef4444, #dc2626)"
-                  } as React.CSSProperties}
+                  className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 bar-grow"
+                  style={{ "--bar-target": `${Math.max(4, confidence)}%` } as React.CSSProperties}
                 />
-              </div>
-              <div className="flex justify-between items-center text-[10px] font-medium text-blue-600 uppercase tracking-wide">
-                <span>Low</span>
-                <span
-                  className={`px-2 py-0.5 rounded-full font-bold ${
-                    confidence >= 80
-                      ? "bg-emerald-100 text-emerald-700"
-                      : confidence >= 60
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-red-100 text-red-700"
-                  }`}
-                >
-                  {confidence >= 80 ? "High" : confidence >= 60 ? "Medium" : "Low"}
-                </span>
-                <span>High</span>
               </div>
             </div>
           </div>
 
           <div className="rounded-xl border border-ws-border bg-white p-4 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="space-y-1">
                 <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Event</div>
                 <div className="text-sm text-gray-800">{alert.event_title}</div>
+              </div>
+              <div className="space-y-1">
                 <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">AI summary</div>
                 <p className="text-sm text-gray-800">{alert.summary}</p>
               </div>
-              <div className="rounded-lg bg-gray-900 text-gray-100 p-3 space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-gray-300">
-                  Priority justification
-                </div>
-                <p className="text-sm">
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-2">
+                <div className="text-sm font-semibold text-amber-900">Priority justification</div>
+                <p className="text-sm text-amber-900 leading-relaxed">
                   Ranked with {alert.priority.toLowerCase()} priority based on concentration (
                   {alert.concentration_score.toFixed(1)}), drift ({alert.drift_score.toFixed(1)}), and
-                  volatility ({alert.volatility_proxy.toFixed(1)}). Combined risk score is {" "}
-                  {alert.risk_score.toFixed(1)} / 10. Human review is required before any client
-                  action.
+                  volatility ({alert.volatility_proxy.toFixed(1)}). Combined risk score is{" "}
+                  {alert.risk_score.toFixed(1)} / 10. Human review is required before any client action.
                 </p>
               </div>
             </div>
@@ -366,20 +340,12 @@ export default function RiskBrief({
           </div>
 
           <div className="rounded-xl border border-ws-border bg-white p-4 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Operator history</div>
-            <div className="relative pl-3">
-              <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200" />
-              <ul className="space-y-2 text-xs text-gray-800">
-                {operatorHistory.map((entry) => (
-                  <li key={`${entry.dateLabel}-${entry.description}`} className="relative flex gap-2">
-                    <span className="absolute -left-1.5 mt-1 h-2 w-2 rounded-full bg-gray-400" />
-                    <div>
-                      <div className="text-[11px] text-ws-muted">{entry.dateLabel}</div>
-                      <div className="text-gray-900">{entry.description}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Risk metrics</div>
+            <div className="grid grid-cols-2 gap-3">
+              <MetricCard label="Concentration score" value={alert.concentration_score} />
+              <MetricCard label="Drift score" value={alert.drift_score} />
+              <MetricCard label="Volatility proxy" value={alert.volatility_proxy} />
+              <MetricCard label="Combined risk score" value={alert.risk_score} />
             </div>
           </div>
         </div>
@@ -387,25 +353,7 @@ export default function RiskBrief({
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          {alert.decision_trace_steps.length > 0 && (
-            <div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Operator decision trace</div>
-              <div className="text-xs text-ws-muted">
-                How the AI evaluated the portfolio, client constraints, and deviation severity
-                before ranking this alert.
-              </div>
-              <ol className="mt-2 space-y-2 text-sm text-gray-800 list-decimal list-inside">
-                {alert.decision_trace_steps.map((step, idx) => (
-                  <li key={`${idx}-${step.step}`} className="space-y-0.5">
-                    <div className="font-medium">{step.step}</div>
-                    <div className="text-ws-muted text-xs">{step.detail}</div>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          <div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
+<div className="rounded-xl border border-ws-border bg-white p-4 space-y-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Change detection</div>
             <div className="text-xs text-ws-muted">How key risk metrics have moved since the last operator run.</div>
             {alert.change_detection.length === 0 ? (
@@ -420,13 +368,32 @@ export default function RiskBrief({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ws-border">
-                  {alert.change_detection.map((item, idx) => (
-                    <tr key={`${idx}-${item.metric}`}>
-                      <td className="px-3 py-2 text-sm text-gray-900">{item.metric.replace("_", " ")}</td>
-                      <td className="px-3 py-2 text-sm text-ws-muted">{item.from}</td>
-                      <td className="px-3 py-2 text-sm text-gray-900">{item.to}</td>
-                    </tr>
-                  ))}
+                  {alert.change_detection.map((item, idx) => {
+                    const fromNum = parseFloat(item.from);
+                    const toNum = parseFloat(item.to);
+                    const isNumeric = !isNaN(fromNum) && !isNaN(toNum);
+                    const direction = isNumeric && toNum > fromNum ? "up" : isNumeric && toNum < fromNum ? "down" : null;
+
+                    return (
+                      <tr key={`${idx}-${item.metric}`}>
+                        <td className="px-3 py-2 text-sm text-gray-900">{item.metric.replace("_", " ")}</td>
+                        <td className="px-3 py-2 text-sm text-ws-muted">{item.from}</td>
+                        <td className="px-3 py-2 text-sm text-gray-900 flex items-center gap-2">
+                          {item.to}
+                          {direction === "up" && (
+                            <span className="text-red-600">
+                              <ArrowUpRight size={16} className="inline" />
+                            </span>
+                          )}
+                          {direction === "down" && (
+                            <span className="text-emerald-600">
+                              <ArrowUpRight size={16} className="inline rotate-180" />
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -440,48 +407,44 @@ export default function RiskBrief({
             </div>
           )}
         </div>
-
-        <div className="space-y-4">
-          <div className="rounded-xl border border-ws-border bg-white p-4 space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Risk metrics</div>
-            <div className="grid grid-cols-2 gap-3">
-              <MetricCard label="Concentration score" value={alert.concentration_score} />
-              <MetricCard label="Drift score" value={alert.drift_score} />
-              <MetricCard label="Volatility proxy" value={alert.volatility_proxy} />
-              <MetricCard label="Combined risk score" value={alert.risk_score} />
-            </div>
-          </div>
-
-        </div>
       </div>
 
-      <div className="rounded-xl border border-ws-border bg-gray-50 p-4 space-y-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ws-muted">Human review & responsibility</div>
-            <div className="text-sm text-gray-900">
-              {alert.human_review_required
-                ? "Human review required before any client-facing action."
-                : "Human review optional - advisor discretion based on client context."}
-            </div>
-            <div className="text-xs text-ws-muted">
-              <span className="font-medium">AI responsibility:</span> detection, triage, and
-              explanation of portfolio risk signals.
-            </div>
-            <div className="text-xs text-ws-muted">
-              <span className="font-medium">Human responsibility:</span> all investment
-              decisions, client communication, escalation, and interpretation of these signals.
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-start md:justify-end">
-            <Button
-              variant="secondary"
-              type="button"
-              disabled={updating}
-              onClick={() => onAction("reviewed")}
-            >
-              Mark as reviewed
-            </Button>
+      <div className="space-y-3 pt-4 border-t border-ws-border">
+        {/* Quick Actions */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => notify("Request sent to schedule a call with client")}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition border border-blue-200"
+          >
+            <Phone size={14} />
+            Schedule Call
+          </button>
+          <button
+            onClick={() => notify("Request sent to draft email communication")}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-purple-600 hover:bg-purple-50 rounded-lg transition border border-purple-200"
+          >
+            <Mail size={14} />
+            Send Email
+          </button>
+          <button
+            onClick={() => notify("Opening call logs for this client")}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition border border-slate-200"
+          >
+            <FileText size={14} />
+            Call Logs
+          </button>
+        </div>
+
+        {/* Main Actions */}
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button
+            variant="secondary"
+            type="button"
+            disabled={updating}
+            onClick={() => onAction("reviewed")}
+          >
+            Mark as reviewed
+          </Button>
             <Button
               variant="secondary"
               type="button"
@@ -510,7 +473,6 @@ export default function RiskBrief({
               <AlertTriangle className="mr-1.5 h-4 w-4" aria-hidden="true" />
               False positive
             </Button>
-          </div>
         </div>
       </div>
 
@@ -555,10 +517,28 @@ export default function RiskBrief({
 }
 
 function MetricCard({ label, value }: { label: string; value: number }) {
+  let bgClass = "bg-emerald-50 border-emerald-200";
+  let valueColorClass = "text-emerald-700";
+  let dotColorClass = "bg-emerald-500";
+
+  if (value >= 7) {
+    bgClass = "bg-red-50 border-red-200";
+    valueColorClass = "text-red-700";
+    dotColorClass = "bg-red-500";
+  } else if (value >= 4) {
+    bgClass = "bg-amber-50 border-amber-200";
+    valueColorClass = "text-amber-700";
+    dotColorClass = "bg-amber-500";
+  }
+
   return (
-    <div className="rounded-xl border border-ws-border p-3">
-      <div className="text-xs text-ws-muted">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-gray-900">{value.toFixed(1)} / 10</div>
+    <div className={`rounded-xl border ${bgClass} p-3 flex items-start justify-between`}>
+      <div>
+        <div className="text-xs text-gray-600">{label}</div>
+        <div className={`mt-1 text-lg font-semibold ${valueColorClass}`}>{value.toFixed(1)}</div>
+        <div className="text-xs text-gray-500">/10</div>
+      </div>
+      <div className={`h-3 w-3 rounded-full ${dotColorClass} shrink-0 mt-0.5`} />
     </div>
   );
 }
@@ -706,6 +686,7 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
   const [approvalStatus, setApprovalStatus] = useState<"pending" | "approved" | "changes_requested">("pending");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [expandedTranscriptId, setExpandedTranscriptId] = useState<number | null>(null);
+  const [generatingEmail, setGeneratingEmail] = useState(false);
 
   // Reset draft and approval status whenever alert changes (ensures fresh draft on each alert)
   useEffect(() => {
@@ -752,9 +733,44 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
       .trim();
   }
 
-  function handleQuickAction(kind: QuickActionKind) {
-    setQuickActionDraft(buildQuickActionDraft(kind, alert));
-    setApprovalStatus("pending");
+  async function handleQuickAction(kind: QuickActionKind) {
+    if (kind === "send_email") {
+      try {
+        setGeneratingEmail(true);
+
+        // Try to fetch existing follow-up draft first (backwards compatibility)
+        let emailData: { subject: string; body: string };
+        try {
+          const existingDraft = await fetchFollowUpDraft(alert.id);
+          emailData = {
+            subject: existingDraft.draft.subject,
+            body: existingDraft.draft.body
+          };
+          notifyUser("Using previously generated email draft.");
+        } catch (err) {
+          // No existing draft, generate fresh from Gemini
+          emailData = await generateEmailDraft(alert.client.id);
+          notifyUser("Generated fresh email from Gemini.");
+        }
+
+        const draft: QuickActionDraft = {
+          kind: "send_email",
+          title: "Proposed Email: Client Follow-up",
+          statusLine: "AI-generated email which can be sent after advisor approval.",
+          subject: emailData.subject,
+          body: emailData.body
+        };
+        setQuickActionDraft(draft);
+        setApprovalStatus("pending");
+      } catch (err) {
+        notifyUser(`Failed to generate email: ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        setGeneratingEmail(false);
+      }
+    } else {
+      setQuickActionDraft(buildQuickActionDraft(kind, alert));
+      setApprovalStatus("pending");
+    }
   }
 
   function handleDraftChange(field: "subject" | "body" | "footer", value: string) {
@@ -1315,11 +1331,13 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
           <Button
             type="button"
             variant="secondary"
-            className="text-xs px-3 py-2 flex items-center justify-center gap-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+            className="text-xs px-3 py-2 flex items-center justify-center gap-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={() => handleQuickAction("send_email")}
+            disabled={generatingEmail}
           >
-            <Mail className="h-3.5 w-3.5" aria-hidden="true" />
-            Send Email
+            {generatingEmail && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+            {!generatingEmail && <Mail className="h-3.5 w-3.5" aria-hidden="true" />}
+            {generatingEmail ? "Generating..." : "Send Email"}
           </Button>
           <Button
             type="button"

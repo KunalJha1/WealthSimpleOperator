@@ -215,17 +215,9 @@ export default function PriorityQueue({
         }
       });
 
-    fetchFollowUpDraft(selectedId)
-      .then((response) => {
-        if (!cancelled) {
-          setFollowUpDraft(response.draft);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFollowUpDraft(null);
-        }
-      });
+    // Don't auto-fetch follow-up drafts - only fetch when user explicitly clicks "Send Email"
+    // This prevents old drafts from appearing without user action
+    setFollowUpDraft(null);
 
     return () => {
       cancelled = true;

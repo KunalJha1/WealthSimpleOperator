@@ -13,7 +13,10 @@
       "Bash(git:*)",
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

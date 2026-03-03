@@ -66,7 +66,7 @@ export default function AlertDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       <div className="mb-4">
         <button
           onClick={() => router.back()}
@@ -77,33 +77,13 @@ export default function AlertDetailPage() {
         </button>
       </div>
 
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="page-title">{alert.event_title}</h1>
-          <p className="page-subtitle max-w-2xl">{alert.summary}</p>
-          <div className="mt-2 flex flex-wrap gap-2 items-center">
-            <PriorityPill priority={alert.priority} />
-            <StatusPill status={alert.status} />
-            <ConfidencePill confidence={alert.confidence} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <div className="text-xs text-ws-muted">
-            Actions are advisory tooling only. Advisors remain fully
-            responsible for all investment decisions and client contact.
-          </div>
-        </div>
-      </header>
-
       {error && (
         <div className="card border-red-200 bg-red-50 text-red-800 p-3 text-sm">
           {error}
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-6xl">
-        <RiskBrief alert={alert} onAction={handleAction} updating={updating} />
-      </div>
+      <RiskBrief alert={alert} onAction={handleAction} updating={updating} />
     </div>
   );
 }

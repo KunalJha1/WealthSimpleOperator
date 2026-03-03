@@ -46,6 +46,33 @@ async def add_dev_cors_headers(request, call_next):
 def on_startup() -> None:
     # Ensure database schema is created.
     Base.metadata.create_all(bind=engine)
+    _run_startup_migrations()
+
+
+def _run_startup_migrations() -> None:
+    """Apply lightweight schema migrations for local SQLite databases."""
+    if not str(engine.url).startswith("sqlite"):
+        return
+
+    with engine.begin() as conn:
+        table_exists = conn.execute(
+            text("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meeting_notes' LIMIT 1")
+        ).fetchone()
+        if not table_exists:
+            return
+
+        rows = conn.execute(text("PRAGMA table_info(meeting_notes)")).fetchall()
+        existing_columns = {row[1] for row in rows}
+
+        # Keep this list additive-only so existing data is preserved.
+        required_columns: Dict[str, str] = {
+            "action_item_completions": "JSON",
+        }
+
+        for column_name, column_type in required_columns.items():
+            if column_name in existing_columns:
+                continue
+            conn.execute(text(f"ALTER TABLE meeting_notes ADD COLUMN {column_name} {column_type}"))
 
 
 app.include_router(operator.router)

@@ -78,6 +78,12 @@ export async function fetchAlerts(
   return handle<AlertsListResponse>(res);
 }
 
+export async function fetchAlertsByClient(clientId: number): Promise<AlertsListResponse> {
+  // Use new dedicated endpoint with path parameter for better filtering
+  const res = await fetch(`${API_BASE}/alerts/client/${clientId}?limit=5`, { cache: "no-store" });
+  return handle<AlertsListResponse>(res);
+}
+
 export async function fetchAlert(id: number): Promise<AlertDetail> {
   const res = await fetch(`${API_BASE}/alerts/${id}`, { cache: "no-store" });
   return handle<AlertDetail>(res);
@@ -380,7 +386,7 @@ export async function approveEmailSent(clientId: number, actor: string = "adviso
   return handle(res);
 }
 
-export async function approveActivityLogged(clientId: number, actor: string = "advisor"): Promise<{
+export async function approveActivityLogged(clientId: number, actor: string = "advisor", notes?: string): Promise<{
   success: boolean;
   message: string;
   meeting_note_id?: number;
@@ -388,7 +394,7 @@ export async function approveActivityLogged(clientId: number, actor: string = "a
   const res = await fetch(`${API_BASE}/contacts/approve-activity-logged`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ client_id: clientId, actor }),
+    body: JSON.stringify({ client_id: clientId, actor, notes: notes || undefined }),
     cache: "no-store"
   });
   return handle(res);

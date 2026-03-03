@@ -43,6 +43,7 @@ class ActivityLogEntry(BaseModel):
 class DraftApprovalRequest(BaseModel):
     client_id: int
     actor: str = "advisor"
+    notes: Optional[str] = None
 
 
 class ApprovalResponse(BaseModel):
@@ -462,11 +463,12 @@ def approve_activity_logged(req: DraftApprovalRequest, db: Session = Depends(get
         raise HTTPException(status_code=404, detail="Client not found")
 
     # Create meeting note for activity
+    note_body = req.notes or "Contact activity recorded."
     meeting_note = MeetingNote(
         client_id=req.client_id,
         title=f"Activity Logged - {datetime.utcnow().strftime('%B %d, %Y')}",
         meeting_date=datetime.utcnow(),
-        note_body="Contact activity recorded.",
+        note_body=note_body,
         meeting_type=MeetingNoteType.NOTE
     )
     db.add(meeting_note)

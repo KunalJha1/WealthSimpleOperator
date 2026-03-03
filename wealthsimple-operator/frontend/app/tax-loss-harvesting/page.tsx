@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { fetchTaxLossOpportunities } from "../../lib/api";
 import type { TaxLossResponse, TaxLossOpportunity } from "../../lib/types";
 import { Scissors, AlertTriangle, Activity, AlertCircle, ChevronDown, ChevronUp, TrendingDown, Flag, Info, Copy, Zap, Calendar, Download, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "../../lib/utils";
 
 export default function TaxLossHarvestingPage() {
+  const searchParams = useSearchParams();
+  const clientIdParam = searchParams.get("client_id");
+  const portfolioIdParam = searchParams.get("portfolio_id");
+  const targetClientId = clientIdParam ? Number.parseInt(clientIdParam, 10) : null;
+  const targetPortfolioId = portfolioIdParam ? Number.parseInt(portfolioIdParam, 10) : null;
+
   const [data, setData] = useState<TaxLossResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +39,37 @@ export default function TaxLossHarvestingPage() {
     load();
   }, []);
 
+  const targetOpportunityKey = useMemo(() => {
+    if (!data) return null;
+
+    if (Number.isFinite(targetPortfolioId)) {
+      const exactMatch = data.opportunities.find(
+        (opportunity) =>
+          opportunity.portfolio_id === targetPortfolioId &&
+          (!Number.isFinite(targetClientId) || opportunity.client_id === targetClientId)
+      );
+      if (exactMatch) {
+        return `${exactMatch.portfolio_id}-${exactMatch.ticker}`;
+      }
+    }
+
+    if (Number.isFinite(targetClientId)) {
+      const clientMatch = data.opportunities.find(
+        (opportunity) => opportunity.client_id === targetClientId
+      );
+      if (clientMatch) {
+        return `${clientMatch.portfolio_id}-${clientMatch.ticker}`;
+      }
+    }
+
+    return null;
+  }, [data, targetClientId, targetPortfolioId]);
+
+  useEffect(() => {
+    if (!targetOpportunityKey) return;
+    setExpandedId(targetOpportunityKey);
+  }, [targetOpportunityKey]);
+
   const getSortedOpportunities = () => {
     if (!data) return [];
     const sorted = [...data.opportunities];
@@ -40,6 +78,17 @@ export default function TaxLossHarvestingPage() {
     } else if (sortBy === "unrealized_loss") {
       sorted.sort((a, b) => b.unrealized_loss - a.unrealized_loss);
     }
+
+    if (targetOpportunityKey) {
+      sorted.sort((a, b) => {
+        const aIsTarget = `${a.portfolio_id}-${a.ticker}` === targetOpportunityKey;
+        const bIsTarget = `${b.portfolio_id}-${b.ticker}` === targetOpportunityKey;
+        if (aIsTarget && !bIsTarget) return -1;
+        if (!aIsTarget && bIsTarget) return 1;
+        return 0;
+      });
+    }
+
     return sorted;
   };
 
@@ -152,7 +201,7 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
           <div className="card p-4">
             <div className="text-xs text-ws-muted font-semibold uppercase tracking-wider mb-2">Est. Tax Savings</div>
             <div className="text-2xl font-semibold text-emerald-600">{formatCurrency(data.total_tax_savings).split('.')[0]}</div>
-            <p className="text-xs text-ws-muted mt-1">@ 20% capital gains rate</p>
+            <p className="text-xs text-ws-muted mt-1">Segment-adjusted CG rates</p>
           </div>
           <div className="card p-4">
             <div className="text-xs text-ws-muted font-semibold uppercase tracking-wider mb-2">Portfolios</div>
@@ -309,6 +358,25 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
                           {formatCurrency(opportunity.unrealized_loss)}
                         </div>
                       </div>
+
+                      {opportunity.loss_reason && (
+                        <div>
+                          <span className="text-xs text-ws-muted font-semibold uppercase tracking-wider block mb-2">Loss Context</span>
+                          <div className="text-sm font-semibold text-gray-900">{opportunity.loss_reason}</div>
+                        </div>
+                      )}
+
+                      {opportunity.holding_period_days !== undefined && (
+                        <div>
+                          <span className="text-xs text-ws-muted font-semibold uppercase tracking-wider block mb-2">Holding Period</span>
+                          <div className="text-sm font-semibold text-gray-900">
+                            {opportunity.holding_period_days} days
+                            <span className="ml-1 text-xs font-normal text-ws-muted">
+                              ({opportunity.holding_period_days >= 365 ? "Long-term" : "Short-term"})
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {opportunity.wash_sale_risk && (
@@ -329,7 +397,7 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
                       <div className="p-4 rounded-lg bg-emerald-50 border border-emerald-200">
                         <p className="text-xs font-semibold text-emerald-900 uppercase tracking-wider mb-1">Suggested Alternative</p>
                         <p className="text-sm text-emerald-900">
-                          Consider <span className="font-semibold">{opportunity.replacement_ticker}</span> to maintain asset class exposure.
+                          Consider <span className="font-semibold">{opportunity.replacement_ticker}</span> to maintain {opportunity.asset_class.toLowerCase()} exposure while satisfying the wash sale waiting period.
                         </p>
                       </div>
                     )}
@@ -366,7 +434,7 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
                       </button>
                       <button
                         onClick={() => {
-                          const details = `${opportunity.ticker} - ${opportunity.client_name}\nUnrealized Loss: ${formatCurrency(opportunity.unrealized_loss)}\nTax Savings: ${formatCurrency(opportunity.tax_savings_estimate)}\n\nTrade Plan:\nSell Position → Tax Loss Recognition → Reinvest in ${opportunity.replacement_ticker || 'similar exposure'}`;
+                          const details = `${opportunity.ticker} - ${opportunity.client_name}\nUnrealized Loss: ${formatCurrency(opportunity.unrealized_loss)}\nTax Savings: ${formatCurrency(opportunity.tax_savings_estimate)}\nLoss Context: ${opportunity.loss_reason || 'N/A'}\nHolding Period: ${opportunity.holding_period_days || 365} days\n\nTrade Plan:\nSell Position → Tax Loss Recognition → Reinvest in ${opportunity.replacement_ticker || 'similar exposure'}`;
                           const blob = new Blob([details], { type: "text/plain" });
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement("a");
@@ -437,15 +505,6 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
           <p className="text-sm text-blue-900">{actionFeedback}</p>
         </div>
       )}
-
-      {/* Footer AI Boundary */}
-      <div className="card p-4 bg-blue-50 border-blue-200">
-        <p className="text-xs text-blue-900 leading-relaxed">
-          <strong>AI scans and estimates:</strong> Synthetic loss calculations based on portfolio metrics.
-          <br />
-          <strong>You execute:</strong> Confirm trades considering wash sale rules, client goals, and tax timing.
-        </p>
-      </div>
     </section>
   );
 }

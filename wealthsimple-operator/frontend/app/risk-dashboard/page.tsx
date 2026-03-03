@@ -410,17 +410,17 @@ export default function RiskDashboardPage() {
                 style={{ animationDelay: `${Math.min(index * 40, 240)}ms` }}
               >
                 {/* Row: Checkbox + Client Info + Risk Scores */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_1fr_1fr_1fr] gap-1 items-start">
                   {/* Checkbox */}
-                  <div className="flex items-center pt-1">
+                  <div className="flex items-center pt-0.5 pr-2">
                     <button
                       onClick={() => toggleSelect(row.alert_id)}
                       className="text-gray-600 hover:text-blue-600 transition"
                     >
                       {isSelected ? (
-                        <CheckSquare size={20} className="text-blue-600" />
+                        <CheckSquare size={16} className="text-blue-600" />
                       ) : (
-                        <Square size={20} />
+                        <Square size={16} />
                       )}
                     </button>
                   </div>
@@ -428,7 +428,7 @@ export default function RiskDashboardPage() {
                   {/* Client Info */}
                   <div className="md:col-span-2">
                     <h3 className="font-semibold text-gray-900">{row.client_name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{row.portfolio_name}</p>
+                    <p className="text-sm text-gray-600 mt-0.5">{row.portfolio_name}</p>
                     <div className="flex items-center gap-2 text-xs text-gray-600 mt-2">
                       <span>{row.segment}</span>
                       <span>•</span>
@@ -454,7 +454,7 @@ export default function RiskDashboardPage() {
                 </div>
 
                 {/* Row: Trend + Days + Status + Recommended Action */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 pt-4 border-t border-gray-200">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-white/50">
                     <div className="flex items-center gap-1">
                       {getTrendIcon(row.trend)}

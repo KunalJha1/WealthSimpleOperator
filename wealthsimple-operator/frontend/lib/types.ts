@@ -427,6 +427,8 @@ export interface TaxLossOpportunity {
   estimated_units: number;
   wash_sale_risk: boolean;
   replacement_ticker?: string;
+  loss_reason?: string;
+  holding_period_days?: number;
 }
 
 export interface TaxLossResponse {

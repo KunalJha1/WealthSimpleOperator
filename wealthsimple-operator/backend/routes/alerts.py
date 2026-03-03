@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence
@@ -12,6 +13,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from ai.provider import get_provider
 from db import get_db
+
+logger = logging.getLogger(__name__)
 
 # Cache file path for pre-generated reallocation rationales
 REALLOCATION_CACHE_FILE = Path(__file__).parent.parent / ".reallocation_cache.json"
@@ -193,6 +196,7 @@ def list_alerts(
         None,
         description="Optional status filter, e.g. 'OPEN' or 'OPEN,ESCALATED'.",
     ),
+    client_id: Optional[int] = Query(None, description="Filter by client ID"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ) -> AlertsListResponse:
@@ -200,6 +204,10 @@ def list_alerts(
         joinedload(Alert.client),
         joinedload(Alert.portfolio),
     )
+
+    # CRITICAL: Apply client_id filter - FIX: Using explicit type check instead of if client_id:
+    if client_id is not None and isinstance(client_id, int):
+        query = query.filter(Alert.client_id == client_id)
 
     if priority:
         raw_values = {p.strip().upper() for p in priority.split(",") if p.strip()}
@@ -268,7 +276,75 @@ def list_alerts(
     return AlertsListResponse(items=items, total=total)
 
 
-@router.get("/{alert_id}", response_model=AlertDetail)
+# New dedicated endpoint for client-specific alerts using path parameter
+@router.get("/client/{client_id:int}", response_model=AlertsListResponse)
+def list_alerts_for_client(
+    client_id: int,
+    db: Session = Depends(get_db),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> AlertsListResponse:
+    """Get all OPEN/ESCALATED alerts for a specific client (path parameter)"""
+    query = db.query(Alert).options(
+        joinedload(Alert.client),
+        joinedload(Alert.portfolio),
+    ).filter(Alert.client_id == client_id).filter(Alert.status.in_([AlertStatus.OPEN, AlertStatus.ESCALATED]))
+
+    total = query.count()
+
+    priority_rank = case(
+        (Alert.priority == Priority.HIGH, 0),
+        (Alert.priority == Priority.MEDIUM, 1),
+        (Alert.priority == Priority.LOW, 2),
+        else_=99,
+    )
+
+    alerts: Sequence[Alert] = (
+        query.order_by(priority_rank.asc(), Alert.created_at.desc(), Alert.confidence.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    items: List[AlertSummary] = []
+    for a in alerts:
+        client = a.client
+        portfolio = a.portfolio
+        if client is None or portfolio is None:
+            continue
+        client_summary = ClientSummary(
+            id=client.id,
+            name=client.name,
+            email=client.email,
+            segment=client.segment,
+            risk_profile=client.risk_profile,
+        )
+        portfolio_summary = PortfolioSummary(
+            id=portfolio.id,
+            name=portfolio.name,
+            total_value=float(portfolio.total_value),
+            target_equity_pct=float(portfolio.target_equity_pct),
+            target_fixed_income_pct=float(portfolio.target_fixed_income_pct),
+            target_cash_pct=float(portfolio.target_cash_pct),
+        )
+        items.append(
+            AlertSummary(
+                id=a.id,
+                created_at=a.created_at,
+                priority=a.priority,
+                confidence=a.confidence,
+                event_title=a.event_title,
+                summary=a.summary,
+                status=a.status,
+                client=client_summary,
+                portfolio=portfolio_summary,
+            )
+        )
+
+    return AlertsListResponse(items=items, total=total)
+
+
+@router.get("/{alert_id:int}", response_model=AlertDetail)
 def get_alert(alert_id: int, db: Session = Depends(get_db)) -> AlertDetail:
     alert: Alert | None = (
         db.query(Alert)

@@ -245,6 +245,7 @@ export default function SimulationsPage() {
             onSelect={() => setSelectedScenario("interest_rate_shock")}
             onRun={() => handleRun("interest_rate_shock")}
             running={running}
+            severity={severity}
           />
           <ScenarioCard
             scenario="bond_spread_widening"
@@ -254,6 +255,7 @@ export default function SimulationsPage() {
             onSelect={() => setSelectedScenario("bond_spread_widening")}
             onRun={() => handleRun("bond_spread_widening")}
             running={running}
+            severity={severity}
           />
           <ScenarioCard
             scenario="equity_drawdown"
@@ -263,6 +265,7 @@ export default function SimulationsPage() {
             onSelect={() => setSelectedScenario("equity_drawdown")}
             onRun={() => handleRun("equity_drawdown")}
             running={running}
+            severity={severity}
           />
           <ScenarioCard
             scenario="multi_asset_regime_change"
@@ -272,6 +275,7 @@ export default function SimulationsPage() {
             onSelect={() => setSelectedScenario("multi_asset_regime_change")}
             onRun={() => handleRun("multi_asset_regime_change")}
             running={running}
+            severity={severity}
           />
         </div>
 
@@ -317,11 +321,11 @@ export default function SimulationsPage() {
               </div>
             )}
             {result ? (
-              <div className="mt-2 rounded-lg bg-gray-900 text-gray-100 p-3 space-y-1.5">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+              <div className="mt-2 rounded-lg p-3 space-y-1.5">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-600">
                   AI scenario assessment
                 </div>
-                <p className="text-sm leading-relaxed">{result.ai_summary}</p>
+                <p className="text-sm leading-relaxed text-gray-900">{result.ai_summary}</p>
               </div>
             ) : (
               <div className="mt-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-ws-border bg-gray-50 py-10 text-center space-y-2">
@@ -333,13 +337,6 @@ export default function SimulationsPage() {
               </div>
             )}
           </div>
-          <Button
-            variant="secondary"
-            disabled={!result || playbookLoading}
-            onClick={() => void handleGeneratePlaybook()}
-          >
-            {playbookLoading ? "Generating..." : "Configure defensive playbook"}
-          </Button>
         </div>
 
         {result && (
@@ -374,7 +371,7 @@ export default function SimulationsPage() {
               />
               <ImpactStat
                 label="Scenario severity"
-                value={running ? undefined : result.severity}
+                value={running ? undefined : result.severity.charAt(0).toUpperCase() + result.severity.slice(1)}
                 helper={running ? undefined : result.scenario.replace(/_/g, " ")}
                 loading={running}
               />
@@ -865,7 +862,8 @@ function ScenarioCard({
   selected,
   onSelect,
   onRun,
-  running
+  running,
+  severity
 }: {
   scenario: SimulationScenario;
   title: string;
@@ -874,8 +872,10 @@ function ScenarioCard({
   onSelect: () => void;
   onRun: () => void;
   running: boolean;
+  severity: SimulationSeverity;
 }) {
   const config = SCENARIO_CONFIG[scenario];
+  const severityConfig = SEVERITY_CONFIG[severity];
 
   return (
     <div
@@ -894,10 +894,7 @@ function ScenarioCard({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="text-sm font-semibold text-gray-900">{title}</div>
-          <div className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded">
-            {config.icon}
-            Market move: {config.marketMove}
-          </div>
+          <div className="mt-1 text-xs text-gray-600">{severityConfig.description}</div>
         </div>
         <span
           className={`mt-0.5 inline-flex h-2.5 w-2.5 rounded-full ${
@@ -962,9 +959,6 @@ function SeverityPill({
       }`}
     >
       {label}
-      <span className={`ml-1 ${active ? "text-blue-100" : "text-gray-500"}`}>
-        {config.drawdown}
-      </span>
     </button>
   );
 }

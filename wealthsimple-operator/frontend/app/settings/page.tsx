@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ResponsibilityBoundary from "../../components/ResponsibilityBoundary";
 import { fetchHealth, fetchMonitoringSummary } from "../../lib/api";
 import type { HealthResponse, MonitoringUniverseSummary } from "../../lib/types";
 
@@ -109,18 +108,6 @@ export default function SettingsPage() {
               Failed to fetch live health status from backend. {error}
             </div>
           ) : null}
-          <div className="mt-3 border-t border-ws-border pt-3 text-xs text-ws-muted">
-            To swap providers in this demo, update{" "}
-            <code className="px-1 py-0.5 bg-gray-100 rounded text-xs">
-              PROVIDER
-            </code>{" "}
-            and{" "}
-            <code className="px-1 py-0.5 bg-gray-100 rounded text-xs">
-              GEMINI_API_KEY
-            </code>{" "}
-            in <span className="font-mono">backend/.env</span>, or adjust the
-            provider factory in <span className="font-mono">ai/provider.py</span>.
-          </div>
         </div>
 
         <div className="card p-4 space-y-3">
@@ -223,8 +210,6 @@ export default function SettingsPage() {
           </div>
         </section>
       )}
-
-      <ResponsibilityBoundary />
     </div>
   );
 }

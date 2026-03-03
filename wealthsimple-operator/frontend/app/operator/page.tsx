@@ -682,7 +682,6 @@ export default function OperatorPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="page-title">Priority Queue</div>
           {/* Sort toggle — segmented control */}
           <div className="relative inline-flex rounded-lg bg-gray-100 p-0.5 text-sm select-none">
             {/* Sliding indicator */}

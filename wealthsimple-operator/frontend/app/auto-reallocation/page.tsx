@@ -16,10 +16,7 @@ import { PriorityPill, StatusPill } from "../../components/StatusPills";
 import { RebalancingSuggestionPanel } from "../../components/RebalancingSuggestion";
 import {
   AlertTriangle,
-  TrendingDown,
-  Target,
   CheckCircle2,
-  DollarSign,
   Zap,
   BarChart3
 } from "lucide-react";
@@ -28,13 +25,16 @@ import { formatCurrency } from "../../lib/utils";
 
 export default function AutoReallocationPage() {
   const searchParams = useSearchParams();
-  const portfolioParam = searchParams.get("portfolio");
+  const alertParam = searchParams.get("alert_id") ?? searchParams.get("portfolio");
+  const clientIdParam = searchParams.get("client_id");
+  const initialAlertId = alertParam ? Number.parseInt(alertParam, 10) : null;
+  const initialClientId = clientIdParam ? Number.parseInt(clientIdParam, 10) : null;
 
   const [alerts, setAlerts] = useState<AlertSummary[]>([]);
   const [loadingAlerts, setLoadingAlerts] = useState(true);
   const [alertsError, setAlertsError] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<number | null>(
-    portfolioParam ? parseInt(portfolioParam, 10) : null
+    Number.isFinite(initialAlertId) ? initialAlertId : null
   );
 
   const [plan, setPlan] = useState<ReallocationPlan | null>(null);
@@ -63,6 +63,22 @@ export default function AutoReallocationPage() {
         const data = await fetchAlerts(params);
         setAlerts(data.items);
         if (data.items.length > 0) {
+          if (
+            Number.isFinite(initialAlertId) &&
+            data.items.some((item) => item.id === initialAlertId)
+          ) {
+            setSelectedAlertId(initialAlertId);
+            return;
+          }
+
+          if (Number.isFinite(initialClientId)) {
+            const clientMatch = data.items.find((item) => item.client.id === initialClientId);
+            if (clientMatch) {
+              setSelectedAlertId(clientMatch.id);
+              return;
+            }
+          }
+
           setSelectedAlertId(data.items[0].id);
         }
       } catch (e) {
@@ -290,7 +306,7 @@ export default function AutoReallocationPage() {
         <div className="card p-4 space-y-3 flex flex-col">
           <div className="flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <AlertTriangle size={16} className="text-amber-500" />
+              <AlertTriangle size={16} className="text-blue-600" />
               Active Alerts
             </div>
             <div className="inline-flex items-center justify-center rounded-full bg-ws-ink text-white text-xs font-semibold w-6 h-6">
@@ -311,7 +327,7 @@ export default function AutoReallocationPage() {
             </div>
           )}
 
-          <div className="space-y-2 flex-1 overflow-hidden">
+          <div className="space-y-2 flex-1 overflow-hidden min-h-0">
             <style jsx>{`
               .scrollbar-hide {
                 -ms-overflow-style: none;
@@ -321,7 +337,7 @@ export default function AutoReallocationPage() {
                 display: none;
               }
             `}</style>
-            <div className="scrollbar-hide space-y-2 overflow-y-auto max-h-[620px]">
+            <div className="scrollbar-hide space-y-2 overflow-y-auto flex-1">
               {alerts.map((alert) => {
                 const active = alert.id === selectedAlertId;
                 const isExecuted = Boolean(active && plan && plan.status === "EXECUTED");
@@ -422,15 +438,15 @@ export default function AutoReallocationPage() {
                 </p>
               </div>
 
-              {/* RISK PROFILE CARD - Shows metrics that drive target cash calculation */}
+              {/* RISK PROFILE CARD - Shows metrics that drive reallocation */}
               {!alertDetailLoading && alertDetail && selectedAlert && (
                 <div className="card p-4 space-y-4 border-l-4 border-blue-500">
                   <div>
                     <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
                       <BarChart3 size={16} className="text-blue-600" />
-                      Risk Profile & Target Cash Analysis
+                      Risk Profile
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1">Metrics that determine your recommended cash target:</p>
+                    <p className="text-xs text-gray-600 mt-1">Key risk metrics identified in this portfolio:</p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
@@ -485,104 +501,6 @@ export default function AutoReallocationPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Portfolio Allocation Flow */}
-                  <div className="border-t border-gray-200 pt-4 space-y-3">
-                    <div className="text-xs font-bold text-gray-700 uppercase tracking-wider">Portfolio Shift: Current → Target</div>
-
-                    {/* Current State */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <div className="text-[11px] font-semibold text-gray-600">Current Allocation</div>
-                        <div className="text-[10px] text-gray-500">100%</div>
-                      </div>
-                      <div className="flex gap-1 h-6 rounded-lg overflow-hidden border border-gray-200 bg-white">
-                        <div className="bg-blue-500 flex items-center justify-center"
-                          style={{ width: `${Math.max(5, (parseFloat(selectedAlert.portfolio.target_equity_pct.toString()) * 0.7))}%` }}>
-                          <span className="text-[8px] font-bold text-white">E</span>
-                        </div>
-                        <div className="bg-emerald-500 flex items-center justify-center"
-                          style={{ width: `${Math.max(5, (parseFloat(selectedAlert.portfolio.target_fixed_income_pct.toString()) * 0.8))}%` }}>
-                          <span className="text-[8px] font-bold text-white">F</span>
-                        </div>
-                        <div className="bg-amber-400 flex items-center justify-center"
-                          style={{ width: `${Math.max(5, (parseFloat(selectedAlert.portfolio.target_cash_pct.toString()) * 0.3))}%` }}>
-                          <span className="text-[8px] font-bold text-gray-800">C</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Arrow */}
-                    <div className="flex items-center justify-center py-1">
-                      <div className="text-gray-400 text-sm">↓</div>
-                    </div>
-
-                    {/* Target State */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <div className="text-[11px] font-semibold text-emerald-700">Target Allocation</div>
-                        <div className="text-[10px] text-emerald-600">100%</div>
-                      </div>
-                      <div className="flex gap-1 h-6 rounded-lg overflow-hidden border border-emerald-300 bg-emerald-50">
-                        <div className="bg-blue-400 flex items-center justify-center"
-                          style={{ width: `${Math.max(5, parseFloat(selectedAlert.portfolio.target_equity_pct.toString()) * 0.5)}%` }}>
-                          <span className="text-[8px] font-bold text-white">E</span>
-                        </div>
-                        <div className="bg-emerald-400 flex items-center justify-center"
-                          style={{ width: `${Math.max(5, parseFloat(selectedAlert.portfolio.target_fixed_income_pct.toString()) * 0.6)}%` }}>
-                          <span className="text-[8px] font-bold text-white">F</span>
-                        </div>
-                        <div className="bg-amber-300 flex items-center justify-center"
-                          style={{ width: `${Math.max(5, parseFloat(selectedAlert.portfolio.target_cash_pct.toString()))}%` }}>
-                          <span className="text-[8px] font-bold text-gray-700">C</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Legend & Gap Explanation */}
-                    <div className="grid grid-cols-3 gap-2 text-[10px] pt-2 border-t border-gray-100">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                        <span className="text-gray-600">Equity</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-                        <span className="text-gray-600">Fixed Inc</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 bg-amber-400 rounded"></div>
-                        <span className="text-gray-600">Cash</span>
-                      </div>
-                    </div>
-
-                    {/* Gap Explanation */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-[11px] text-blue-800">
-                      <div className="font-semibold mb-0.5">Cash Raise Plan:</div>
-                      <div>Liquidate overweight positions (E, F) to increase cash from current to target allocation. System prioritizes lowest-gain lots to minimize tax impact.</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TARGET CASH INPUT - INLINE */}
-              {!plan && (
-                <div className="card p-4">
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1 mb-2">
-                        <DollarSign size={14} className="text-emerald-600" />
-                        Target Cash Reserve
-                      </label>
-                      <input
-                        type="number"
-                        value={targetCashAmount}
-                        onChange={(e) => setTargetCashAmount(parseInt(e.target.value, 10) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter target cash amount"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-2">Leave at default (266k) to auto-derive from portfolio target. Or enter a custom amount.</p>
                 </div>
               )}
 
@@ -605,7 +523,7 @@ export default function AutoReallocationPage() {
               {plan && allocationProjection && (
                 <div className={`card p-4 space-y-4 transition ${plan?.status === "EXECUTED" ? "opacity-50" : ""}`}>
                   <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <TrendingDown size={16} className="text-blue-600" />
+                    <BarChart3 size={16} className="text-blue-600" />
                     Portfolio Allocation: Before → After
                   </h3>
                   <div className="grid grid-cols-3 gap-3">
