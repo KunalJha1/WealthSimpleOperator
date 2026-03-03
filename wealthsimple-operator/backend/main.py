@@ -130,9 +130,9 @@ if __name__ == "__main__":
         "on",
     }
 
-    # Read host and port from environment variables, with defaults for production
-    host = os.getenv("UVICORN_HOST", "0.0.0.0")
-    port = int(os.getenv("UVICORN_PORT", "8001"))
+    # Read host and port from environment variables, with defaults for local development
+    host = os.getenv("UVICORN_HOST", "127.0.0.1")
+    port = int(os.getenv("UVICORN_PORT", "8000"))
 
     uvicorn.run("main:app", host=host, port=port, reload=reload_enabled)
 
