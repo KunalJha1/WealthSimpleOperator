@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { fetchTaxLossOpportunities } from "../../lib/api";
 import type { TaxLossResponse, TaxLossOpportunity } from "../../lib/types";
 import { Scissors, AlertTriangle, Activity, AlertCircle, ChevronDown, ChevronUp, TrendingDown, Flag, Info, Copy, Zap, Calendar, Download, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "../../lib/utils";
 
-export default function TaxLossHarvestingPage() {
+function TaxLossHarvestingContent() {
   const searchParams = useSearchParams();
   const clientIdParam = searchParams.get("client_id");
   const portfolioIdParam = searchParams.get("portfolio_id");
@@ -506,5 +506,13 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
         </div>
       )}
     </section>
+  );
+}
+
+export default function TaxLossHarvestingPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center text-gray-600">Loading...</div>}>
+      <TaxLossHarvestingContent />
+    </Suspense>
   );
 }
