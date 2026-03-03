@@ -160,6 +160,20 @@ export async function fetchAuditLog(
   return handle<AuditListResponse>(res);
 }
 
+export async function logAuditActivity(input: {
+  event_type: string;
+  actor?: string;
+  page?: string;
+  details?: Record<string, unknown>;
+}): Promise<{ success: boolean; event_id: number; message: string }> {
+  const res = await fetch(apiUrl("/audit/activity"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+  return handle(res);
+}
+
 export async function fetchMonitoringSummary(): Promise<MonitoringUniverseSummary> {
   const res = await fetch(apiUrl("/portfolios/summary"), {
     cache: "no-store"

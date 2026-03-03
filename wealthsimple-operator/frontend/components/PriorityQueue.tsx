@@ -918,7 +918,7 @@ export default function PriorityQueue({
                       type="button"
                       variant="secondary"
                       className="text-xs px-3 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
-                      onClick={() => router.push(`/meeting-notes?portfolio=${selectedDetail.portfolio.id}`)}
+                      onClick={() => router.push(`/meeting-notes?client_id=${selectedDetail.client.id}`)}
                     >
                       <FileText className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                       Meeting Notes

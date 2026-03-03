@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "../../components/Buttons";
 import {
-  fetchMonitoringSummary,
+  fetchMonitoringDetail,
   fetchMeetingNotes,
   createMeetingNote,
   summarizeTranscript,
@@ -23,18 +23,18 @@ import { ChevronDown, ChevronUp, FileText, CheckCircle2, AlertCircle, Search, X 
 
 export default function MeetingNotesPage() {
   const searchParams = useSearchParams();
-  const portfolioParam = searchParams.get("portfolio");
+  const clientIdParam = searchParams.get("client_id");
 
   const [clients, setClients] = useState<MonitoringClientRow[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const [initialPortfolioId] = useState(portfolioParam ? parseInt(portfolioParam, 10) : null);
+  const [initialClientId] = useState(clientIdParam ? Number.parseInt(clientIdParam, 10) : null);
   const [notes, setNotes] = useState<MeetingNote[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const clientSearchRef = useRef<HTMLDivElement>(null);
 
   // Form states
   const [showNewNoteForm, setShowNewNoteForm] = useState(false);
@@ -64,6 +64,7 @@ export default function MeetingNotesPage() {
 
   // Filter out generic client names (e.g., "Client 6", "Client 22")
   const isGenericClientName = (name: string) => /^Client\s+\d+$/i.test(name);
+  const DEFAULT_CLIENT_NAME = "adrian wilkins";
 
   // Memoized selected note to ensure it updates when notes change
   const selectedNote = useMemo(
@@ -120,24 +121,21 @@ export default function MeetingNotesPage() {
   useEffect(() => {
     const loadClients = async () => {
       try {
-        const summary = await fetchMonitoringSummary();
-        if (summary) {
-          const detail = await import("../../lib/api").then((m) =>
-            m.fetchMonitoringDetail ? m.fetchMonitoringDetail() : null
-          );
-          if (detail?.clients) {
-            const filtered = detail.clients.filter((c) => !isGenericClientName(c.client_name));
-            setClients(filtered);
-            if (filtered.length > 0) {
-              // Try to select client based on portfolio param if provided
-              if (initialPortfolioId) {
-                // Try to find a client with matching portfolio
-                const matchingClient = filtered.find((c) => c.client_id === initialPortfolioId);
-                setSelectedClientId(matchingClient ? matchingClient.client_id : filtered[0].client_id);
-              } else {
-                setSelectedClientId(filtered[0].client_id);
-              }
-            }
+        const detail = await fetchMonitoringDetail();
+        if (detail?.clients) {
+          const filtered = detail.clients.filter((c) => !isGenericClientName(c.client_name));
+          setClients(filtered);
+          if (filtered.length > 0) {
+            const matchingClient =
+              initialClientId !== null
+                ? filtered.find((c) => c.client_id === initialClientId)
+                : undefined;
+            const defaultClient = filtered.find(
+              (c) => c.client_name.trim().toLowerCase() === DEFAULT_CLIENT_NAME
+            );
+            const nextClient = matchingClient ?? defaultClient ?? filtered[0];
+            setSelectedClientId(nextClient.client_id);
+            setSearchQuery(nextClient.client_name);
           }
         }
       } catch (e) {
@@ -145,20 +143,20 @@ export default function MeetingNotesPage() {
       }
     };
     void loadClients();
-  }, [initialPortfolioId]);
+  }, [initialClientId]);
 
   // Handle click outside dropdown to close it
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        searchInputRef.current &&
-        !searchInputRef.current.contains(e.target as Node)
+        clientSearchRef.current &&
+        !clientSearchRef.current.contains(e.target as Node)
       ) {
         setShowSearchDropdown(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   // Load notes when client changes
@@ -249,8 +247,6 @@ export default function MeetingNotesPage() {
       setLoadingBrief(false);
     }
   };
-
-  const selectedClient = clients.find((c) => c.client_id === selectedClientId);
 
   return (
     <div className="space-y-6">
@@ -387,12 +383,11 @@ export default function MeetingNotesPage() {
             <label className="block text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted mb-2">
               Search Client
             </label>
-            <div className="relative w-full">
+            <div ref={clientSearchRef} className="relative w-full">
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                 <Search className="w-4 h-4" />
               </div>
               <input
-                ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => {
