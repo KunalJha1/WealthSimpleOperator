@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 
 from db import get_db
-from models import Alert, AlertStatus, Client, ContactScheduleEntry, ContactScheduleResponse, MeetingNote, MeetingNoteType, Priority, FollowUpDraft, FollowUpDraftStatus, AuditEvent
+from models import Alert, AlertStatus, Client, ContactScheduleEntry, ContactScheduleResponse, MeetingNote, MeetingNoteType, Portfolio, Priority, FollowUpDraft, FollowUpDraftStatus, AuditEvent
 from ai.provider import get_provider
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
