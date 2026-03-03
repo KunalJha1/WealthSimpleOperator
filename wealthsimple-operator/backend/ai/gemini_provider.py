@@ -90,6 +90,14 @@ class GeminiAIProvider:
         summary = str(alert_context.get("summary", "")).strip()
         suggested_next_step = str(alert_context.get("suggested_next_step", "")).strip()
 
+        wealthsimple_footer = (
+            "\n\n———————————————————————————\n\n"
+            "Wealthsimple Private Wealth\n"
+            "80 Spadina Ave, Toronto, ON M5V 2J4\n"
+            "wealthsimple.com | 1-855-255-9038\n\n"
+            "Confidentiality Notice: This message may contain confidential information and is intended only for the named recipient."
+        )
+
         prompt = (
             "You are drafting an advisor follow-up email.\n"
             "Return strict JSON with exactly keys: subject, body.\n"
@@ -102,6 +110,7 @@ class GeminiAIProvider:
             "- Professional, concise tone.\n"
             "- Do not include direct investment execution instructions.\n"
             "- Invite client to review with advisor.\n"
+            f"- End the body with this footer:\n{wealthsimple_footer}\n"
         )
 
         try:

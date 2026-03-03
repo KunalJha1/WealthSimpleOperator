@@ -13,7 +13,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex items-center justify-center rounded-lg text-sm font-medium px-3 py-2 border transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center rounded-lg text-sm font-medium px-3 py-2 border transition-colors transform-gpu active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed";
 
   const variantClasses =
     variant === "primary"

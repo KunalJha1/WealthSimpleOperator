@@ -156,6 +156,7 @@ export default function PriorityQueue({
   const [reallocationLoading, setReallocationLoading] = useState(false);
   const [planActionLoading, setPlanActionLoading] = useState<null | "queue" | "approve" | "execute">(null);
   const [planMessage, setPlanMessage] = useState<string | null>(null);
+  const [actionSuccessKey, setActionSuccessKey] = useState(0);
 
   const selected = useMemo(
     () => alerts.find((a) => a.id === selectedId) ?? null,
@@ -235,6 +236,33 @@ export default function PriorityQueue({
     setPortalReady(true);
   }, []);
 
+  // Handle escape key and click-outside to close client details modal
+  useEffect(() => {
+    if (!showClientDetails) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowClientDetails(false);
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Close if clicking on the backdrop (the dark background)
+      if (target.classList.contains("client-details-backdrop")) {
+        setShowClientDetails(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("click", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [showClientDetails]);
+
   async function handleCreateFollowUpDraft(forceRegenerate = false) {
     if (!selected) return;
     setDraftActionLoading(forceRegenerate ? "regenerate" : "create");
@@ -306,6 +334,7 @@ export default function PriorityQueue({
       };
       setSelectedDetail(patchedDetail);
       setActionMessage(response.message);
+      setActionSuccessKey(k => k + 1);
       onAlertAction?.({
         id: selected.id,
         action,
@@ -572,8 +601,8 @@ export default function PriorityQueue({
                     </div>
                     <div className="h-3 rounded-full bg-blue-100 overflow-hidden">
                       <div
-                        className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300"
-                        style={{ width: `${Math.max(4, Math.min(100, selected.confidence))}%` }}
+                        className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 bar-grow"
+                        style={{ "--bar-target": `${Math.max(4, Math.min(100, selected.confidence))}%` } as React.CSSProperties}
                       />
                     </div>
                   </div>
@@ -620,6 +649,16 @@ export default function PriorityQueue({
                       {selectedDetail.risk_score.toFixed(1)} / 10.
                     </p>
                   </div>
+                  {selectedDetail.suggested_next_step && (
+                    <div className="rounded-xl border border-amber-300 bg-amber-100/50 p-4 space-y-2">
+                      <div className="text-sm font-semibold text-amber-900">
+                        Suggested Next Step
+                      </div>
+                      <p className="text-xs text-amber-900 leading-relaxed">
+                        {selectedDetail.suggested_next_step}
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-base font-semibold text-gray-900">AI Reasoning</div>
@@ -821,7 +860,10 @@ export default function PriorityQueue({
 
               <div className="border-t border-gray-200 pt-4"></div>
 
-              <div className="space-y-3">
+              <div
+                key={actionSuccessKey}
+                className={`space-y-3 ${actionSuccessKey > 0 ? "action-pulse rounded-xl" : ""}`}
+              >
                 <div className="flex gap-3">
                   <Button
                     type="button"
@@ -899,8 +941,8 @@ export default function PriorityQueue({
       </div>
       {portalReady && showClientDetails && selectedDetail
         ? createPortal(
-            <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
-              <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="client-details-backdrop fixed inset-0 z-[90] flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
+              <div className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto scrollbar-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between border-b border-ws-border px-5 py-3 md:px-6 md:py-4">
                   <div className="space-y-0.5">
                     <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">

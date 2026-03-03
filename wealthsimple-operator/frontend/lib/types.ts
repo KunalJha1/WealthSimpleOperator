@@ -95,6 +95,7 @@ export interface MeetingNote {
   call_transcript: string | null;
   ai_summary: string | null;
   ai_action_items: string[] | null;
+  action_item_completions: boolean[] | null;
   ai_summarized_at: string | null;
   ai_provider_used: string | null;
   created_at: string;
@@ -108,6 +109,18 @@ export interface MeetingNotesListResponse {
 export interface SummarizeTranscriptResponse {
   note: MeetingNote;
   message: string;
+}
+
+export interface PreCallBriefResponse {
+  client_name: string;
+  risk_profile: string;
+  aum: number;
+  open_alert_count: number;
+  highest_priority: Priority | null;
+  last_note_title: string | null;
+  last_note_date: string | null;
+  last_note_summary: string | null;
+  outstanding_action_items: string[];
 }
 
 export interface MeetingNoteCreate {
@@ -186,6 +199,8 @@ export interface AuditEventEntry {
   run_id: number | null;
   event_type: string;
   actor: string;
+  client_id: number | null;
+  client_name: string | null;
   details: Record<string, unknown>;
   created_at: string;
 }
@@ -423,6 +438,7 @@ export interface TaxLossResponse {
 
 // Risk Dashboard Types
 export interface RiskClientRow {
+  alert_id: number;
   client_id: number;
   client_name: string;
   segment: string;

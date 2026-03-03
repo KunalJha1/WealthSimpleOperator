@@ -36,6 +36,7 @@ export default function AuditTable({ items }: AuditTableProps) {
       return (
         item.event_type.toLowerCase().includes(normalizedQuery) ||
         item.actor.toLowerCase().includes(normalizedQuery) ||
+        item.client_name?.toLowerCase().includes(normalizedQuery) ||
         String(item.alert_id ?? "").includes(normalizedQuery) ||
         String(item.run_id ?? "").includes(normalizedQuery) ||
         detailsText.includes(normalizedQuery)
@@ -58,7 +59,7 @@ export default function AuditTable({ items }: AuditTableProps) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search actor, run, details..."
+            placeholder="Search client, actor, event, details..."
             className="rounded-lg border border-ws-border bg-white px-3 py-2 text-xs text-gray-900 outline-none transition focus:border-gray-300 focus:ring-1 focus:ring-gray-200"
           />
           <select
@@ -80,42 +81,77 @@ export default function AuditTable({ items }: AuditTableProps) {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-50">
             <tr className="text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-              <th className="px-3 py-2">Time</th>
-              <th className="px-3 py-2">Event</th>
-              <th className="px-3 py-2">Alert</th>
-              <th className="px-3 py-2">Run</th>
-              <th className="px-3 py-2">Actor</th>
-              <th className="px-3 py-2">Details</th>
+              <th className="px-4 py-3">Time</th>
+              <th className="px-4 py-3">Event</th>
+              <th className="px-4 py-3">Client</th>
+              <th className="px-4 py-3">Advisor</th>
+              <th className="px-4 py-3">Alert / Run</th>
+              <th className="px-4 py-3">Details</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-ws-border">
             {filteredItems.map((event) => (
               <tr key={event.id} className="align-top transition-colors hover:bg-gray-50/70">
-                <td className="px-3 py-2 text-xs text-ws-muted">{formatDateTime(event.created_at)}</td>
-                <td className="px-3 py-2 text-sm text-gray-900">
+                <td className="px-4 py-3 text-xs text-ws-muted whitespace-nowrap">
+                  {formatDateTime(event.created_at)}
+                </td>
+                <td className="px-4 py-3 text-sm">
                   <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${eventBadgeClass(event.event_type)}`}
+                    className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${eventBadgeClass(event.event_type)}`}
                   >
                     {toLabel(event.event_type)}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-xs text-ws-muted">
-                  {event.alert_id ? (
-                    <Link href={`/alerts/${event.alert_id}`} className="text-blue-600 hover:text-blue-700 font-medium transition">
-                      {event.alert_id}
-                    </Link>
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                  {event.client_name ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span>{event.client_name}</span>
+                      {event.client_id && (
+                        <span className="text-xs text-ws-muted">ID: {event.client_id}</span>
+                      )}
+                    </div>
                   ) : (
-                    "-"
+                    <span className="text-xs text-ws-muted">System</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-xs text-ws-muted">{event.run_id ?? "-"}</td>
-                <td className="px-3 py-2 text-xs text-ws-muted">
-                  <span className="font-medium text-gray-700">{event.actor}</span>
+                <td className="px-4 py-3 text-sm text-gray-700 font-medium">
+                  {event.actor}
                 </td>
-                <td className="px-3 py-2 text-xs text-ws-muted">
-                  {Object.entries(event.details)
-                    .map(([k, v]) => `${toLabel(k)}: ${formatDetailValue(v)}`)
-                    .join(" | ") || "-"}
+                <td className="px-4 py-3 text-xs text-ws-muted">
+                  <div className="flex flex-col gap-1">
+                    {event.alert_id && (
+                      <Link
+                        href={`/alerts/${event.alert_id}`}
+                        className="text-blue-600 hover:text-blue-700 font-medium transition"
+                      >
+                        Alert #{event.alert_id}
+                      </Link>
+                    )}
+                    {event.run_id && (
+                      <span>Run #{event.run_id}</span>
+                    )}
+                    {!event.alert_id && !event.run_id && <span>-</span>}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-xs text-ws-muted max-w-xs">
+                  {Object.entries(event.details).length > 0 ? (
+                    <div className="space-y-1">
+                      {Object.entries(event.details)
+                        .slice(0, 2)
+                        .map(([k, v]) => (
+                          <div key={k} className="text-gray-600">
+                            <span className="font-medium">{toLabel(k)}:</span> {formatDetailValue(v)}
+                          </div>
+                        ))}
+                      {Object.entries(event.details).length > 2 && (
+                        <div className="text-gray-500 italic">
+                          +{Object.entries(event.details).length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">No details</span>
+                  )}
                 </td>
               </tr>
             ))}

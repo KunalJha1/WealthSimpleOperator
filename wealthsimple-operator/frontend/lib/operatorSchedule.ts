@@ -1,4 +1,4 @@
-export const SCHEDULE_INTERVAL_MS = 3 * 60 * 1000;
+export const SCHEDULE_INTERVAL_MS = 90 * 1000;
 export const FIRST_RELEASE_DELAY_MS = 60 * 1000;
 
 const NEXT_SCAN_STORAGE_KEY = "operator_next_auto_scan_at_v1";

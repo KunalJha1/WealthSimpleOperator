@@ -7,14 +7,17 @@ import {
   fetchMonitoringSummary,
   fetchMeetingNotes,
   createMeetingNote,
-  summarizeTranscript
+  summarizeTranscript,
+  updateActionItem,
+  fetchPreCallBrief
 } from "../../lib/api";
 import type {
   MonitoringUniverseSummary,
   MonitoringClientRow,
   MeetingNote,
   MeetingNoteCreate,
-  MeetingNoteType
+  MeetingNoteType,
+  PreCallBriefResponse
 } from "../../lib/types";
 import { ChevronDown, ChevronUp, FileText, CheckCircle2, AlertCircle, Search, X } from "lucide-react";
 
@@ -48,6 +51,14 @@ export default function MeetingNotesPage() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [expandedTranscriptIds, setExpandedTranscriptIds] = useState<Set<number>>(new Set());
 
+  // Pre-call brief state
+  const [showPreCallBrief, setShowPreCallBrief] = useState(false);
+  const [preCallBrief, setPreCallBrief] = useState<PreCallBriefResponse | null>(null);
+  const [loadingBrief, setLoadingBrief] = useState(false);
+
+  // Filter by note type
+  const [noteTypeFilter, setNoteTypeFilter] = useState<"all" | MeetingNoteType>("all");
+
   // Filter out generic client names (e.g., "Client 6", "Client 22")
   const isGenericClientName = (name: string) => /^Client\s+\d+$/i.test(name);
 
@@ -67,6 +78,23 @@ export default function MeetingNotesPage() {
       )
       .sort((a, b) => a.client_name.localeCompare(b.client_name));
   }, [clients, searchQuery]);
+
+  // Memoized filtered notes by type
+  const filteredNotes = useMemo(() => {
+    if (noteTypeFilter === "all") return notes;
+    return notes.filter((n) => n.meeting_type === noteTypeFilter);
+  }, [notes, noteTypeFilter]);
+
+  // Count notes by type for tabs
+  const noteTypeCounts = useMemo(() => {
+    return {
+      all: notes.length,
+      meeting: notes.filter((n) => n.meeting_type === "meeting").length,
+      phone_call: notes.filter((n) => n.meeting_type === "phone_call").length,
+      email: notes.filter((n) => n.meeting_type === "email").length,
+      review: notes.filter((n) => n.meeting_type === "review").length,
+    };
+  }, [notes]);
 
   // Load clients on mount
   useEffect(() => {
@@ -177,6 +205,31 @@ export default function MeetingNotesPage() {
     }
   };
 
+  const handleToggleActionItem = async (noteId: number, index: number, currentCompleted: boolean) => {
+    try {
+      const response = await updateActionItem(noteId, index, !currentCompleted);
+      // Update the note in the list
+      const updatedNotes = notes.map((n) => (n.id === noteId ? response.note : n));
+      setNotes(updatedNotes);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
+  const handleOpenPreCallBrief = async () => {
+    if (!selectedClientId) return;
+    try {
+      setLoadingBrief(true);
+      const brief = await fetchPreCallBrief(selectedClientId);
+      setPreCallBrief(brief);
+      setShowPreCallBrief(true);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoadingBrief(false);
+    }
+  };
+
   const selectedClient = clients.find((c) => c.client_id === selectedClientId);
 
   return (
@@ -191,6 +244,119 @@ export default function MeetingNotesPage() {
       {error && (
         <div className="card border-red-200 bg-red-50 p-3 text-sm text-red-800">
           {error}
+        </div>
+      )}
+
+      {/* Pre-Call Brief Modal */}
+      {showPreCallBrief && preCallBrief && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Pre-Call Brief</h2>
+                  <p className="text-sm text-gray-600 mt-1">{preCallBrief.client_name}</p>
+                </div>
+                <button
+                  onClick={() => setShowPreCallBrief(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl w-8 h-8 flex items-center justify-center"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Portfolio Context Card */}
+              <div className="card p-4 bg-blue-50 border-blue-200 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-900">Portfolio Context</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs text-blue-700">Risk Profile</div>
+                    <div className="text-lg font-semibold text-blue-900">{preCallBrief.risk_profile}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-blue-700">Total AUM</div>
+                    <div className="text-lg font-semibold text-blue-900">
+                      ${(preCallBrief.aum / 1000000).toFixed(2)}M
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Open Alerts Card */}
+              <div className="card p-4 bg-red-50 border-red-200 space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-red-900">Open Alerts</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-3xl font-bold text-red-600">{preCallBrief.open_alert_count}</span>
+                  <div className="flex-1">
+                    <div className="text-sm text-red-900">Active alert{preCallBrief.open_alert_count !== 1 ? "s" : ""}</div>
+                    {preCallBrief.highest_priority && (
+                      <div className="text-xs text-red-700 mt-1">
+                        Highest: <span className="font-semibold">{preCallBrief.highest_priority}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Last Interaction Card */}
+              {preCallBrief.last_note_title ? (
+                <div className="card p-4 bg-emerald-50 border-emerald-200 space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-900">Last Interaction</div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-sm font-semibold text-emerald-900">{preCallBrief.last_note_title}</div>
+                      {preCallBrief.last_note_date && (
+                        <div className="text-xs text-emerald-700 mt-0.5">
+                          {new Date(preCallBrief.last_note_date).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                    {preCallBrief.last_note_summary && (
+                      <p className="text-sm text-emerald-900 mt-2 line-clamp-3">
+                        {preCallBrief.last_note_summary}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="card p-4 bg-gray-50 border-gray-200">
+                  <div className="text-xs text-gray-600">No previous notes on record</div>
+                </div>
+              )}
+
+              {/* Outstanding Action Items Card */}
+              {preCallBrief.outstanding_action_items.length > 0 ? (
+                <div className="card p-4 bg-amber-50 border-amber-200 space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-900">
+                    Outstanding Action Items
+                  </div>
+                  <ul className="space-y-2">
+                    {preCallBrief.outstanding_action_items.map((item, idx) => (
+                      <li key={idx} className="flex gap-2 text-sm text-amber-900">
+                        <span className="font-semibold flex-shrink-0">{idx + 1}.</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="card p-4 bg-green-50 border-green-200">
+                  <div className="text-sm text-green-900 font-semibold">✓ All action items complete</div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-end">
+              <Button onClick={() => setShowPreCallBrief(false)} variant="primary">
+                Close
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -261,9 +427,14 @@ export default function MeetingNotesPage() {
               </div>
             )}
           </div>
-          <Button onClick={() => setShowNewNoteForm(!showNewNoteForm)} variant="primary">
-            {showNewNoteForm ? "Cancel" : "+ New Note"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => void handleOpenPreCallBrief()} disabled={!selectedClientId || loadingBrief} variant="secondary">
+              {loadingBrief ? "Loading..." : "📋 Pre-Call Brief"}
+            </Button>
+            <Button onClick={() => setShowNewNoteForm(!showNewNoteForm)} variant="primary">
+              {showNewNoteForm ? "Cancel" : "+ New Note"}
+            </Button>
+          </div>
         </div>
 
         {/* New Note Form */}
@@ -337,16 +508,46 @@ export default function MeetingNotesPage() {
         {/* Notes List */}
         <div className="space-y-2">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted px-1">
-            Notes ({notes.length})
+            Notes ({filteredNotes.length})
           </div>
+
+          {/* Note Type Filter Tabs */}
+          {notes.length > 0 && (
+            <div className="flex gap-2 flex-wrap px-1">
+              {(
+                [
+                  { label: "All", type: "all" as const, count: noteTypeCounts.all },
+                  { label: "Meeting", type: "meeting" as const, count: noteTypeCounts.meeting },
+                  { label: "Phone Call", type: "phone_call" as const, count: noteTypeCounts.phone_call },
+                  { label: "Email", type: "email" as const, count: noteTypeCounts.email },
+                  { label: "Review", type: "review" as const, count: noteTypeCounts.review },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.type}
+                  onClick={() => setNoteTypeFilter(tab.type)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                    noteTypeFilter === tab.type
+                      ? "bg-blue-100 text-blue-700 border border-blue-300"
+                      : "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-150"
+                  }`}
+                >
+                  {tab.label}
+                  <span className="text-xs font-semibold bg-gray-300 px-1.5 py-0.5 rounded-full">
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           {loading ? (
             <div className="card p-4 text-sm text-ws-muted">Loading notes...</div>
-          ) : notes.length === 0 ? (
+          ) : filteredNotes.length === 0 ? (
             <div className="card p-4 text-sm text-ws-muted">
-              No notes yet. Create one to get started.
+              {notes.length === 0 ? "No notes yet. Create one to get started." : "No notes match this filter."}
             </div>
           ) : (
-            notes.map((note) => (
+            filteredNotes.map((note) => (
               <div
                 key={note.id}
                 role="button"
@@ -376,6 +577,11 @@ export default function MeetingNotesPage() {
                           Summarized
                         </span>
                       )}
+                      {note.ai_action_items && note.ai_action_items.length > 0 && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold">
+                          {note.action_item_completions?.filter(Boolean).length ?? 0}/{note.ai_action_items.length}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -384,20 +590,22 @@ export default function MeetingNotesPage() {
           )}
         </div>
 
-        {/* Detail View - Show all notes as cards with transcript accordions */}
+        {/* Detail View - Show filtered notes as cards with transcript accordions */}
         <div className="space-y-4 self-start w-full">
-          {notes.length === 0 ? (
+          {filteredNotes.length === 0 ? (
             <div className="card p-4 flex flex-col items-center justify-center space-y-3 py-10 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-gray-400">
                 <FileText className="w-6 h-6" />
               </div>
-              <div className="text-sm font-semibold text-gray-900">No Notes Yet</div>
+              <div className="text-sm font-semibold text-gray-900">
+                {notes.length === 0 ? "No Notes Yet" : "No Notes Match Filter"}
+              </div>
               <div className="text-xs text-ws-muted">
-                Create a note to get started.
+                {notes.length === 0 ? "Create a note to get started." : "Try adjusting your filter."}
               </div>
             </div>
           ) : (
-            notes.map((note, idx) => {
+            filteredNotes.map((note, idx) => {
               // Auto-expand first transcript
               const isFirstNote = idx === 0;
               const isExpanded = expandedTranscriptIds.has(note.id) || isFirstNote;
@@ -483,15 +691,30 @@ export default function MeetingNotesPage() {
                         {note.ai_summary}
                       </p>
                       {note.ai_action_items && note.ai_action_items.length > 0 && (
-                        <div className="mt-3 space-y-1">
-                          <div className="text-xs font-semibold text-emerald-900">Action Items</div>
-                          <ul className="text-sm text-emerald-900 space-y-1">
-                            {note.ai_action_items.map((item, itemIdx) => (
-                              <li key={itemIdx} className="flex gap-2">
-                                <span>•</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
+                        <div className="mt-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="text-xs font-semibold text-emerald-900">Action Items</div>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-semibold">
+                              {note.action_item_completions?.filter(Boolean).length ?? 0}/{note.ai_action_items.length} Complete
+                            </span>
+                          </div>
+                          <ul className="text-sm text-emerald-900 space-y-2">
+                            {note.ai_action_items.map((item, itemIdx) => {
+                              const isCompleted = note.action_item_completions?.[itemIdx] ?? false;
+                              return (
+                                <li key={itemIdx} className="flex items-start gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={isCompleted}
+                                    onChange={() => void handleToggleActionItem(note.id, itemIdx, isCompleted)}
+                                    className="mt-0.5 w-4 h-4 rounded border-emerald-300 text-emerald-600 cursor-pointer flex-shrink-0"
+                                  />
+                                  <span className={isCompleted ? "line-through opacity-50" : ""}>
+                                    {item}
+                                  </span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       )}

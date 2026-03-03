@@ -2,7 +2,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { X, TrendingUp, Zap, AlertTriangle, DollarSign } from "lucide-react";
 
 import { Button } from "../../components/Buttons";
 import { runSimulation, fetchSimulationPlaybook } from "../../lib/api";
@@ -17,6 +17,86 @@ import type {
 
 const DEFAULT_SCENARIO: SimulationScenario = "interest_rate_shock";
 const DEFAULT_SEVERITY: SimulationSeverity = "moderate";
+
+// Scenario context: market moves, affected assets, historical references
+const SCENARIO_CONFIG: Record<SimulationScenario, {
+  marketMove: string;
+  affected: string[];
+  notAffected: string[];
+  historicalRef: string;
+  worstExposure: string;
+  icon: React.ReactNode;
+}> = {
+  interest_rate_shock: {
+    marketMove: "+175 bps overnight",
+    affected: ["Fixed Income", "Rate-sensitive equities", "Dividend stocks"],
+    notAffected: ["Cash", "Commodities"],
+    historicalRef: "2022 Bank of Canada tightening cycle",
+    worstExposure: "Fixed income-heavy portfolios with long duration",
+    icon: <TrendingUp className="w-5 h-5" />
+  },
+  bond_spread_widening: {
+    marketMove: "Credit spreads +200 bps",
+    affected: ["Corporate bonds", "Credit-sensitive sectors", "High-yield"],
+    notAffected: ["Government bonds", "Cash", "Treasuries"],
+    historicalRef: "March 2020 COVID market stress",
+    worstExposure: "Investment grade & high-yield bond positions",
+    icon: <AlertTriangle className="w-5 h-5" />
+  },
+  equity_drawdown: {
+    marketMove: "-18% broad decline",
+    affected: ["Growth stocks", "Technology", "Small-cap equities"],
+    notAffected: ["Fixed income", "Cash", "Gold"],
+    historicalRef: "2022 bear market & rate-driven selloff",
+    worstExposure: "Growth-heavy or 100% equity portfolios",
+    icon: <TrendingUp className="w-5 h-5 rotate-180" />
+  },
+  multi_asset_regime_change: {
+    marketMove: "Complex macro shift (rates +150, equities -12%, spreads +100)",
+    affected: ["All risk assets", "Diversification breakdown", "Correlation shifts"],
+    notAffected: ["Gold", "Cash", "Defensive bonds"],
+    historicalRef: "2008 financial crisis stagflation environment",
+    worstExposure: "Balanced portfolios relying on traditional diversification",
+    icon: <Zap className="w-5 h-5" />
+  }
+};
+
+// Severity descriptions with real market numbers
+const SEVERITY_CONFIG: Record<SimulationSeverity, {
+  label: string;
+  drawdown: string;
+  description: string;
+}> = {
+  mild: {
+    label: "Mild",
+    drawdown: "~5% drawdown",
+    description: "+50 bps or -5% equity draw"
+  },
+  moderate: {
+    label: "Moderate",
+    drawdown: "~12% drawdown",
+    description: "+175 bps or -12% equity draw"
+  },
+  severe: {
+    label: "Severe",
+    drawdown: "~25% drawdown",
+    description: "+350 bps or -25% equity draw"
+  }
+};
+
+// Helper: Generate narrative summary from results
+function scenarioNarrative(result: SimulationSummary): string {
+  const clientWord = result.clients_off_trajectory === 1 ? "client" : "clients";
+  const portWord = result.portfolios_off_trajectory === 1 ? "portfolio" : "portfolios";
+  const pctOff = ((result.clients_off_trajectory / result.total_clients) * 100).toFixed(0);
+
+  return `${result.clients_off_trajectory} ${clientWord} would miss their investment goals. Under this scenario, ${result.portfolios_off_trajectory} ${portWord} drop off their risk-adjusted return path (${pctOff}% of your universe affected).`;
+}
+
+// Helper: Calculate estimated at-risk capital from delta_risk
+function calculateAtRiskCapital(totalValue: number, deltaRisk: number): number {
+  return Math.round(totalValue * (deltaRisk / 10) * 0.15);
+}
 
 export default function SimulationsPage() {
   const [selectedScenario, setSelectedScenario] =
@@ -264,6 +344,16 @@ export default function SimulationsPage() {
 
         {result && (
           <div className="space-y-4">
+            {/* Narrative banner */}
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+              <p className="text-sm text-amber-900">
+                <strong>Impact summary:</strong> {scenarioNarrative(result)}
+              </p>
+            </div>
+
+            {/* Featured risk card */}
+            <FeaturedRiskCard result={result} />
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
               <ImpactStat
                 label="Clients off trajectory"
@@ -312,7 +402,7 @@ export default function SimulationsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
                   AI proactive steps checklist
@@ -331,100 +421,91 @@ export default function SimulationsPage() {
 
               <div className="space-y-2">
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
-                  Most exposed portfolios
+                  Impact by portfolio
                 </div>
                 <div className="border border-ws-border rounded-lg overflow-hidden bg-white">
-                  <table className="min-w-full text-xs">
-                    <thead className="bg-gray-50 text-ws-muted">
-                      <tr>
-                        <th className="px-3 py-2 text-left font-medium">Client</th>
-                        <th className="px-3 py-2 text-left font-medium">Portfolio</th>
-                        <th className="px-3 py-2 text-right font-medium">Risk before</th>
-                        <th className="px-3 py-2 text-right font-medium">Risk Δ</th>
-                        <th className="px-3 py-2 text-right font-medium">Scenario risk</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {running ? (
-                        <>
-                          {[...Array(4)].map((_, idx) => (
-                            <tr key={`skeleton-${idx}`} className="bg-gray-50 animate-pulse">
-                              <td className="px-3 py-1.5">
-                                <div className="h-4 w-20 rounded bg-gray-200" />
-                                <div className="mt-1 h-3 w-16 rounded bg-gray-200" />
-                              </td>
-                              <td className="px-3 py-1.5">
-                                <div className="h-4 w-24 rounded bg-gray-200" />
-                                <div className="mt-1 h-3 w-20 rounded bg-gray-200" />
-                              </td>
-                              <td className="px-3 py-1.5 text-right">
-                                <div className="ml-auto h-4 w-10 rounded bg-gray-200" />
-                              </td>
-                              <td className="px-3 py-1.5 text-right">
-                                <div className="ml-auto h-4 w-10 rounded bg-gray-200" />
-                              </td>
-                              <td className="px-3 py-1.5 text-right">
-                                <div className="ml-auto h-4 w-10 rounded bg-gray-200" />
-                              </td>
-                            </tr>
-                          ))}
-                        </>
-                      ) : (
-                        (expandedTable
-                          ? result.impacted_portfolios
-                          : result.impacted_portfolios.slice(0, 6)
-                        ).map((impact, idx) => (
-                          <tr
-                            key={`${impact.portfolio.id}-${impact.client.id}-${idx}`}
-                            onClick={() => setSelectedClient(impact)}
-                            className={`cursor-pointer transition-colors ${
-                              impact.off_trajectory
-                                ? "bg-red-50/60 text-red-900 hover:bg-red-100/60"
-                                : "text-gray-900 hover:bg-gray-50"
-                            }`}
-                          >
-                            <td className="px-3 py-1.5">
-                              <div className="font-medium">{impact.client.name}</div>
-                              <div className="text-[10px] text-ws-muted">
-                                {impact.client.segment} · {impact.client.risk_profile}
-                              </div>
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <div className="font-medium">{impact.portfolio.name}</div>
-                              <div className="text-[10px]">
-                                <span
-                                  className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium ${
-                                    impact.off_trajectory
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-emerald-100 text-emerald-800"
-                                  }`}
-                                >
-                                  {impact.off_trajectory ? "Off trajectory" : "On plan"}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-3 py-1.5 text-right">
-                              {impact.risk_before.toFixed(1)}
-                            </td>
-                            <td className="px-3 py-1.5 text-right">
-                              <span
-                                className={
-                                  impact.delta_risk > 0
-                                    ? "text-red-700 font-semibold"
-                                    : "text-emerald-700 font-semibold"
-                                }
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-xs">
+                      <thead className="bg-gray-50 text-ws-muted">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-medium">Client</th>
+                          <th className="px-3 py-2 text-right font-medium">$ at Risk</th>
+                          <th className="px-3 py-2 text-right font-medium">Risk Δ</th>
+                          <th className="px-3 py-2 text-left font-medium">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {running ? (
+                          <>
+                            {[...Array(4)].map((_, idx) => (
+                              <tr key={`skeleton-${idx}`} className="bg-gray-50 animate-pulse">
+                                <td className="px-3 py-1.5">
+                                  <div className="h-4 w-20 rounded bg-gray-200" />
+                                </td>
+                                <td className="px-3 py-1.5 text-right">
+                                  <div className="ml-auto h-4 w-16 rounded bg-gray-200" />
+                                </td>
+                                <td className="px-3 py-1.5 text-right">
+                                  <div className="ml-auto h-4 w-10 rounded bg-gray-200" />
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <div className="h-4 w-20 rounded bg-gray-200" />
+                                </td>
+                              </tr>
+                            ))}
+                          </>
+                        ) : (
+                          (expandedTable
+                            ? result.impacted_portfolios
+                            : result.impacted_portfolios.slice(0, 6)
+                          ).map((impact, idx) => {
+                            const atRiskCapital = calculateAtRiskCapital(impact.portfolio.total_value, impact.delta_risk);
+                            return (
+                              <tr
+                                key={`${impact.portfolio.id}-${impact.client.id}-${idx}`}
+                                onClick={() => setSelectedClient(impact)}
+                                className={`cursor-pointer transition-colors border-t ${
+                                  impact.off_trajectory
+                                    ? "bg-red-50/60 text-red-900 hover:bg-red-100/60"
+                                    : "text-gray-900 hover:bg-gray-50"
+                                }`}
                               >
-                                {impact.delta_risk > 0 ? "+" : ""}{impact.delta_risk.toFixed(1)}
-                              </span>
-                            </td>
-                            <td className="px-3 py-1.5 text-right">
-                              {impact.risk_after.toFixed(1)}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                                <td className="px-3 py-2">
+                                  <div className="font-medium text-sm">{impact.client.name}</div>
+                                  <div className="text-[10px] text-gray-600 mt-0.5">{impact.portfolio.name}</div>
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                  <div className="font-semibold">${(atRiskCapital / 1000).toFixed(0)}k</div>
+                                </td>
+                                <td className="px-3 py-2 text-right">
+                                  <span
+                                    className={
+                                      impact.delta_risk > 0
+                                        ? "text-red-700 font-semibold"
+                                        : "text-emerald-700 font-semibold"
+                                    }
+                                  >
+                                    {impact.delta_risk > 0 ? "+" : ""}{impact.delta_risk.toFixed(1)}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2">
+                                  <span
+                                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                      impact.off_trajectory
+                                        ? "bg-red-100 text-red-800"
+                                        : "bg-emerald-100 text-emerald-800"
+                                    }`}
+                                  >
+                                    {impact.off_trajectory ? "Off" : "On"}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
                 {result.impacted_portfolios.length > 6 && (
                   <div className="flex justify-center pt-2">
@@ -445,14 +526,20 @@ export default function SimulationsPage() {
         )}
       </section>
 
-      {playbook && (
+      {playbook && result && (
         <section className="card p-4 md:p-5 space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted">
-                Defensive Playbook
+                Defensive Playbook — Scenario-Specific Actions
               </div>
-              <p className="mt-1 text-sm text-gray-700">{playbook.ai_rationale}</p>
+              <p className="mt-2 text-sm text-gray-700 font-medium">
+                {result.scenario === "interest_rate_shock" && "Focus on duration management: short-duration bond swaps and income buffer review."}
+                {result.scenario === "bond_spread_widening" && "Focus on credit quality: investment grade migration and yield laddering review."}
+                {result.scenario === "equity_drawdown" && "Focus on sequence-of-returns risk: cash buffer and systematic withdrawal strategy review."}
+                {result.scenario === "multi_asset_regime_change" && "Focus on regime-aware rebalancing: asset class concentration and diversification review."}
+              </p>
+              <p className="mt-2 text-xs text-gray-600">{playbook.ai_rationale}</p>
             </div>
             <button
               type="button"
@@ -464,64 +551,75 @@ export default function SimulationsPage() {
           </div>
 
           <div className="border-t border-gray-200 pt-4">
-            <div className="space-y-3">
-              {playbook.actions.map((action, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-lg border border-gray-200 bg-white p-3 hover:border-gray-300 cursor-pointer transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
-                          {action.rank}
-                        </span>
-                        <div className="font-semibold text-gray-900">
-                          {action.client_name}
+            <div className="space-y-4">
+              {playbook.actions.map((action, idx) => {
+                // Find corresponding impact to show $ at risk
+                const impact = result.impacted_portfolios.find(
+                  p => p.portfolio.id.toString() === action.portfolio_name
+                ) || result.impacted_portfolios[idx];
+                const atRiskCapital = impact ? calculateAtRiskCapital(impact.portfolio.total_value, impact.delta_risk) : 0;
+
+                return (
+                  <div
+                    key={idx}
+                    className="rounded-lg border border-gray-200 bg-white p-4 hover:border-gray-300 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
+                            {action.rank}
+                          </span>
+                          <div className="font-semibold text-gray-900">
+                            {action.client_name}
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                            {action.portfolio_name}
+                          </span>
                         </div>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                          {action.portfolio_name}
-                        </span>
-                      </div>
-                      <div className="text-sm text-gray-700 mt-2">
-                        <span className="font-medium">{action.action_type}</span>
-                        {" — "}
-                        <span
-                          className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
-                            action.urgency === "Urgent"
-                              ? "border-red-200 bg-red-50 text-red-700"
-                              : action.urgency === "High"
-                              ? "border-amber-200 bg-amber-50 text-amber-700"
-                              : "border-gray-200 bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          {action.urgency}
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="text-sm text-gray-700">
+                            <span className="font-medium">{action.action_type}</span>
+                            {" — "}
+                            <span
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
+                                action.urgency === "Urgent"
+                                  ? "border-red-200 bg-red-50 text-red-700"
+                                  : action.urgency === "High"
+                                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                                  : "border-gray-200 bg-gray-50 text-gray-700"
+                              }`}
+                            >
+                              {action.urgency}
+                            </span>
+                          </div>
+                          {impact && (
+                            <span className="text-sm font-semibold text-red-700">
+                              ${(atRiskCapital / 1000).toFixed(0)}k at risk
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <details className="mt-3">
-                    <summary className="cursor-pointer text-sm font-medium text-blue-700 hover:text-blue-800">
-                      View draft email
-                    </summary>
-                    <div className="mt-3 space-y-2 text-xs">
+                    {/* Draft email inline */}
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-3 space-y-2">
                       <div>
-                        <div className="font-semibold text-gray-700 mb-1">Subject</div>
-                        <div className="p-2 bg-gray-50 rounded border border-gray-200 text-gray-800">
+                        <div className="font-semibold text-xs text-gray-700 mb-1">Subject</div>
+                        <div className="p-2 bg-white rounded border border-gray-200 text-sm text-gray-800 font-medium">
                           {action.draft_email_subject}
                         </div>
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-700 mb-1">Body</div>
-                        <div className="p-2 bg-gray-50 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                        <div className="font-semibold text-xs text-gray-700 mb-1">Message</div>
+                        <div className="p-2 bg-white rounded border border-gray-200 text-xs text-gray-800 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
                           {action.draft_email_body}
                         </div>
                       </div>
                     </div>
-                  </details>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -777,6 +875,8 @@ function ScenarioCard({
   onRun: () => void;
   running: boolean;
 }) {
+  const config = SCENARIO_CONFIG[scenario];
+
   return (
     <div
       role="button"
@@ -787,14 +887,17 @@ function ScenarioCard({
           onSelect();
         }
       }}
-      className={`text-left rounded-lg border bg-white p-3 space-y-2 transition-colors cursor-pointer ${
+      className={`text-left rounded-lg border bg-white p-3 space-y-3 transition-colors cursor-pointer ${
         selected ? "border-ws-ink shadow-sm" : "border-ws-border hover:bg-gray-50"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <div className="flex-1">
           <div className="text-sm font-semibold text-gray-900">{title}</div>
-          <div className="mt-1 text-xs text-ws-muted">{description}</div>
+          <div className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-50 px-2 py-1 rounded">
+            {config.icon}
+            Market move: {config.marketMove}
+          </div>
         </div>
         <span
           className={`mt-0.5 inline-flex h-2.5 w-2.5 rounded-full ${
@@ -803,6 +906,23 @@ function ScenarioCard({
           aria-hidden="true"
         />
       </div>
+
+      <div className="space-y-2 text-xs">
+        <div>
+          <div className="font-semibold text-gray-700 mb-1">Affected assets</div>
+          <div className="flex flex-wrap gap-1">
+            {config.affected.map((asset, idx) => (
+              <span key={idx} className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-red-700">
+                {asset}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="text-[11px] text-ws-muted">
+          <span className="font-semibold">Historical ref:</span> {config.historicalRef}
+        </div>
+      </div>
+
       <div className="pt-1">
         <Button
           variant={selected ? "primary" : "secondary"}
@@ -830,15 +950,21 @@ function SeverityPill({
   active: boolean;
   onClick: () => void;
 }) {
+  const config = SEVERITY_CONFIG[value];
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1 border text-xs font-medium transition-colors ${
+      title={config.description}
+      className={`rounded-full px-3 py-1.5 border text-xs font-medium transition-colors ${
         active ? "border-ws-ink bg-ws-ink text-white" : "border-gray-200 bg-white text-gray-800"
       }`}
     >
       {label}
+      <span className={`ml-1 ${active ? "text-blue-100" : "text-gray-500"}`}>
+        {config.drawdown}
+      </span>
     </button>
   );
 }
@@ -865,6 +991,71 @@ function ImpactStat({
           {helper ? <div className="mt-0.5 text-[11px] text-ws-muted">{helper}</div> : null}
         </>
       )}
+    </div>
+  );
+}
+
+function FeaturedRiskCard({
+  result
+}: {
+  result: SimulationSummary;
+}) {
+  // Find the portfolio with highest delta_risk that is off-trajectory
+  const mostAtRisk = result.impacted_portfolios
+    .filter(p => p.off_trajectory)
+    .sort((a, b) => b.delta_risk - a.delta_risk)[0];
+
+  if (!mostAtRisk) return null;
+
+  const atRiskCapital = calculateAtRiskCapital(mostAtRisk.portfolio.total_value, mostAtRisk.delta_risk);
+
+  return (
+    <div className="rounded-lg border-2 border-red-200 bg-red-50 p-4">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <h3 className="font-semibold text-red-900">Most at risk — {mostAtRisk.client.name}</h3>
+          <p className="text-sm text-red-800 mt-1">{mostAtRisk.portfolio.name}</p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+            <div>
+              <div className="text-xs text-red-700 font-medium">Total AUM</div>
+              <div className="text-lg font-semibold text-red-900 mt-0.5">
+                ${(mostAtRisk.portfolio.total_value / 1000).toFixed(0)}k
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-red-700 font-medium">Risk Score</div>
+              <div className="text-lg font-semibold text-red-900 mt-0.5">
+                {mostAtRisk.risk_before.toFixed(1)} → {mostAtRisk.risk_after.toFixed(1)}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-red-700 font-medium">Est. at-risk capital</div>
+              <div className="text-lg font-semibold text-red-900 mt-0.5">
+                ${(atRiskCapital / 1000).toFixed(0)}k
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-red-700 font-medium">% of portfolio</div>
+              <div className="text-lg font-semibold text-red-900 mt-0.5">
+                {((atRiskCapital / mostAtRisk.portfolio.total_value) * 100).toFixed(0)}%
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-red-200 text-sm text-red-900">
+            <div className="font-medium mb-1">Why exposed:</div>
+            <p className="text-[13px]">
+              {mostAtRisk.portfolio.target_fixed_income_pct > 50
+                ? `Fixed income weight (${mostAtRisk.portfolio.target_fixed_income_pct.toFixed(0)}%) far exceeds target (40%). Duration mismatch in rising rate scenario.`
+                : mostAtRisk.portfolio.target_equity_pct > 80
+                ? `Equity concentration (${mostAtRisk.portfolio.target_equity_pct.toFixed(0)}%) exposes portfolio to market drawdown risk.`
+                : "Portfolio allocation creates exposure to this scenario's key risk factors."}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

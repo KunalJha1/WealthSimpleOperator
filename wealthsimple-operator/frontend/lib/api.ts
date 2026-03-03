@@ -13,6 +13,7 @@ import {
   MeetingNote,
   MeetingNotesListResponse,
   SummarizeTranscriptResponse,
+  PreCallBriefResponse,
   MeetingNoteCreate,
   RebalancingSuggestion,
   ReallocationPlan,
@@ -231,6 +232,28 @@ export async function createMeetingNote(
   return handle<MeetingNote>(res);
 }
 
+export async function fetchPreCallBrief(clientId: number): Promise<PreCallBriefResponse> {
+  const res = await fetch(`${API_BASE}/meeting-notes/pre-call-brief`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client_id: clientId })
+  });
+  return handle<PreCallBriefResponse>(res);
+}
+
+export async function updateActionItem(
+  noteId: number,
+  index: number,
+  completed: boolean
+): Promise<{ note: MeetingNote; message: string }> {
+  const res = await fetch(`${API_BASE}/meeting-notes/${noteId}/action-items`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ index, completed })
+  });
+  return handle<{ note: MeetingNote; message: string }>(res);
+}
+
 export async function fetchRebalancingSuggestion(
   alertId: number
 ): Promise<RebalancingSuggestion> {
@@ -298,6 +321,77 @@ export async function fetchContactSchedule(): Promise<ContactScheduleResponse> {
     cache: "no-store"
   });
   return handle<ContactScheduleResponse>(res);
+}
+
+export async function generateCallScript(clientId: number): Promise<{
+  client_id: number;
+  client_name: string;
+  script: string;
+  key_talking_points: string[];
+  provider: string;
+}> {
+  const res = await fetch(`${API_BASE}/contacts/generate-call-script?client_id=${clientId}`, {
+    method: "POST",
+    cache: "no-store"
+  });
+  return handle(res);
+}
+
+export async function generateEmailDraft(clientId: number): Promise<{
+  client_id: number;
+  client_name: string;
+  subject: string;
+  body: string;
+  key_points: string[];
+  provider: string;
+}> {
+  const res = await fetch(`${API_BASE}/contacts/generate-email-draft?client_id=${clientId}`, {
+    method: "POST",
+    cache: "no-store"
+  });
+  return handle(res);
+}
+
+export async function approveCallScheduled(clientId: number, actor: string = "advisor"): Promise<{
+  success: boolean;
+  message: string;
+  meeting_note_id?: number;
+}> {
+  const res = await fetch(`${API_BASE}/contacts/approve-call-scheduled`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client_id: clientId, actor }),
+    cache: "no-store"
+  });
+  return handle(res);
+}
+
+export async function approveEmailSent(clientId: number, actor: string = "advisor"): Promise<{
+  success: boolean;
+  message: string;
+  meeting_note_id?: number;
+}> {
+  const res = await fetch(`${API_BASE}/contacts/approve-email-sent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client_id: clientId, actor }),
+    cache: "no-store"
+  });
+  return handle(res);
+}
+
+export async function approveActivityLogged(clientId: number, actor: string = "advisor"): Promise<{
+  success: boolean;
+  message: string;
+  meeting_note_id?: number;
+}> {
+  const res = await fetch(`${API_BASE}/contacts/approve-activity-logged`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client_id: clientId, actor }),
+    cache: "no-store"
+  });
+  return handle(res);
 }
 
 export async function fetchTaxLossOpportunities(): Promise<TaxLossResponse> {

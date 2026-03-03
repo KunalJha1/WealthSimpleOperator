@@ -81,7 +81,7 @@ class FollowUpDraftRejectRequest(BaseModel):
 
 
 class ReallocationPlanRequest(BaseModel):
-    target_cash_amount: float = 266000.0
+    target_cash_amount: float = 266000.0  # Magic value: 266000 triggers intelligent calculation based on alert severity (concentration, drift, volatility); user-set values override
 
 
 def _estimate_unit_price(ticker: str, asset_class: str) -> float:
@@ -108,6 +108,26 @@ def _volatility_weight(asset_class: str) -> float:
     if asset_class == "Fixed Income":
         return 0.07
     return 0.01
+
+
+def _overweight_score(pos, positions: List, portfolio) -> float:
+    """
+    Returns positive if overweight, negative if underweight.
+    Overweight positions should be prioritized for selling.
+    """
+    n_class = max(1, len([p for p in positions if p.asset_class == pos.asset_class]))
+    total = float(portfolio.total_value)
+
+    if pos.asset_class == "Equity":
+        target_pct = float(portfolio.target_equity_pct)
+    elif pos.asset_class == "Fixed Income":
+        target_pct = float(portfolio.target_fixed_income_pct)
+    else:
+        return -1.0  # don't sell cash
+
+    target_weight = target_pct / n_class if n_class > 0 else 0.0
+    actual_weight = (float(pos.value) / total * 100) if total > 0 else 0.0
+    return actual_weight - target_weight
 
 
 def _plan_to_view(plan: ReallocationPlan) -> ReallocationPlanView:
@@ -357,7 +377,7 @@ def act_on_alert(
             alert_id=alert.id,
             run_id=alert.run_id,
             event_type=event_type,
-            actor="operator_demo",
+            actor="Kunal Jha",
             details={"new_status": new_status.value},
         )
     )
@@ -383,21 +403,6 @@ def create_follow_up_draft(
     )
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
-
-    existing_pending: FollowUpDraft | None = (
-        db.query(FollowUpDraft)
-        .filter(
-            FollowUpDraft.alert_id == alert.id,
-            FollowUpDraft.status == FollowUpDraftStatus.PENDING_APPROVAL,
-        )
-        .order_by(FollowUpDraft.created_at.desc())
-        .first()
-    )
-    if existing_pending and not payload.force_regenerate:
-        return FollowUpDraftResponse(
-            draft=_draft_to_view(existing_pending),
-            message="Existing pending follow-up draft returned.",
-        )
 
     provider = get_provider()
     advisor_name = "Advisor Team"
@@ -437,7 +442,7 @@ def create_follow_up_draft(
             alert_id=alert.id,
             run_id=alert.run_id,
             event_type=AuditEventType.FOLLOW_UP_DRAFT_CREATED,
-            actor="operator_demo",
+            actor="Kunal Jha",
             details={
                 "draft_id": draft.id,
                 "status": draft.status.value,
@@ -451,7 +456,7 @@ def create_follow_up_draft(
 
     return FollowUpDraftResponse(
         draft=_draft_to_view(draft),
-        message="Follow-up draft generated and queued for approval.",
+        message="Follow-up draft generated (fresh each time).",
     )
 
 
@@ -503,7 +508,7 @@ def approve_follow_up_draft(
         raise HTTPException(status_code=409, detail="Only pending drafts can be approved")
 
     draft.status = FollowUpDraftStatus.APPROVED_READY
-    draft.approved_by = "operator_demo"
+    draft.approved_by = "Kunal Jha"
     draft.approved_at = datetime.utcnow()
 
     db.add(
@@ -511,7 +516,7 @@ def approve_follow_up_draft(
             alert_id=draft.alert_id,
             run_id=draft.alert.run_id if draft.alert else None,
             event_type=AuditEventType.FOLLOW_UP_DRAFT_APPROVED,
-            actor="operator_demo",
+            actor="Kunal Jha",
             details={"draft_id": draft.id, "status": draft.status.value},
         )
     )
@@ -548,7 +553,7 @@ def reject_follow_up_draft(
             alert_id=draft.alert_id,
             run_id=draft.alert.run_id if draft.alert else None,
             event_type=AuditEventType.FOLLOW_UP_DRAFT_REJECTED,
-            actor="operator_demo",
+            actor="Kunal Jha",
             details={
                 "draft_id": draft.id,
                 "status": draft.status.value,
@@ -647,7 +652,7 @@ def generate_rebalance_suggestion(
             alert_id=alert.id,
             run_id=alert.run_id,
             event_type=AuditEventType.REBALANCE_SUGGESTION_CREATED,
-            actor="operator_demo",
+            actor="Kunal Jha",
             details={
                 "alert_id": alert.id,
                 "portfolio_id": portfolio.id,
@@ -698,7 +703,48 @@ def generate_reallocation_plan(
     total_value = float(portfolio.total_value)
 
     current_cash_amount = sum(float(p.value) for p in positions if p.asset_class == "Cash")
-    target_cash_amount = max(0.0, float(payload.target_cash_amount))
+
+    # INTELLIGENT TARGET CASH CALCULATION based on alert severity and portfolio context
+    # If user sent the magic default (266000), calculate a smart, contextual recommendation
+    DEFAULT_MAGIC = 266000.0
+    if abs(float(payload.target_cash_amount) - DEFAULT_MAGIC) < 1:
+        concentration = float(alert.concentration_score)
+        drift = float(alert.drift_score)
+        volatility = float(alert.volatility_proxy)
+
+        # Start with portfolio's baseline target, ensure it's reasonable
+        base_target_pct = float(portfolio.target_cash_pct) if float(portfolio.target_cash_pct) > 0 else 10.0
+
+        # RULE 1: If concentration is dangerously high, enforce minimum cash buffer
+        # High concentration = need liquidity to rebalance out of concentrated positions
+        if concentration > 7.5:
+            base_target_pct = max(base_target_pct, 18.0)  # Ensure at least 18% for tactical moves
+        elif concentration > 6.5:
+            base_target_pct = max(base_target_pct, 15.0)  # Ensure at least 15% for high concentration
+        elif concentration > 5.5:
+            base_target_pct = max(base_target_pct, 12.0)  # Ensure at least 12% buffer
+
+        # RULE 2: If drift is high, boost for rebalancing flexibility
+        if drift > 7.0:
+            base_target_pct += 3.0  # Add 3% for rebalancing
+
+        # RULE 3: High volatility = need emergency buffer
+        volatility_boost_pct = 0.0
+        if volatility > 15.0:
+            volatility_boost_pct = 5.0  # Add 5% emergency buffer
+        elif volatility > 12.0:
+            volatility_boost_pct = 3.0  # Add 3% for moderate volatility
+
+        # Calculate recommended dollar amount
+        final_target_pct = base_target_pct + volatility_boost_pct
+        recommended_target = (final_target_pct / 100.0) * total_value
+
+        # Never reduce cash below current level; always move toward target
+        target_cash_amount = max(current_cash_amount, round(recommended_target, 2))
+    else:
+        # User explicitly set a target, respect it
+        target_cash_amount = max(0.0, float(payload.target_cash_amount))
+
     additional_cash_needed = max(0.0, target_cash_amount - current_cash_amount)
 
     tax_inclusion_rate = 0.50
@@ -707,11 +753,12 @@ def generate_reallocation_plan(
     sell_candidates = [
         p for p in positions if p.asset_class in {"Equity", "Fixed Income"} and float(p.value) > 0
     ]
+    # Sort: most overweight first, then lowest gain rate (tax efficient), then largest value
     sell_candidates.sort(
         key=lambda p: (
-            _estimate_gain_rate(p.ticker, p.asset_class),
-            0 if p.asset_class == "Fixed Income" else 1,
-            -float(p.value),
+            -_overweight_score(p, positions, portfolio),  # overweight first (descending)
+            _estimate_gain_rate(p.ticker, p.asset_class),  # then lowest tax gain rate
+            -float(p.value),  # then largest value
         )
     )
 
@@ -774,27 +821,103 @@ def generate_reallocation_plan(
     volatility_after = _portfolio_volatility(updated_values, updated_cash_amount)
     volatility_reduction_pct = round(max(0.0, volatility_before - volatility_after), 2)
 
+    # Generate realistic alternatives: compute actual scenarios with real gain rates
+
+    # Alternative 1: Sell highest-gain lots first (opposite of chosen strategy)
+    alt1_trades = []
+    alt1_remaining = additional_cash_needed
+    alt1_realized_gains = 0.0
+    alt1_tax_impact = 0.0
+    alt1_settlement_days = 0
+    alt1_updated_values = {p.id: float(p.value) for p in positions}
+
+    # Sort by HIGHEST gain rate first (opposite of chosen)
+    alt1_candidates = sorted(
+        sell_candidates,
+        key=lambda p: (
+            -_estimate_gain_rate(p.ticker, p.asset_class),  # highest gain first
+            -float(p.value),
+        )
+    )
+
+    for pos in alt1_candidates:
+        if alt1_remaining <= 0:
+            break
+        available = float(pos.value)
+        sell_amount = min(available, alt1_remaining)
+        if sell_amount <= 0:
+            continue
+        gain_rate = _estimate_gain_rate(pos.ticker, pos.asset_class)
+        estimated_gain = round(sell_amount * gain_rate, 2)
+        estimated_tax = round(estimated_gain * tax_inclusion_rate * marginal_tax_rate, 2)
+        settle = 2 if pos.asset_class == "Equity" else 1
+        alt1_settlement_days = max(alt1_settlement_days, settle)
+        alt1_realized_gains += estimated_gain
+        alt1_tax_impact += estimated_tax
+        alt1_remaining -= sell_amount
+        alt1_updated_values[pos.id] = round(max(0.0, alt1_updated_values[pos.id] - sell_amount), 2)
+
+    alt1_cash = current_cash_amount + (additional_cash_needed - alt1_remaining)
+    alt1_volatility = _portfolio_volatility(alt1_updated_values, alt1_cash)
+
+    # Alternative 2: Pro-rata liquidation (proportional from all risk assets)
+    alt2_trades = []
+    alt2_remaining = additional_cash_needed
+    alt2_realized_gains = 0.0
+    alt2_tax_impact = 0.0
+    alt2_settlement_days = 0
+    alt2_updated_values = {p.id: float(p.value) for p in positions}
+
+    # Calculate total risky assets
+    total_risky = sum(float(p.value) for p in sell_candidates)
+
+    for pos in sell_candidates:
+        if alt2_remaining <= 0:
+            break
+        available = float(pos.value)
+        # Sell proportionally based on position weight in total risky assets
+        proportion = available / total_risky if total_risky > 0 else 0
+        sell_amount = min(available, proportion * additional_cash_needed)
+        if sell_amount <= 0:
+            continue
+        gain_rate = _estimate_gain_rate(pos.ticker, pos.asset_class)
+        estimated_gain = round(sell_amount * gain_rate, 2)
+        estimated_tax = round(estimated_gain * tax_inclusion_rate * marginal_tax_rate, 2)
+        settle = 2 if pos.asset_class == "Equity" else 1
+        alt2_settlement_days = max(alt2_settlement_days, settle)
+        alt2_realized_gains += estimated_gain
+        alt2_tax_impact += estimated_tax
+        alt2_remaining -= sell_amount
+        alt2_updated_values[pos.id] = round(max(0.0, alt2_updated_values[pos.id] - sell_amount), 2)
+
+    alt2_cash = current_cash_amount + (additional_cash_needed - alt2_remaining)
+    alt2_volatility = _portfolio_volatility(alt2_updated_values, alt2_cash)
+
+    # Alternative 3: Delay (no liquidation; cash target not met)
+    # No trades, original volatility, no tax impact
+    alt3_volatility = volatility_before
+
     alternatives = [
         {
             "name": "Sell highest gain positions first",
-            "estimated_tax_impact": round(total_tax_impact * 1.34, 2),
-            "estimated_liquidity_days": max(2, settlement_days),
-            "volatility_after": round(max(0.0, volatility_after - 0.2), 2),
-            "rejected_reason": "Higher projected tax cost despite marginally better volatility.",
+            "estimated_tax_impact": round(alt1_tax_impact, 2),
+            "estimated_liquidity_days": max(2, alt1_settlement_days) if alt1_settlement_days else 2,
+            "volatility_after": alt1_volatility,
+            "rejected_reason": "Higher projected tax cost ($" + f"{alt1_tax_impact:,.0f}" + ") makes this less tax efficient.",
         },
         {
             "name": "Pro-rata liquidation across all risk assets",
-            "estimated_tax_impact": round(total_tax_impact * 1.17, 2),
-            "estimated_liquidity_days": settlement_days or 1,
-            "volatility_after": round(volatility_after + 0.15, 2),
-            "rejected_reason": "Faster, but less tax efficient and leaves more concentration.",
+            "estimated_tax_impact": round(alt2_tax_impact, 2),
+            "estimated_liquidity_days": alt2_settlement_days or 1,
+            "volatility_after": alt2_volatility,
+            "rejected_reason": "Lower tax efficiency ($" + f"{alt2_tax_impact:,.0f}" + ") and does not reduce concentration effectively.",
         },
         {
             "name": "Delay liquidation and fund externally",
             "estimated_tax_impact": 0.0,
             "estimated_liquidity_days": 10,
-            "volatility_after": round(volatility_before, 2),
-            "rejected_reason": "Misses down payment liquidity deadline and keeps current risk profile.",
+            "volatility_after": alt3_volatility,
+            "rejected_reason": "Avoids taxes but misses the cash raise deadline and keeps current risk profile intact.",
         },
     ]
 
@@ -813,10 +936,21 @@ def generate_reallocation_plan(
 
     # Fallback to default rationale if not in cache
     if not ai_rationale:
+        concentration_score = float(alert.concentration_score)
+        drift_score = float(alert.drift_score)
+        volatility_proxy = float(alert.volatility_proxy)
+        current_cash_pct = (current_cash_amount / total_value * 100) if total_value > 0 else 0
+        target_cash_pct = (target_cash_amount / total_value * 100) if total_value > 0 else 0
+
         ai_rationale = (
-            f"AI selected low-gain lots first to raise ${additional_cash_needed:,.0f} for a down payment target of "
-            f"${target_cash_amount:,.0f}, while reducing volatility from {volatility_before:.2f}% to {volatility_after:.2f}%. "
-            f"Projected taxable gains are ${total_realized_gains:,.0f} with estimated tax impact of ${total_tax_impact:,.0f}."
+            f"Portfolio shows concentration risk ({concentration_score:.1f}/10), allocation drift ({drift_score:.1f}/10), "
+            f"and volatility at {volatility_proxy:.1f}%. "
+            f"Target cash raised from {current_cash_pct:.1f}% to {target_cash_pct:.1f}% of AUM (${additional_cash_needed:,.0f} needed) "
+            f"to provide rebalancing flexibility and reduce concentration. "
+            f"AI selected lowest-unrealized-gain positions in overweight asset classes first. "
+            f"Projected volatility improves from {volatility_before:.2f}% to {volatility_after:.2f}% "
+            f"({volatility_reduction_pct:.1f}% reduction), with estimated tax impact ${total_tax_impact:,.0f} "
+            f"(marginal rate: {marginal_tax_rate*100:.0f}%)."
         )
 
     assumptions = {
@@ -855,7 +989,7 @@ def generate_reallocation_plan(
             alert_id=alert.id,
             run_id=alert.run_id,
             event_type=AuditEventType.REALLOCATION_PLAN_CREATED,
-            actor="operator_demo",
+            actor="Kunal Jha",
             details={
                 "plan_id": plan.id,
                 "status": plan.status.value,
@@ -895,7 +1029,7 @@ def queue_reallocation_plan(
                 alert_id=plan.alert_id,
                 run_id=plan.alert.run_id if plan.alert else None,
                 event_type=AuditEventType.REALLOCATION_PLAN_QUEUED,
-                actor="operator_demo",
+                actor="Kunal Jha",
                 details={"plan_id": plan.id, "status": plan.status.value},
             )
         )
@@ -923,14 +1057,14 @@ def approve_reallocation_plan(
 
     if plan.status == ReallocationPlanStatus.QUEUED:
         plan.status = ReallocationPlanStatus.APPROVED
-        plan.approved_by = "operator_demo"
+        plan.approved_by = "Kunal Jha"
         plan.approved_at = datetime.utcnow()
         db.add(
             AuditEvent(
                 alert_id=plan.alert_id,
                 run_id=plan.alert.run_id if plan.alert else None,
                 event_type=AuditEventType.REALLOCATION_PLAN_APPROVED,
-                actor="operator_demo",
+                actor="Kunal Jha",
                 details={"plan_id": plan.id, "status": plan.status.value, "approved_by": plan.approved_by},
             )
         )
@@ -966,7 +1100,7 @@ def execute_reallocation_plan(
                 alert_id=plan.alert_id,
                 run_id=plan.alert.run_id if plan.alert else None,
                 event_type=AuditEventType.REALLOCATION_PLAN_EXECUTED,
-                actor="operator_demo",
+                actor="Kunal Jha",
                 details={
                     "plan_id": plan.id,
                     "status": plan.status.value,

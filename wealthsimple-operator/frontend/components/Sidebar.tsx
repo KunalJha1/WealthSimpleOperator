@@ -70,7 +70,7 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               className={clsx(
-                "flex items-center px-3 py-2 rounded-lg text-sm gap-2",
+                "flex items-center px-3 py-2 rounded-lg text-sm gap-2 transition-colors duration-150",
                 active
                   ? "bg-ws-ink text-white font-medium"
                   : "text-gray-700 hover:bg-gray-100"

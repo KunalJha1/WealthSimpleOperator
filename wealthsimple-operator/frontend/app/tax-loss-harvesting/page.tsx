@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchTaxLossOpportunities } from "../../lib/api";
 import type { TaxLossResponse, TaxLossOpportunity } from "../../lib/types";
-import { Scissors, AlertTriangle, Activity, AlertCircle, ChevronDown, ChevronUp, TrendingDown, Flag } from "lucide-react";
+import { Scissors, AlertTriangle, Activity, AlertCircle, ChevronDown, ChevronUp, TrendingDown, Flag, Info, Copy, Zap, Calendar, Download, CheckCircle2 } from "lucide-react";
 import { formatCurrency } from "../../lib/utils";
 
 export default function TaxLossHarvestingPage() {
@@ -13,6 +13,8 @@ export default function TaxLossHarvestingPage() {
   const [sortBy, setSortBy] = useState<"tax_savings" | "unrealized_loss">("tax_savings");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [executionScheduled, setExecutionScheduled] = useState<Set<string>>(new Set());
+  const [executionDates, setExecutionDates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -160,29 +162,42 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
         </div>
       </header>
 
+      {/* Intro Card */}
+      <div className="card p-5 bg-emerald-50 border border-emerald-200 space-y-2">
+        <div className="flex items-start gap-3">
+          <Info size={18} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-emerald-900">Tax-Loss Harvesting Scanner</p>
+            <p className="text-xs text-emerald-800 mt-1">AI scans your portfolios for unrealized losses and estimates tax savings potential. All values are synthetic estimates—you confirm wash sale compliance and execution timing.</p>
+          </div>
+        </div>
+      </div>
+
       {/* Sort Controls */}
       <div className="flex items-center gap-3">
         <span className="text-xs text-ws-muted font-semibold uppercase tracking-wider">Sort by:</span>
         <div className="flex gap-2">
           <button
             onClick={() => setSortBy("tax_savings")}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 ${
               sortBy === "tax_savings"
                 ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
                 : "bg-white border border-ws-border text-gray-600 hover:border-gray-400"
             }`}
           >
-            💰 Tax Savings
+            <TrendingDown size={14} />
+            Tax Savings
           </button>
           <button
             onClick={() => setSortBy("unrealized_loss")}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 ${
               sortBy === "unrealized_loss"
                 ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
                 : "bg-white border border-ws-border text-gray-600 hover:border-gray-400"
             }`}
           >
-            📉 Loss Amount
+            <AlertTriangle size={14} />
+            Loss Amount
           </button>
         </div>
       </div>
@@ -204,47 +219,50 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
                 {/* Row Header */}
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : key)}
-                  className="w-full p-4 flex items-center justify-between hover:bg-ws-background transition text-left"
+                  className="w-full p-4 hover:bg-ws-background transition text-left"
                 >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    {/* Ticker */}
-                    <div className="flex-shrink-0 font-semibold text-gray-900 w-12 text-center">
-                      {opportunity.ticker}
-                    </div>
-
-                    {/* Client Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-gray-900 truncate">{opportunity.client_name}</div>
-                      <div className="text-xs text-ws-muted truncate">{opportunity.portfolio_name}</div>
-                    </div>
-
-                    {/* Loss & Savings */}
-                    <div className="flex-shrink-0 text-right mr-4">
-                      <div className="text-sm font-semibold text-red-600">
-                        {formatCurrency(opportunity.unrealized_loss)}
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Left: Ticker + Client Info */}
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className="flex-shrink-0 w-14">
+                        <div className="font-bold text-lg text-gray-900 text-center">{opportunity.ticker}</div>
                       </div>
-                      <div className="text-xs text-emerald-600 font-semibold">
-                        Save: {formatCurrency(opportunity.tax_savings_estimate)}
+
+                      <div className="flex-1 min-w-0 py-1">
+                        <div className="text-sm font-semibold text-gray-900">{opportunity.client_name}</div>
+                        <div className="text-xs text-ws-muted">{opportunity.portfolio_name}</div>
                       </div>
                     </div>
 
-                    {/* Wash Sale Badge */}
-                    {opportunity.wash_sale_risk && (
-                      <div className="flex-shrink-0">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 border border-amber-300 text-amber-700 text-xs font-semibold rounded">
+                    {/* Right: Metrics + Badge + Chevron */}
+                    <div className="flex items-start gap-4 flex-shrink-0">
+                      {/* Loss & Savings */}
+                      <div className="text-right">
+                        <div className="text-sm font-semibold text-red-600">
+                          {formatCurrency(opportunity.unrealized_loss)}
+                        </div>
+                        <div className="text-xs text-emerald-600 font-semibold">
+                          {formatCurrency(opportunity.tax_savings_estimate)}
+                        </div>
+                      </div>
+
+                      {/* Wash Sale Badge */}
+                      {opportunity.wash_sale_risk && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 border border-amber-300 text-amber-700 text-xs font-semibold rounded whitespace-nowrap">
                           <AlertTriangle size={12} />
-                          Wash Sale
+                          Wash
                         </span>
-                      </div>
-                    )}
-                  </div>
+                      )}
 
-                  <div className="ml-2">
-                    {isExpanded ? (
-                      <ChevronUp size={16} className="text-gray-400" />
-                    ) : (
-                      <ChevronDown size={16} className="text-gray-400" />
-                    )}
+                      {/* Chevron */}
+                      <div className="pt-1">
+                        {isExpanded ? (
+                          <ChevronUp size={16} className="text-gray-400" />
+                        ) : (
+                          <ChevronDown size={16} className="text-gray-400" />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </button>
 
@@ -316,21 +334,95 @@ Cost Basis: ${formatCurrency(opportunity.cost_basis_per_unit)}/unit`;
                       </div>
                     )}
 
-                    <div className="flex gap-2 pt-2">
+                    <div className="grid grid-cols-2 gap-2 pt-2">
                       <button
                         onClick={() => handleFlagForReview(opportunity.ticker, opportunity.client_name)}
-                        className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold text-sm transition border border-emerald-300"
+                        className="flex items-center justify-center gap-2 p-3 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold text-sm transition border border-emerald-300"
                       >
                         <Flag size={14} />
-                        Flag for Review
+                        Flag
                       </button>
                       <button
                         onClick={() => handleCopyDetails(opportunity)}
-                        className="flex-1 p-3 rounded-lg bg-white text-gray-700 hover:bg-gray-50 font-semibold text-sm transition border border-ws-border"
+                        className="flex items-center justify-center gap-2 p-3 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold text-sm transition border border-blue-300"
                       >
-                        📋 Copy Details
+                        <Copy size={14} />
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => {
+                          const key = `${opportunity.portfolio_id}-${opportunity.ticker}`;
+                          setExecutionScheduled(prev => {
+                            const next = new Set(prev);
+                            if (next.has(key)) next.delete(key);
+                            else next.add(key);
+                            return next;
+                          });
+                        }}
+                        className="flex items-center justify-center gap-2 p-3 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold text-sm transition border border-amber-300"
+                      >
+                        <Calendar size={14} />
+                        Schedule
+                      </button>
+                      <button
+                        onClick={() => {
+                          const details = `${opportunity.ticker} - ${opportunity.client_name}\nUnrealized Loss: ${formatCurrency(opportunity.unrealized_loss)}\nTax Savings: ${formatCurrency(opportunity.tax_savings_estimate)}\n\nTrade Plan:\nSell Position → Tax Loss Recognition → Reinvest in ${opportunity.replacement_ticker || 'similar exposure'}`;
+                          const blob = new Blob([details], { type: "text/plain" });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `${opportunity.ticker}-tax-loss-${new Date().toISOString().split('T')[0]}.txt`;
+                          a.click();
+                          setActionFeedback(`✓ Export downloaded for ${opportunity.ticker}`);
+                          setTimeout(() => setActionFeedback(null), 3000);
+                        }}
+                        className="flex items-center justify-center gap-2 p-3 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold text-sm transition border border-purple-300"
+                      >
+                        <Download size={14} />
+                        Export
                       </button>
                     </div>
+
+                    {/* Execution Schedule UI */}
+                    {executionScheduled.has(`${opportunity.portfolio_id}-${opportunity.ticker}`) && (
+                      <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
+                        <h4 className="text-sm font-semibold text-gray-900">Schedule Execution</h4>
+                        <input
+                          type="date"
+                          value={executionDates[`${opportunity.portfolio_id}-${opportunity.ticker}`] || ""}
+                          onChange={(e) => {
+                            const key = `${opportunity.portfolio_id}-${opportunity.ticker}`;
+                            setExecutionDates(prev => ({
+                              ...prev,
+                              [key]: e.target.value
+                            }));
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        <button
+                          onClick={() => {
+                            const key = `${opportunity.portfolio_id}-${opportunity.ticker}`;
+                            const date = executionDates[key];
+                            if (!date) {
+                              setActionFeedback("Please select a date");
+                              setTimeout(() => setActionFeedback(null), 3000);
+                              return;
+                            }
+                            setActionFeedback(`✓ Execution scheduled for ${opportunity.ticker} on ${date}`);
+                            setTimeout(() => setActionFeedback(null), 4000);
+                            setExecutionScheduled(prev => {
+                              const next = new Set(prev);
+                              next.delete(key);
+                              return next;
+                            });
+                          }}
+                          className="w-full flex items-center justify-center gap-2 p-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold text-sm transition"
+                        >
+                          <CheckCircle2 size={14} />
+                          Confirm Schedule
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

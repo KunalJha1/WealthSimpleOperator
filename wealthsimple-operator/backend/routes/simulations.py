@@ -138,7 +138,7 @@ Advisor Team"""
     db.add(
         AuditEvent(
             event_type=AuditEventType.PLAYBOOK_GENERATED,
-            actor="operator_demo",
+            actor="Kunal Jha",
             details={
                 "scenario": payload.scenario.value,
                 "severity": payload.severity.value,

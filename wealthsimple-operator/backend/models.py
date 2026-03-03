@@ -264,6 +264,7 @@ class MeetingNote(Base):
     call_transcript: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ai_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ai_action_items: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
+    action_item_completions: Mapped[Optional[List[bool]]] = mapped_column(JSON, nullable=True)
     ai_summarized_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     ai_provider_used: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
@@ -283,7 +284,7 @@ class AuditEvent(Base):
     )
     # Keep as String to avoid runtime crashes when newer/unknown event types exist in DB.
     event_type: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    actor: Mapped[str] = mapped_column(String, nullable=False, default="operator_demo")
+    actor: Mapped[str] = mapped_column(String, nullable=False, default="Kunal Jha")
     details: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False, index=True
@@ -419,6 +420,8 @@ class AuditEventEntry(BaseModel):
     run_id: Optional[int]
     event_type: str
     actor: str
+    client_id: Optional[int]
+    client_name: Optional[str]
     details: Dict[str, Any]
     created_at: datetime
 
@@ -538,6 +541,7 @@ class MeetingNoteView(BaseModel):
     call_transcript: Optional[str] = None
     ai_summary: Optional[str] = None
     ai_action_items: Optional[List[str]] = None
+    action_item_completions: Optional[List[bool]] = None
     ai_summarized_at: Optional[datetime] = None
     ai_provider_used: Optional[str] = None
     created_at: datetime
@@ -549,6 +553,18 @@ class MeetingNoteCreate(BaseModel):
     note_body: str
     meeting_type: MeetingNoteType = MeetingNoteType.MEETING
     call_transcript: Optional[str] = None
+
+
+class PreCallBriefResponse(BaseModel):
+    client_name: str
+    risk_profile: str
+    aum: float
+    open_alert_count: int
+    highest_priority: Optional[Priority] = None
+    last_note_title: Optional[str] = None
+    last_note_date: Optional[datetime] = None
+    last_note_summary: Optional[str] = None
+    outstanding_action_items: List[str]
 
 
 class RebalancingLineItem(BaseModel):
@@ -691,6 +707,7 @@ class TaxLossResponse(BaseModel):
 
 
 class RiskClientRow(BaseModel):
+    alert_id: int
     client_id: int
     client_name: str
     segment: str

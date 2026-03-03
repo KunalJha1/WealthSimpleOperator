@@ -81,6 +81,7 @@ def get_risk_dashboard(db: Session = Depends(get_db)) -> RiskDashboardResponse:
             days_without_review = (datetime.utcnow() - current_alert.created_at).days
 
             row = RiskClientRow(
+                alert_id=current_alert.id,
                 client_id=client.id,
                 client_name=client.name,
                 segment=client.segment,

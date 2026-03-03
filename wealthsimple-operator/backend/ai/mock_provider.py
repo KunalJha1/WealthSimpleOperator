@@ -130,13 +130,25 @@ class MockAIProvider:
         ).strip()
 
         subject = f"Quick follow-up: {event_title}"
+
+        # Wealthsimple footer consistent with frontend
+        wealthsimple_footer = (
+            "Wealthsimple Private Wealth\n"
+            "80 Spadina Ave, Toronto, ON M5V 2J4\n"
+            "wealthsimple.com | 1-855-255-9038\n\n"
+            "Confidentiality Notice: This message may contain confidential information and is intended only for the named recipient."
+        )
+
         body = (
             f"Hi {client_name},\n\n"
             f"We wanted to follow up regarding {event_title.lower()} in your portfolio.\n\n"
             f"{summary}\n\n"
             f"Recommended next step: {suggested_next_step}\n\n"
             "If helpful, we can schedule a quick review call to walk through this together.\n\n"
-            f"Best,\n{advisor_name}"
+            "Warm regards,\n\n"
+            f"{advisor_name}\n\n"
+            "———————————————————————————\n\n"
+            f"{wealthsimple_footer}"
         )
         return FollowUpDraftContent(subject=subject, body=body)
 
@@ -352,3 +364,19 @@ class MockAIProvider:
 
         return items
 
+    def generate_pre_call_brief(self, brief_data: Dict) -> Dict:
+        """Assemble pre-call brief from provided data.
+
+        No external API call needed - purely assembles context.
+        """
+        return {
+            "client_name": brief_data.get("client_name", ""),
+            "risk_profile": brief_data.get("risk_profile", ""),
+            "aum": brief_data.get("aum", 0.0),
+            "open_alert_count": brief_data.get("open_alert_count", 0),
+            "highest_priority": brief_data.get("highest_priority"),
+            "last_note_title": brief_data.get("last_note_title"),
+            "last_note_date": brief_data.get("last_note_date"),
+            "last_note_summary": brief_data.get("last_note_summary"),
+            "outstanding_action_items": brief_data.get("outstanding_action_items", []),
+        }

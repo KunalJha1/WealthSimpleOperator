@@ -15,6 +15,7 @@ from models import (
     AuditEvent,
     AuditEventEntry,
     Priority,
+    Client,
 )
 
 router = APIRouter(prefix="/audit", tags=["audit"])
@@ -85,18 +86,33 @@ def list_audit_events(
         query.order_by(AuditEvent.created_at.desc()).offset(offset).limit(limit).all()
     )
 
-    items: List[AuditEventEntry] = [
-        AuditEventEntry(
-            id=e.id,
-            alert_id=e.alert_id,
-            run_id=e.run_id,
-            event_type=e.event_type,
-            actor=e.actor,
-            details=e.details,
-            created_at=e.created_at,
+    items: List[AuditEventEntry] = []
+    for e in events:
+        client_id = None
+        client_name = None
+
+        # Fetch client info from alert if alert_id exists
+        if e.alert_id:
+            alert = db.query(Alert).filter(Alert.id == e.alert_id).first()
+            if alert:
+                client_id = alert.client_id
+                client = db.query(Client).filter(Client.id == client_id).first()
+                if client:
+                    client_name = client.name
+
+        items.append(
+            AuditEventEntry(
+                id=e.id,
+                alert_id=e.alert_id,
+                run_id=e.run_id,
+                event_type=e.event_type,
+                actor=e.actor,
+                client_id=client_id,
+                client_name=client_name,
+                details=e.details,
+                created_at=e.created_at,
+            )
         )
-        for e in events
-    ]
 
     return AuditListResponse(items=items, total=total)
 

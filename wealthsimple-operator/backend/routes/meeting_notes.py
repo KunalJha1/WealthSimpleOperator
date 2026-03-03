@@ -9,7 +9,16 @@ from sqlalchemy.orm import Session
 
 from ai.provider import get_provider
 from db import get_db
-from models import AuditEvent, MeetingNote, MeetingNoteCreate, MeetingNoteView, TranscriptSummary
+from models import (
+    AuditEvent,
+    MeetingNote,
+    MeetingNoteCreate,
+    MeetingNoteView,
+    TranscriptSummary,
+    PreCallBriefResponse,
+    Alert,
+    Client,
+)
 
 
 router = APIRouter(prefix="/meeting-notes", tags=["meeting-notes"])
@@ -173,6 +182,120 @@ def summarize_transcript(
     )
 
 
+class PreCallBriefRequest(BaseModel):
+    client_id: int
+
+
+@router.post("/pre-call-brief", response_model=PreCallBriefResponse)
+def generate_pre_call_brief(
+    payload: PreCallBriefRequest,
+    db: Session = Depends(get_db),
+) -> PreCallBriefResponse:
+    """Generate a pre-call brief with open alerts, last interaction, and outstanding action items."""
+    client: Client | None = db.query(Client).filter(Client.id == payload.client_id).first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    # Get open alerts for this client
+    open_alerts = db.query(Alert).filter(
+        Alert.client_id == payload.client_id,
+        Alert.status == "OPEN"
+    ).all()
+
+    # Get the most recent meeting note
+    last_note: MeetingNote | None = (
+        db.query(MeetingNote)
+        .filter(MeetingNote.client_id == payload.client_id)
+        .order_by(MeetingNote.meeting_date.desc())
+        .first()
+    )
+
+    # Collect outstanding action items from all notes
+    all_notes = db.query(MeetingNote).filter(MeetingNote.client_id == payload.client_id).all()
+    outstanding_action_items: List[str] = []
+    for note in all_notes:
+        if note.ai_action_items:
+            for idx, item in enumerate(note.ai_action_items):
+                is_completed = note.action_item_completions and note.action_item_completions[idx]
+                if not is_completed:
+                    outstanding_action_items.append(item)
+
+    # Get client portfolio context (total AUM)
+    total_aum = sum(p.total_value for p in client.portfolios) if client.portfolios else 0.0
+
+    # Determine highest priority
+    highest_priority = None
+    if open_alerts:
+        priority_order = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
+        highest_priority = min(open_alerts, key=lambda a: priority_order.get(a.priority.value, 3)).priority.value
+
+    return PreCallBriefResponse(
+        client_name=client.name,
+        risk_profile=client.risk_profile,
+        aum=total_aum,
+        open_alert_count=len(open_alerts),
+        highest_priority=highest_priority,
+        last_note_title=last_note.title if last_note else None,
+        last_note_date=last_note.meeting_date if last_note else None,
+        last_note_summary=last_note.ai_summary if last_note else None,
+        outstanding_action_items=outstanding_action_items,
+    )
+
+
+class UpdateActionItemRequest(BaseModel):
+    index: int
+    completed: bool
+
+
+class UpdateActionItemResponse(BaseModel):
+    note: MeetingNoteView
+    message: str
+
+
+@router.patch("/{note_id}/action-items", response_model=UpdateActionItemResponse)
+def update_action_item(
+    note_id: int,
+    payload: UpdateActionItemRequest,
+    db: Session = Depends(get_db),
+) -> UpdateActionItemResponse:
+    """Update completion status of an action item."""
+    note: MeetingNote | None = db.query(MeetingNote).filter(MeetingNote.id == note_id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Meeting note not found")
+
+    if not note.ai_action_items or payload.index < 0 or payload.index >= len(note.ai_action_items):
+        raise HTTPException(status_code=400, detail="Invalid action item index")
+
+    # Initialize or update completions list
+    if note.action_item_completions is None:
+        note.action_item_completions = [False] * len(note.ai_action_items)
+
+    note.action_item_completions[payload.index] = payload.completed
+    db.commit()
+    db.refresh(note)
+
+    # Log audit event
+    audit_event = AuditEvent(
+        event_type="MEETING_NOTE_ACTION_ITEM_UPDATED",
+        actor="system",
+        alert_id=None,
+        run_id=None,
+        details={
+            "client_id": note.client_id,
+            "note_id": note.id,
+            "action_item_index": payload.index,
+            "completed": payload.completed,
+        }
+    )
+    db.add(audit_event)
+    db.commit()
+
+    return UpdateActionItemResponse(
+        note=_note_to_view(note),
+        message=f"Action item {payload.index + 1} marked as {'complete' if payload.completed else 'incomplete'}"
+    )
+
+
 def _note_to_view(note: MeetingNote) -> MeetingNoteView:
     """Convert a MeetingNote ORM object to a Pydantic view."""
     return MeetingNoteView(
@@ -185,6 +308,7 @@ def _note_to_view(note: MeetingNote) -> MeetingNoteView:
         call_transcript=note.call_transcript,
         ai_summary=note.ai_summary,
         ai_action_items=note.ai_action_items,
+        action_item_completions=note.action_item_completions,
         ai_summarized_at=note.ai_summarized_at,
         ai_provider_used=note.ai_provider_used,
         created_at=note.created_at,

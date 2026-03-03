@@ -260,16 +260,16 @@ export default function RiskBrief({
             <div className="space-y-2">
               <div className="h-2.5 rounded-full bg-blue-100 overflow-hidden shadow-inner">
                 <div
-                  className="h-2.5 rounded-full shadow-lg transition-all duration-500"
+                  className="h-2.5 rounded-full shadow-lg bar-grow"
                   style={{
-                    width: `${Math.max(confidence, 2)}%`,
+                    "--bar-target": `${Math.max(confidence, 2)}%`,
                     background:
                       confidence >= 80
                         ? "linear-gradient(to right, #10b981, #059669)"
                         : confidence >= 60
                           ? "linear-gradient(to right, #f59e0b, #f97316)"
                           : "linear-gradient(to right, #ef4444, #dc2626)"
-                  }}
+                  } as React.CSSProperties}
                 />
               </div>
               <div className="flex justify-between items-center text-[10px] font-medium text-blue-600 uppercase tracking-wide">
@@ -875,8 +875,8 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
               </div>
               <div className="mt-1 h-1.5 rounded-full bg-gray-200">
                 <div
-                  className={`h-1.5 rounded-full ${row.color}`}
-                  style={{ width: `${Math.min(100, Math.max(0, row.value))}%` }}
+                  className={`h-1.5 rounded-full ${row.color} bar-grow`}
+                  style={{ "--bar-target": `${Math.min(100, Math.max(0, row.value))}%` } as React.CSSProperties}
                 />
               </div>
             </div>
@@ -1026,10 +1026,10 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
                       </div>
                       <div className="h-2 w-full rounded-full bg-gray-200">
                         <div
-                          className={`h-2 rounded-full transition-all ${barColor}`}
+                          className={`h-2 rounded-full bar-grow ${barColor}`}
                           style={{
-                            width: `${Math.min(100, Math.max(0, goal.progress_pct))}%`
-                          }}
+                            "--bar-target": `${Math.min(100, Math.max(0, goal.progress_pct))}%`
+                          } as React.CSSProperties}
                         />
                       </div>
                     </div>
@@ -1332,7 +1332,7 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
           </Button>
         </div>
         {quickActionDraft && (
-          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3 flex flex-col h-[650px]">
             <div className="space-y-1">
               <div className="text-xs font-bold uppercase tracking-wide text-amber-800">
                 {quickActionDraft.title}
@@ -1355,35 +1355,40 @@ export function ClientDetailsPanel({ alert }: { alert: AlertDetail }) {
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 flex-1 flex flex-col">
               <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700">
                 Proposed Email (Send-Ready)
               </label>
               <textarea
-                value={quickActionDraft.body}
-                onChange={(e) => handleDraftChange("body", e.target.value)}
-                className="min-h-28 w-full rounded border border-amber-300 bg-white px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-amber-500"
+                value={
+                  quickActionDraft.body +
+                  (typeof quickActionDraft.footer === "string"
+                    ? `\n\n---\n\n${quickActionDraft.footer}`
+                    : "")
+                }
+                onChange={(e) => {
+                  const fullText = e.target.value;
+                  const footerSeparator = "\n\n---\n\n";
+                  const footerIndex = fullText.lastIndexOf(footerSeparator);
+
+                  if (footerIndex !== -1) {
+                    const body = fullText.substring(0, footerIndex);
+                    const footer = fullText.substring(footerIndex + footerSeparator.length);
+                    handleDraftChange("body", body);
+                    handleDraftChange("footer", footer);
+                  } else {
+                    handleDraftChange("body", fullText);
+                  }
+                }}
+                className="flex-1 w-full rounded border border-amber-300 bg-white px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-amber-500 resize-none"
               />
             </div>
-
-            {typeof quickActionDraft.footer === "string" && (
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold uppercase tracking-wide text-gray-700">
-                  Wealthsimple Footer
-                </label>
-                <textarea
-                  value={quickActionDraft.footer}
-                  onChange={(e) => handleDraftChange("footer", e.target.value)}
-                  className="min-h-20 w-full rounded border border-amber-300 bg-white px-2 py-1.5 text-xs text-gray-900 outline-none focus:border-amber-500"
-                />
-              </div>
-            )}
 
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
-                variant="secondary"
-                className="text-xs px-3 py-1.5 bg-emerald-600 border-emerald-700 text-white hover:bg-emerald-700"
+                variant="primary"
+                className="text-xs px-3 py-1.5 !bg-ws-green !border-ws-green !text-white hover:!opacity-90"
                 onClick={handleApproveDraft}
               >
                 <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />

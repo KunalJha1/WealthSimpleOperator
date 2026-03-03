@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import clsx from "clsx";
 import { Button } from "../../components/Buttons";
 import PriorityQueue from "../../components/PriorityQueue";
 import AuditTable from "../../components/AuditTable";
@@ -34,7 +35,7 @@ const PRIORITY_RANK: Record<Priority, number> = {
   LOW: 2
 };
 const AUTO_SCAN_ENABLED = true;
-const INITIAL_QUEUE_SIZE = 8;
+const INITIAL_QUEUE_SIZE = 30;
 const DEFERRED_QUEUE_SIZE = 3;
 
 type SessionActionMetrics = {
@@ -85,6 +86,19 @@ function sortAlertsByPriority(alerts: AlertSummary[]): AlertSummary[] {
     // Newest first within the same priority band
     return bTime - aTime;
   });
+}
+
+function sortAlertsByRecency(alerts: AlertSummary[]): AlertSummary[] {
+  return [...alerts].sort((a, b) => {
+    const aTime = new Date(a.created_at).getTime();
+    const bTime = new Date(b.created_at).getTime();
+    // Newest first
+    return bTime - aTime;
+  });
+}
+
+function sortAlerts(alerts: AlertSummary[], mode: "priority" | "recent"): AlertSummary[] {
+  return mode === "priority" ? sortAlertsByPriority(alerts) : sortAlertsByRecency(alerts);
 }
 
 function dedupeAlertsById(alerts: AlertSummary[]): AlertSummary[] {
@@ -145,6 +159,7 @@ export default function OperatorPage() {
     return getOrInitNextRunAt();
   });
   const [nowMs, setNowMs] = useState<number>(Date.now());
+  const [sortMode, setSortMode] = useState<"priority" | "recent">("priority");
   const streamVersionRef = useRef(0);
   const streamTimeoutsRef = useRef<number[]>([]);
   const autoRunInFlightRef = useRef(false);
@@ -211,6 +226,10 @@ export default function OperatorPage() {
       feedbackCases
     };
   }, [runSummary, highPriorityCount, alerts.length, sessionMetrics]);
+
+  const displayedAlerts = useMemo(() => {
+    return sortAlerts(alerts, sortMode);
+  }, [alerts, sortMode]);
 
   useEffect(() => {
     try {
@@ -351,14 +370,14 @@ export default function OperatorPage() {
     const sorted = dedupeAlertsById(sortAlertsByPriority(newAlerts));
 
     setAlerts([]);
-    sorted.forEach((alert, index) => {
+    sorted.forEach((alert) => {
       const timeoutId = window.setTimeout(() => {
         if (streamVersionRef.current !== streamVersion) return;
         setAlerts((prev) => {
           if (prev.some((item) => item.id === alert.id)) return prev;
           return dedupeAlertsById(sortAlertsByPriority([alert, ...prev]));
         });
-      }, index * 120);
+      }, 0);
       streamTimeoutsRef.current.push(timeoutId);
     });
     return sorted;
@@ -486,6 +505,7 @@ export default function OperatorPage() {
       <section className="card border border-emerald-100 p-4 md:p-5 space-y-4 bg-gradient-to-r from-emerald-50 via-white to-slate-50">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <HeaderStat
+            className="stat-enter stagger-1"
             label="Operator Mode"
             value={
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-emerald-50 px-3 py-1 shadow-sm">
@@ -500,6 +520,7 @@ export default function OperatorPage() {
             }
           />
           <HeaderStat
+            className="stat-enter stagger-2"
             label="Next Scheduled Run"
             value={
               <span className="text-sm font-semibold text-gray-900">
@@ -508,6 +529,7 @@ export default function OperatorPage() {
             }
           />
           <HeaderStat
+            className="stat-enter stagger-3"
             label="Monitoring Universe"
             value={
               <span className="text-sm font-semibold text-gray-900">
@@ -517,6 +539,7 @@ export default function OperatorPage() {
             }
           />
           <HeaderStat
+            className="stat-enter stagger-4"
             label="Last Updated"
             value={
               <span className="text-sm font-semibold text-gray-900">
@@ -527,15 +550,52 @@ export default function OperatorPage() {
         </div>
       </section>
 
+      <section className="card border border-blue-100 p-4 md:p-5 space-y-3 bg-gradient-to-r from-blue-50 to-cyan-50">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700 mb-2">
+          AI System Status
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-gray-600">AI Provider</div>
+            {health ? (
+              <div className="inline-flex items-center gap-2">
+                <span className={`relative flex h-2.5 w-2.5 rounded-full ${health.provider === "Gemini" ? "bg-blue-500" : "bg-gray-400"}`} />
+                <span className="text-sm font-semibold text-gray-900">{health.provider}</span>
+              </div>
+            ) : (
+              <span className="text-sm text-gray-500">—</span>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-gray-600">DB Status</div>
+            {health ? (
+              <span className={`inline-flex items-center text-sm font-semibold ${health.db_ok ? "text-emerald-600" : "text-red-600"}`}>
+                {health.db_ok ? "✓ Healthy" : "⚠ Degraded"}
+              </span>
+            ) : (
+              <span className="text-sm text-gray-500">—</span>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-gray-600">Last Run</div>
+            <span className="text-sm font-semibold text-gray-900">
+              {minutesAgoLabel(health?.last_run_completed_at ?? null)}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-gray-600">Total Runs</div>
+            <span className="text-sm font-semibold text-gray-900">
+              {monitoringSummary ? monitoringSummary.total_runs : "—"}
+            </span>
+          </div>
+        </div>
+      </section>
+
       <div className="text-xs text-ws-muted">
-        Last updated: <span className="font-semibold text-gray-900">{minutesAgoLabel(health?.last_run_completed_at ?? null)}</span>
-        {"  "}
         <span className={`inline-flex rounded-full border px-2 py-0.5 font-medium transition-all duration-300 ${isFreshScan ? "border-emerald-200 bg-emerald-50 text-emerald-700 animate-pulse" : "border-gray-200 bg-white text-gray-600"}`}>
           {isFreshScan ? "Fresh scan" : "Waiting for next run"}
         </span>
-        {"  "}Mode: <span className="font-semibold text-emerald-700">Autonomous</span>
-        {"  "}Priority alerts: <span className="font-semibold text-red-600">{highPriorityCount}</span>
-        {"  "}Queue size: <span className="font-semibold text-gray-900">{alerts.length}</span>
+        {"  "}Queue: <span className="font-semibold text-gray-900">{alerts.length}</span>
       </div>
 
       {runSummary && (
@@ -575,38 +635,10 @@ export default function OperatorPage() {
         </section>
       )}
 
+
       {error && (
         <div className="card border-red-200 bg-red-50 p-3 text-sm text-red-800">
           {error}
-        </div>
-      )}
-
-      {runSummary && (
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-          <span className="text-ws-muted">
-            High priority:{" "}
-            <span className="font-semibold text-emerald-700">
-              {runSummary.priority_counts.HIGH}
-            </span>
-          </span>
-          <span className="text-ws-muted">
-            Medium priority:{" "}
-            <span className="font-semibold text-amber-600">
-              {runSummary.priority_counts.MEDIUM}
-            </span>
-          </span>
-          <span className="text-ws-muted">
-            Low priority:{" "}
-            <span className="font-semibold text-gray-700">
-              {runSummary.priority_counts.LOW}
-            </span>
-          </span>
-          <span className="text-ws-muted">
-            Alerts created:{" "}
-            <span className="font-semibold text-gray-900">
-              {runSummary.created_alerts_count}
-            </span>
-          </span>
         </div>
       )}
 
@@ -617,19 +649,25 @@ export default function OperatorPage() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3 md:gap-4">
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
             <div className="text-xs font-semibold text-gray-700">{sessionMetrics.reviewed}</div>
-            <div className="text-[10px] text-ws-muted mt-0.5">Reviewed</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">
+              {runSummary ? `/ ${runSummary.created_alerts_count}` : ""} Reviewed
+            </div>
           </div>
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
             <div className="text-xs font-semibold text-gray-700">{sessionMetrics.escalated}</div>
-            <div className="text-[10px] text-ws-muted mt-0.5">Escalated</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">
+              {runSummary ? `/ ${runSummary.created_alerts_count}` : ""} Escalated
+            </div>
           </div>
           <div className="rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-center">
             <div className="text-xs font-semibold text-gray-700">{sessionMetrics.falsePositive}</div>
-            <div className="text-[10px] text-ws-muted mt-0.5">False Positives</div>
+            <div className="text-[10px] text-ws-muted mt-0.5">
+              {runSummary ? `/ ${runSummary.created_alerts_count}` : ""} False +
+            </div>
           </div>
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-center">
             <div className="text-xs font-semibold text-amber-700">{sessionMetrics.followUpDraftsCreated}</div>
-            <div className="text-[10px] text-amber-600 mt-0.5">Drafts</div>
+            <div className="text-[10px] text-amber-600 mt-0.5">Drafts Created</div>
           </div>
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-center">
             <div className="text-xs font-semibold text-emerald-700">{sessionMetrics.followUpDraftsApproved}</div>
@@ -642,8 +680,42 @@ export default function OperatorPage() {
         </div>
       </section>
 
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="page-title">Priority Queue</div>
+          {/* Sort toggle — segmented control */}
+          <div className="relative inline-flex rounded-lg bg-gray-100 p-0.5 text-sm select-none">
+            {/* Sliding indicator */}
+            <div
+              className={clsx(
+                "absolute top-0.5 bottom-0.5 rounded-md bg-black shadow-sm transition-all duration-200 ease-in-out",
+                sortMode === "priority" ? "left-0.5 right-1/2" : "left-1/2 right-0.5"
+              )}
+            />
+            <button
+              onClick={() => setSortMode("priority")}
+              className={clsx(
+                "relative z-10 px-4 py-1 font-medium transition-colors duration-200 rounded-md",
+                sortMode === "priority" ? "text-white" : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              By Priority
+            </button>
+            <button
+              onClick={() => setSortMode("recent")}
+              className={clsx(
+                "relative z-10 px-4 py-1 font-medium transition-colors duration-200 rounded-md",
+                sortMode === "recent" ? "text-white" : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              Most Recent
+            </button>
+          </div>
+        </div>
+      </section>
+
       <PriorityQueue
-        alerts={alerts}
+        alerts={displayedAlerts}
         recentAlertIds={recentAlertIds}
         onAlertOpen={handleAlertOpened}
         onAlertAction={handleQueueAlertAction}
@@ -661,9 +733,9 @@ export default function OperatorPage() {
   );
 }
 
-function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
+function HeaderStat({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
   return (
-    <div className="space-y-1">
+    <div className={clsx("space-y-1", className)}>
       <div className="text-xs font-medium text-emerald-700">{label}</div>
       <div>{value}</div>
     </div>

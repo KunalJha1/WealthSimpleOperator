@@ -109,7 +109,7 @@ def _latest_metrics_for_portfolio(db: Session, portfolio_id: int) -> Dict[str, f
     }
 
 
-def run_operator(db: Session, provider: AIProvider, actor: str = "operator_demo", unique_summaries: bool = False) -> RunSummary:
+def run_operator(db: Session, provider: AIProvider, actor: str = "Kunal Jha", unique_summaries: bool = False) -> RunSummary:
     """Run a full operator scan across all portfolios.
 
     Creates a Run record, computes metrics, calls the AI provider, stores alerts,

@@ -118,3 +118,55 @@ body {
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
 }
+
+/* Stat card entrance — combine with .stagger-1/.stagger-2/.stagger-3/.stagger-4 */
+.stat-enter {
+  animation: page-enter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+.stagger-4 {
+  animation-delay: 160ms;
+}
+
+.stagger-5 {
+  animation-delay: 200ms;
+}
+
+/* Progress bar grow from 0 to --bar-target */
+@keyframes bar-grow {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--bar-target, 100%);
+  }
+}
+
+.bar-grow {
+  animation: bar-grow 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: width;
+}
+
+/* Brief green flash after a successful action */
+@keyframes action-success {
+  0% {
+    background-color: transparent;
+  }
+  25% {
+    background-color: rgba(16, 185, 129, 0.10);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.action-pulse {
+  animation: action-success 650ms ease-out forwards;
+}
+
+/* Data table / list row entrance */
+.row-enter {
+  animation: page-enter 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
