@@ -9,5 +9,7 @@ venv/*
 venv
 node_modules/*
 node_modules
-.env.example
+*.env.example
+!wealthsimple-operator/backend/.env.example
+!wealthsimple-operator/frontend/.env.example
 __pycache__/*

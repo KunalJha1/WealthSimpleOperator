@@ -23,8 +23,12 @@ import {
   RiskDashboardResponse
 } from "./types";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api").replace(/\/+$/, "");
+
+function apiUrl(path: string): string {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${API_BASE}${normalizedPath}`;
+}
 
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -41,15 +45,17 @@ export async function runOperator(options?: {
   maxAgeSeconds?: number;
 }): Promise<RunSummary> {
   try {
-    const url = new URL(`${API_BASE}/operator/run`);
+    const params = new URLSearchParams();
     if (options?.force) {
-      url.searchParams.set("force", "true");
+      params.set("force", "true");
     }
     if (typeof options?.maxAgeSeconds === "number") {
-      url.searchParams.set("max_age_seconds", String(options.maxAgeSeconds));
+      params.set("max_age_seconds", String(options.maxAgeSeconds));
     }
+    const suffix = params.toString();
+    const url = suffix ? `${apiUrl("/operator/run")}?${suffix}` : apiUrl("/operator/run");
 
-    const res = await fetch(url.toString(), {
+    const res = await fetch(url, {
       method: "POST"
     });
     return handle<RunSummary>(res);
@@ -70,22 +76,24 @@ export async function runOperator(options?: {
 export async function fetchAlerts(
   params?: URLSearchParams
 ): Promise<AlertsListResponse> {
-  const url = new URL(`${API_BASE}/alerts`);
-  if (params) {
-    url.search = params.toString();
-  }
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const suffix = params?.toString() ?? "";
+  const url = suffix ? `${apiUrl("/alerts")}?${suffix}` : apiUrl("/alerts");
+  const res = await fetch(url, { cache: "no-store" });
   return handle<AlertsListResponse>(res);
 }
 
 export async function fetchAlertsByClient(clientId: number): Promise<AlertsListResponse> {
   // Use new dedicated endpoint with path parameter for better filtering
-  const res = await fetch(`${API_BASE}/alerts/client/${clientId}?limit=5`, { cache: "no-store" });
+  const res = await fetch(`${apiUrl(`/alerts/client/${clientId}`)}?limit=5`, { cache: "no-store" });
+  // Return empty list if endpoint doesn't exist (404)
+  if (!res.ok) {
+    return { items: [], total: 0 };
+  }
   return handle<AlertsListResponse>(res);
 }
 
 export async function fetchAlert(id: number): Promise<AlertDetail> {
-  const res = await fetch(`${API_BASE}/alerts/${id}`, { cache: "no-store" });
+  const res = await fetch(apiUrl(`/alerts/${id}`), { cache: "no-store" });
   return handle<AlertDetail>(res);
 }
 
@@ -93,7 +101,7 @@ export async function postAlertAction(
   id: number,
   action: "reviewed" | "escalate" | "false_positive"
 ): Promise<{ alert: AlertDetail; message: string }> {
-  const res = await fetch(`${API_BASE}/alerts/${id}/action`, {
+  const res = await fetch(apiUrl(`/alerts/${id}/action`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action })
@@ -105,7 +113,7 @@ export async function createFollowUpDraft(
   alertId: number,
   options?: { forceRegenerate?: boolean }
 ): Promise<{ draft: FollowUpDraft; message: string }> {
-  const res = await fetch(`${API_BASE}/alerts/${alertId}/follow-up-draft`, {
+  const res = await fetch(apiUrl(`/alerts/${alertId}/follow-up-draft`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ force_regenerate: Boolean(options?.forceRegenerate) })
@@ -116,7 +124,7 @@ export async function createFollowUpDraft(
 export async function fetchFollowUpDraft(
   alertId: number
 ): Promise<{ draft: FollowUpDraft; message: string }> {
-  const res = await fetch(`${API_BASE}/alerts/${alertId}/follow-up-draft`, {
+  const res = await fetch(apiUrl(`/alerts/${alertId}/follow-up-draft`), {
     cache: "no-store"
   });
   return handle<{ draft: FollowUpDraft; message: string }>(res);
@@ -125,7 +133,7 @@ export async function fetchFollowUpDraft(
 export async function approveFollowUpDraft(
   draftId: number
 ): Promise<{ draft: FollowUpDraft; message: string }> {
-  const res = await fetch(`${API_BASE}/alerts/follow-up-drafts/${draftId}/approve`, {
+  const res = await fetch(apiUrl(`/alerts/follow-up-drafts/${draftId}/approve`), {
     method: "POST"
   });
   return handle<{ draft: FollowUpDraft; message: string }>(res);
@@ -135,7 +143,7 @@ export async function rejectFollowUpDraft(
   draftId: number,
   reason?: string
 ): Promise<{ draft: FollowUpDraft; message: string }> {
-  const res = await fetch(`${API_BASE}/alerts/follow-up-drafts/${draftId}/reject`, {
+  const res = await fetch(apiUrl(`/alerts/follow-up-drafts/${draftId}/reject`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reason: reason ?? "" })
@@ -146,30 +154,28 @@ export async function rejectFollowUpDraft(
 export async function fetchAuditLog(
   params?: URLSearchParams
 ): Promise<AuditListResponse> {
-  const url = new URL(`${API_BASE}/audit`);
-  if (params) {
-    url.search = params.toString();
-  }
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const suffix = params?.toString() ?? "";
+  const url = suffix ? `${apiUrl("/audit")}?${suffix}` : apiUrl("/audit");
+  const res = await fetch(url, { cache: "no-store" });
   return handle<AuditListResponse>(res);
 }
 
 export async function fetchMonitoringSummary(): Promise<MonitoringUniverseSummary> {
-  const res = await fetch(`${API_BASE}/portfolios/summary`, {
+  const res = await fetch(apiUrl("/portfolios/summary"), {
     cache: "no-store"
   });
   return handle<MonitoringUniverseSummary>(res);
 }
 
 export async function fetchMonitoringDetail(): Promise<MonitoringUniverseDetail> {
-  const res = await fetch(`${API_BASE}/portfolios/monitoring-detail`, {
+  const res = await fetch(apiUrl("/portfolios/monitoring-detail"), {
     cache: "no-store"
   });
   return handle<MonitoringUniverseDetail>(res);
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch(`${API_BASE}/health`, { cache: "no-store" });
+  const res = await fetch(apiUrl("/health"), { cache: "no-store" });
   return handle<HealthResponse>(res);
 }
 
@@ -178,7 +184,7 @@ export async function runSimulation(input: {
   severity: SimulationSeverity;
 }): Promise<SimulationSummary> {
   try {
-    const res = await fetch(`${API_BASE}/simulations/run`, {
+    const res = await fetch(apiUrl("/simulations/run"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input)
@@ -200,17 +206,17 @@ export async function runSimulation(input: {
 
 export async function fetchMeetingNotes(
   clientId: number,
-  params?: { limit?: number; offset?: number }
+  options?: { limit?: number; offset?: number }
 ): Promise<MeetingNotesListResponse> {
-  const url = new URL(`${API_BASE}/meeting-notes`);
-  url.searchParams.set("client_id", String(clientId));
-  if (params?.limit) {
-    url.searchParams.set("limit", String(params.limit));
+  const query = new URLSearchParams();
+  query.set("client_id", String(clientId));
+  if (options?.limit) {
+    query.set("limit", String(options.limit));
   }
-  if (params?.offset) {
-    url.searchParams.set("offset", String(params.offset));
+  if (options?.offset) {
+    query.set("offset", String(options.offset));
   }
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const res = await fetch(`${apiUrl("/meeting-notes")}?${query.toString()}`, { cache: "no-store" });
   return handle<MeetingNotesListResponse>(res);
 }
 
@@ -218,7 +224,7 @@ export async function summarizeTranscript(
   noteId: number,
   options?: { forceRegenerate?: boolean }
 ): Promise<SummarizeTranscriptResponse> {
-  const res = await fetch(`${API_BASE}/meeting-notes/${noteId}/summarize`, {
+  const res = await fetch(apiUrl(`/meeting-notes/${noteId}/summarize`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ force_regenerate: Boolean(options?.forceRegenerate) })
@@ -230,7 +236,7 @@ export async function createMeetingNote(
   clientId: number,
   payload: MeetingNoteCreate
 ): Promise<MeetingNote> {
-  const res = await fetch(`${API_BASE}/meeting-notes`, {
+  const res = await fetch(apiUrl("/meeting-notes"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId, ...payload })
@@ -239,7 +245,7 @@ export async function createMeetingNote(
 }
 
 export async function fetchPreCallBrief(clientId: number): Promise<PreCallBriefResponse> {
-  const res = await fetch(`${API_BASE}/meeting-notes/pre-call-brief`, {
+  const res = await fetch(apiUrl("/meeting-notes/pre-call-brief"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId })
@@ -252,7 +258,7 @@ export async function updateActionItem(
   index: number,
   completed: boolean
 ): Promise<{ note: MeetingNote; message: string }> {
-  const res = await fetch(`${API_BASE}/meeting-notes/${noteId}/action-items`, {
+  const res = await fetch(apiUrl(`/meeting-notes/${noteId}/action-items`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ index, completed })
@@ -263,7 +269,7 @@ export async function updateActionItem(
 export async function fetchRebalancingSuggestion(
   alertId: number
 ): Promise<RebalancingSuggestion> {
-  const res = await fetch(`${API_BASE}/alerts/${alertId}/rebalance-suggestion`, {
+  const res = await fetch(apiUrl(`/alerts/${alertId}/rebalance-suggestion`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     cache: "no-store"
@@ -276,7 +282,7 @@ export async function fetchSimulationPlaybook(input: {
   severity: SimulationSeverity;
   portfolio_ids: number[];
 }): Promise<PlaybookSummary> {
-  const res = await fetch(`${API_BASE}/simulations/playbook`, {
+  const res = await fetch(apiUrl("/simulations/playbook"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -289,7 +295,7 @@ export async function generateReallocationPlan(
   alertId: number,
   targetCashAmount = 266000
 ): Promise<ReallocationPlan> {
-  const res = await fetch(`${API_BASE}/alerts/${alertId}/reallocation-plan`, {
+  const res = await fetch(apiUrl(`/alerts/${alertId}/reallocation-plan`), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ target_cash_amount: targetCashAmount }),
@@ -299,7 +305,7 @@ export async function generateReallocationPlan(
 }
 
 export async function queueReallocationPlan(planId: number): Promise<ReallocationPlan> {
-  const res = await fetch(`${API_BASE}/alerts/reallocation-plans/${planId}/queue`, {
+  const res = await fetch(apiUrl(`/alerts/reallocation-plans/${planId}/queue`), {
     method: "POST",
     cache: "no-store"
   });
@@ -307,7 +313,7 @@ export async function queueReallocationPlan(planId: number): Promise<Reallocatio
 }
 
 export async function approveReallocationPlan(planId: number): Promise<ReallocationPlan> {
-  const res = await fetch(`${API_BASE}/alerts/reallocation-plans/${planId}/approve`, {
+  const res = await fetch(apiUrl(`/alerts/reallocation-plans/${planId}/approve`), {
     method: "POST",
     cache: "no-store"
   });
@@ -315,7 +321,7 @@ export async function approveReallocationPlan(planId: number): Promise<Reallocat
 }
 
 export async function executeReallocationPlan(planId: number): Promise<ReallocationPlan> {
-  const res = await fetch(`${API_BASE}/alerts/reallocation-plans/${planId}/execute`, {
+  const res = await fetch(apiUrl(`/alerts/reallocation-plans/${planId}/execute`), {
     method: "POST",
     cache: "no-store"
   });
@@ -323,7 +329,7 @@ export async function executeReallocationPlan(planId: number): Promise<Reallocat
 }
 
 export async function fetchContactSchedule(): Promise<ContactScheduleResponse> {
-  const res = await fetch(`${API_BASE}/contacts/schedule`, {
+  const res = await fetch(apiUrl("/contacts/schedule"), {
     cache: "no-store"
   });
   return handle<ContactScheduleResponse>(res);
@@ -336,7 +342,7 @@ export async function generateCallScript(clientId: number): Promise<{
   key_talking_points: string[];
   provider: string;
 }> {
-  const res = await fetch(`${API_BASE}/contacts/generate-call-script?client_id=${clientId}`, {
+  const res = await fetch(`${apiUrl("/contacts/generate-call-script")}?client_id=${clientId}`, {
     method: "POST",
     cache: "no-store"
   });
@@ -351,7 +357,7 @@ export async function generateEmailDraft(clientId: number): Promise<{
   key_points: string[];
   provider: string;
 }> {
-  const res = await fetch(`${API_BASE}/contacts/generate-email-draft?client_id=${clientId}`, {
+  const res = await fetch(`${apiUrl("/contacts/generate-email-draft")}?client_id=${clientId}`, {
     method: "POST",
     cache: "no-store"
   });
@@ -363,7 +369,7 @@ export async function approveCallScheduled(clientId: number, actor: string = "ad
   message: string;
   meeting_note_id?: number;
 }> {
-  const res = await fetch(`${API_BASE}/contacts/approve-call-scheduled`, {
+  const res = await fetch(apiUrl("/contacts/approve-call-scheduled"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId, actor }),
@@ -377,7 +383,7 @@ export async function approveEmailSent(clientId: number, actor: string = "adviso
   message: string;
   meeting_note_id?: number;
 }> {
-  const res = await fetch(`${API_BASE}/contacts/approve-email-sent`, {
+  const res = await fetch(apiUrl("/contacts/approve-email-sent"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId, actor }),
@@ -391,7 +397,7 @@ export async function approveActivityLogged(clientId: number, actor: string = "a
   message: string;
   meeting_note_id?: number;
 }> {
-  const res = await fetch(`${API_BASE}/contacts/approve-activity-logged`, {
+  const res = await fetch(apiUrl("/contacts/approve-activity-logged"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId, actor, notes: notes || undefined }),
@@ -401,14 +407,14 @@ export async function approveActivityLogged(clientId: number, actor: string = "a
 }
 
 export async function fetchTaxLossOpportunities(): Promise<TaxLossResponse> {
-  const res = await fetch(`${API_BASE}/tax-loss/opportunities`, {
+  const res = await fetch(apiUrl("/tax-loss/opportunities"), {
     cache: "no-store"
   });
   return handle<TaxLossResponse>(res);
 }
 
 export async function fetchRiskDashboard(): Promise<RiskDashboardResponse> {
-  const res = await fetch(`${API_BASE}/risk-dashboard/summary`, {
+  const res = await fetch(apiUrl("/risk-dashboard/summary"), {
     cache: "no-store"
   });
   return handle<RiskDashboardResponse>(res);

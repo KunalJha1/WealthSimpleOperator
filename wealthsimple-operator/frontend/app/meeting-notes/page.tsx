@@ -59,6 +59,9 @@ export default function MeetingNotesPage() {
   // Filter by note type
   const [noteTypeFilter, setNoteTypeFilter] = useState<"all" | MeetingNoteType>("all");
 
+  // Filter by note content search
+  const [noteSearchQuery, setNoteSearchQuery] = useState<string>("");
+
   // Filter out generic client names (e.g., "Client 6", "Client 22")
   const isGenericClientName = (name: string) => /^Client\s+\d+$/i.test(name);
 
@@ -79,11 +82,28 @@ export default function MeetingNotesPage() {
       .sort((a, b) => a.client_name.localeCompare(b.client_name));
   }, [clients, searchQuery]);
 
-  // Memoized filtered notes by type
+  // Memoized filtered notes by type and search query
   const filteredNotes = useMemo(() => {
-    if (noteTypeFilter === "all") return notes;
-    return notes.filter((n) => n.meeting_type === noteTypeFilter);
-  }, [notes, noteTypeFilter]);
+    let filtered = notes;
+
+    // Filter by type
+    if (noteTypeFilter !== "all") {
+      filtered = filtered.filter((n) => n.meeting_type === noteTypeFilter);
+    }
+
+    // Filter by search query
+    if (noteSearchQuery.trim()) {
+      const query = noteSearchQuery.toLowerCase();
+      filtered = filtered.filter((n) =>
+        n.title.toLowerCase().includes(query) ||
+        n.note_body.toLowerCase().includes(query) ||
+        (n.call_transcript && n.call_transcript.toLowerCase().includes(query)) ||
+        (n.ai_summary && n.ai_summary.toLowerCase().includes(query))
+      );
+    }
+
+    return filtered;
+  }, [notes, noteTypeFilter, noteSearchQuery]);
 
   // Count notes by type for tabs
   const noteTypeCounts = useMemo(() => {
@@ -510,6 +530,30 @@ export default function MeetingNotesPage() {
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-ws-muted px-1">
             Notes ({filteredNotes.length})
           </div>
+
+          {/* Note Search Bar */}
+          {notes.length > 0 && (
+            <div className="relative px-1">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <Search className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                value={noteSearchQuery}
+                onChange={(e) => setNoteSearchQuery(e.target.value)}
+                placeholder="Search notes..."
+                className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-blue-500"
+              />
+              {noteSearchQuery && (
+                <button
+                  onClick={() => setNoteSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Note Type Filter Tabs */}
           {notes.length > 0 && (

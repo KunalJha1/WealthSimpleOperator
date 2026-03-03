@@ -11,7 +11,7 @@ from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
 
-from models import AIOutput, FollowUpDraftContent, TranscriptSummary
+from models import AIOutput, CallScriptContent, EmailDraftContent, FollowUpDraftContent, TranscriptSummary
 from ai.mock_provider import MockAIProvider
 from ai.prompt_builder import build_prompt
 
@@ -166,6 +166,90 @@ class GeminiAIProvider:
             lines = [line for line in text.splitlines() if not line.strip().startswith("```")]
             text = "\n".join(lines).strip()
         return json.loads(text)
+
+    def generate_call_script(self, call_context: Dict) -> CallScriptContent:
+        """Generate a Gemini-based call script.
+
+        Falls back to mock provider on any error.
+        """
+        client_name = str(call_context.get("client_name", "Client")).strip()
+        segment = str(call_context.get("segment", "")).strip()
+        risk_profile = str(call_context.get("risk_profile", "balanced")).strip()
+        aum = float(call_context.get("aum", 0.0))
+        days_since_contact = int(call_context.get("days_since_contact", 30))
+        alert_summaries = call_context.get("alert_summaries", [])
+
+        alert_bullets = "\n".join([f"- {s}" for s in alert_summaries[:3]]) if alert_summaries else "routine quarterly check-in"
+
+        prompt = (
+            "You are a financial advisor call prep tool. Draft a professional call script.\n"
+            "Return strict JSON with exactly these keys: \"script\", \"key_talking_points\" (array of strings).\n"
+            "No markdown. No extra keys.\n\n"
+            f"Client: {client_name}\n"
+            f"Segment: {segment}\n"
+            f"Risk Profile: {risk_profile}\n"
+            f"Portfolio AUM: ${aum:,.0f}\n"
+            f"Days Since Last Contact: {days_since_contact}\n"
+            f"Open Alerts:\n{alert_bullets}\n\n"
+            "Constraints:\n"
+            "- Do NOT suggest specific trades, buys, or sells.\n"
+            "- Professional, empathetic tone.\n"
+            "- 3-5 key talking points.\n"
+            "- Script should include opening, agenda, key questions, discussion flow, objection handling, and closing.\n"
+            "- Script should be 800-1000 words."
+        )
+
+        try:
+            response = self._generate_content_with_retry(prompt)
+            raw_text = response.text.strip() if response.text else ""
+            parsed = self._parse_json(raw_text)
+            return CallScriptContent.model_validate(parsed)
+        except Exception as exc:
+            logger.warning("Gemini call script generation failed, using mock fallback: %s", exc, exc_info=True)
+            if self._strict_mode:
+                raise
+            return self._mock_fallback.generate_call_script(call_context=call_context)
+
+    def generate_email_draft(self, email_context: Dict) -> EmailDraftContent:
+        """Generate a Gemini-based email draft.
+
+        Falls back to mock provider on any error.
+        """
+        client_name = str(email_context.get("client_name", "Client")).strip()
+        segment = str(email_context.get("segment", "")).strip()
+        risk_profile = str(email_context.get("risk_profile", "balanced")).strip()
+        days_since_contact = int(email_context.get("days_since_contact", 30))
+        alert_summaries = email_context.get("alert_summaries", [])
+
+        alert_bullets = "\n".join([f"- {s}" for s in alert_summaries[:3]]) if alert_summaries else ""
+
+        prompt = (
+            "You are drafting a wealth advisor outreach email.\n"
+            "Return strict JSON with exactly these keys: \"subject\", \"body\", \"key_points\" (array of 3-5 strings).\n"
+            "No markdown. No extra keys.\n\n"
+            f"Client: {client_name}\n"
+            f"Segment: {segment}\n"
+            f"Risk Profile: {risk_profile}\n"
+            f"Days Since Last Contact: {days_since_contact}\n"
+            f"Open Alerts:\n{alert_bullets}\n\n"
+            "Constraints:\n"
+            "- Do NOT suggest specific trades or buys/sells.\n"
+            "- Professional tone. Max 300 words for body.\n"
+            "- key_points are short 1-sentence bullet summaries (3-5 items).\n"
+            "- Focus on portfolio alignment, review opportunity, and next steps.\n"
+            "- Personalize with client name and context when provided."
+        )
+
+        try:
+            response = self._generate_content_with_retry(prompt)
+            raw_text = response.text.strip() if response.text else ""
+            parsed = self._parse_json(raw_text)
+            return EmailDraftContent.model_validate(parsed)
+        except Exception as exc:
+            logger.warning("Gemini email draft generation failed, using mock fallback: %s", exc, exc_info=True)
+            if self._strict_mode:
+                raise
+            return self._mock_fallback.generate_email_draft(email_context=email_context)
 
     def _generate_content_with_retry(self, prompt: str, temperature: float = 0.6):
         resp = generate_with_retry(

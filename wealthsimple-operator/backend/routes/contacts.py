@@ -208,69 +208,54 @@ def generate_call_script(client_id: int, db: Session = Depends(get_db)) -> CallS
         .all()
     )
 
-    # Generate call script using AI
-    provider = get_provider()
+    # Get latest meeting note for days_since_contact
+    latest_meeting_note = (
+        db.query(MeetingNote)
+        .filter(MeetingNote.client_id == client_id)
+        .order_by(MeetingNote.meeting_date.desc())
+        .first()
+    )
 
-    if not open_alerts:
-        alert_context = "routine quarterly check-in on portfolio performance and alignment"
-        talking_points = ["Portfolio performance review", "Goal alignment check", "Market outlook discussion"]
+    if latest_meeting_note:
+        days_since_contact = (datetime.utcnow() - latest_meeting_note.meeting_date).days
     else:
-        # Build detailed alert context for call script
-        alert_details = []
-        talking_points = []
-        for alert in open_alerts[:3]:
-            main_reason = alert.reasoning_bullets[0] if alert.reasoning_bullets else "Portfolio review needed"
-            alert_details.append(f"[{alert.priority}] {main_reason}")
-            talking_points.append(f"{alert.priority} Priority: {main_reason}")
+        days_since_contact = 999
 
-        alert_context = "\n- ".join(alert_details)
+    # Get primary portfolio AUM
+    primary_portfolio = (
+        db.query(Portfolio)
+        .filter(Portfolio.client_id == client_id)
+        .order_by(Portfolio.total_value.desc())
+        .first()
+    )
+    portfolio_aum = primary_portfolio.total_value if primary_portfolio else 0.0
 
-    script = f"""CALL OPENING (Friendly, Professional):
-"Hi {client.name}, thanks so much for taking my call. I'm reaching out because we've completed our latest portfolio review, and I wanted to walk through some important observations with you. Do you have about 20 minutes to chat?"
+    # Build alert summaries for context
+    alert_summaries = []
+    for alert in open_alerts[:3]:
+        main_reason = alert.reasoning_bullets[0] if alert.reasoning_bullets else "Portfolio review needed"
+        alert_summaries.append(f"[{alert.priority}] {main_reason}")
 
-[Wait for confirmation]
+    # Build call context for provider
+    call_context = {
+        "client_name": client.name,
+        "segment": client.segment,
+        "risk_profile": client.risk_profile,
+        "aum": portfolio_aum,
+        "days_since_contact": days_since_contact,
+        "alert_summaries": alert_summaries,
+    }
 
-BRIDGE TO AGENDA:
-"Great! Here's what I'd like to cover today: First, I'll walk through what our analysis revealed, then we can discuss what it means for your portfolio, and finally we'll explore if any adjustments make sense for your situation."
-
-DETAILED DISCUSSION POINTS:
-• Portfolio Analysis Findings: {alert_context}
-• Market Context: "Given current market conditions, I think it's important we discuss how your allocation is positioned."
-• Risk Assessment: "Let's revisit your comfort level with your current risk profile."
-• Actionable Options: "I've identified a few potential strategies we could explore."
-
-KEY QUESTIONS TO ASK:
-1. "Have there been any significant changes in your financial situation or goals since we last spoke?"
-2. "How are you feeling about the current market environment?"
-3. "Is your portfolio still aligned with how you wanted to be invested?"
-4. "What are your thoughts on the adjustments I'm suggesting?"
-
-DISCUSSION FLOW:
-1. Present the portfolio findings in context
-2. Connect findings to client's stated goals and risk tolerance
-3. Discuss potential solutions (don't push, explore together)
-4. Confirm next steps and timeline
-5. Set expectations for follow-up
-
-HANDLING OBJECTIONS:
-• If concerned about market timing: "That's a valid point. What we focus on is keeping your portfolio aligned with your goals, not predicting market moves."
-• If wants to wait: "I understand. Let's schedule a follow-up to revisit this in [2-3 weeks]."
-• If asks about fees: "Your investment in making adjustments is [X]. Let's discuss if the potential benefit justifies that cost."
-
-CLOSING:
-"Thanks so much for discussing this with me. Here's what we'll do next: I'll send you a detailed email with our analysis and recommendations. Take a few days to review it, and then we can reconnect to finalize any decisions. Does that work for you?"
-
-[Confirm timing and set next meeting]
-
-POST-CALL:
-Send follow-up email with summary, recommendations, and clear next steps."""
+    # Generate call script using AI provider
+    provider = get_provider()
+    content = provider.generate_call_script(call_context)
 
     return CallScriptDraft(
         client_id=client_id,
         client_name=client.name,
-        script=script,
-        key_talking_points=talking_points,
-        provider=provider.__class__.__name__
+        script=content.script,
+        key_talking_points=content.key_talking_points,
+        provider=provider.name
     )
 
 
@@ -292,90 +277,45 @@ def generate_email_draft(client_id: int, db: Session = Depends(get_db)) -> Email
         .all()
     )
 
-    if not open_alerts:
-        # Fallback if no alerts
-        subject = f"Quarterly Portfolio Check-in"
-        body = f"""Hi {client.name},
+    # Get latest meeting note for days_since_contact
+    latest_meeting_note = (
+        db.query(MeetingNote)
+        .filter(MeetingNote.client_id == client_id)
+        .order_by(MeetingNote.meeting_date.desc())
+        .first()
+    )
 
-I hope this message finds you well. As part of our ongoing commitment to managing your wealth effectively, I wanted to reach out for a brief check-in on your portfolio.
-
-During our last review, we discussed your investment goals and risk tolerance. I'd like to ensure your current allocation continues to align with your objectives and market conditions.
-
-This is an excellent opportunity to:
-• Review your current portfolio performance and positioning
-• Discuss any changes in your financial situation or goals
-• Explore optimization opportunities within your investment strategy
-• Address any questions or concerns you may have
-
-I'd welcome the chance to connect with you soon. Please let me know what times work best for a brief call this week or next.
-
-Best regards,
-Your Wealth Advisor"""
-        key_points = ["Routine portfolio review", "Alignment check", "Market positioning"]
+    if latest_meeting_note:
+        days_since_contact = (datetime.utcnow() - latest_meeting_note.meeting_date).days
     else:
-        # Build detailed alert context
-        alert_details = []
-        for alert in open_alerts[:3]:
-            priority_label = f"[{alert.priority}]"
-            main_reason = alert.reasoning_bullets[0] if alert.reasoning_bullets else "Portfolio adjustment recommended"
-            additional_reasons = alert.reasoning_bullets[1:3] if len(alert.reasoning_bullets) > 1 else []
+        days_since_contact = 999
 
-            detail = f"{priority_label} {main_reason}"
-            if additional_reasons:
-                detail += "\n    - " + "\n    - ".join(additional_reasons)
-            alert_details.append(detail)
+    # Build alert summaries for context
+    alert_summaries = []
+    for alert in open_alerts[:3]:
+        main_reason = alert.reasoning_bullets[0] if alert.reasoning_bullets else "Portfolio adjustment recommended"
+        alert_summaries.append(f"[{alert.priority}] {main_reason}")
 
-        alert_context = "\n".join(alert_details)
+    # Build email context for provider
+    email_context = {
+        "client_name": client.name,
+        "segment": client.segment,
+        "risk_profile": client.risk_profile,
+        "days_since_contact": days_since_contact,
+        "alert_summaries": alert_summaries,
+    }
 
-        # Generate more comprehensive email with context
-        subject = f"Important Portfolio Review - {client.name}"
-
-        body = f"""Hi {client.name},
-
-I hope you're doing well. I wanted to reach out because our recent portfolio analysis has identified some important items that would benefit from our discussion.
-
-**Current Portfolio Situation:**
-
-Based on our comprehensive review of your holdings, allocation, and market positioning, we've identified the following considerations:
-
-{alert_context}
-
-**Why This Matters:**
-
-Your portfolio's current composition is an important factor in your long-term financial success. Market conditions, your life circumstances, and your financial goals can all influence whether adjustments might be beneficial. Our role is to ensure your portfolio remains optimized for your situation.
-
-**What I Recommend We Discuss:**
-
-During our call, I'd like to walk through:
-1. A detailed analysis of what's driving these observations
-2. How your current allocation aligns with your long-term objectives
-3. Potential adjustments that could better position your portfolio
-4. Any tax-efficient strategies we should consider
-5. A timeline and action plan moving forward
-
-**Next Steps:**
-
-I'd value the opportunity to connect with you soon to discuss these points in detail. Our conversation will help ensure your portfolio continues to work effectively toward your goals.
-
-Could you share a few times that work best for you this week or early next week? I'm flexible and happy to work around your schedule. A 30-minute call should give us plenty of time to cover the essentials.
-
-I look forward to connecting with you.
-
-Best regards,
-Your Wealth Advisor"""
-
-        key_points = [
-            f"{alert.priority}: {alert.reasoning_bullets[0] if alert.reasoning_bullets else 'Action recommended'}"
-            for alert in open_alerts[:3]
-        ]
+    # Generate email draft using AI provider
+    provider = get_provider()
+    content = provider.generate_email_draft(email_context)
 
     return EmailDraft(
         client_id=client_id,
         client_name=client.name,
-        subject=subject,
-        body=body,
-        key_points=key_points,
-        provider=get_provider().__class__.__name__
+        subject=content.subject,
+        body=content.body,
+        key_points=content.key_points,
+        provider=provider.name
     )
 
 

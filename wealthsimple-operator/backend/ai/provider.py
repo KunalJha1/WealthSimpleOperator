@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Dict, Protocol
 
-from models import AIOutput, FollowUpDraftContent, TranscriptSummary
+from models import AIOutput, CallScriptContent, EmailDraftContent, FollowUpDraftContent, TranscriptSummary
 
 
 class AIProvider(Protocol):
@@ -18,6 +18,12 @@ class AIProvider(Protocol):
         ...
 
     def summarize_transcript(self, transcript: str, context: Dict) -> TranscriptSummary:
+        ...
+
+    def generate_call_script(self, call_context: Dict) -> CallScriptContent:
+        ...
+
+    def generate_email_draft(self, email_context: Dict) -> EmailDraftContent:
         ...
 
 

@@ -4,8 +4,10 @@ from typing import Dict, List
 
 from models import (
     AIOutput,
+    CallScriptContent,
     ChangeDetectionItem,
     DecisionTraceStep,
+    EmailDraftContent,
     FollowUpDraftContent,
     Priority,
     TranscriptSummary,
@@ -380,3 +382,164 @@ class MockAIProvider:
             "last_note_summary": brief_data.get("last_note_summary"),
             "outstanding_action_items": brief_data.get("outstanding_action_items", []),
         }
+
+    def generate_call_script(self, call_context: Dict) -> CallScriptContent:
+        """Generate a deterministic call script from context.
+
+        Uses client name, segment, risk profile, AUM, and alert details
+        to build a professional, empathetic call script.
+        """
+        client_name = str(call_context.get("client_name", "Client")).strip()
+        segment = str(call_context.get("segment", "")).strip()
+        risk_profile = str(call_context.get("risk_profile", "balanced")).strip()
+        aum = float(call_context.get("aum", 0.0))
+        days_since_contact = int(call_context.get("days_since_contact", 30))
+
+        alert_summaries = call_context.get("alert_summaries", [])
+        alert_context = "\n".join([f"- {s}" for s in alert_summaries[:3]]) if alert_summaries else "routine quarterly check-in"
+
+        key_talking_points = [
+            f"Portfolio performance and {risk_profile} allocation alignment",
+            "Current market environment and positioning strategy",
+            "Review of any changes in financial situation or goals",
+        ]
+        if alert_summaries:
+            key_talking_points.insert(0, "Recent portfolio analysis findings")
+
+        script = f"""CALL OPENING (Friendly, Professional):
+"Hi {client_name}, thanks so much for taking my call. I'm reaching out because we've completed our latest portfolio review, and I wanted to walk through some important observations with you. Do you have about 20 minutes to chat?"
+
+[Wait for confirmation]
+
+BRIDGE TO AGENDA:
+"Great! Here's what I'd like to cover today: First, I'll walk through what our analysis revealed, then we can discuss what it means for your portfolio, and finally we'll explore if any adjustments make sense for your situation."
+
+KEY FINDINGS:
+{alert_context}
+
+RISK PROFILE & GOALS:
+Your {risk_profile} risk profile with approximately ${aum:,.0f} in assets is designed to achieve balanced growth while managing volatility. Let's discuss if this still matches your comfort level.
+
+ENGAGEMENT HISTORY:
+We last connected about {days_since_contact} days ago. Any significant changes since then in your financial situation, income, or goals?
+
+QUESTIONS TO ASK:
+1. "Have there been any significant changes in your financial situation or goals since we last spoke?"
+2. "How are you feeling about the current market environment?"
+3. "Is your portfolio still aligned with how you wanted to be invested?"
+4. "What are your thoughts on the observations I've outlined?"
+
+DISCUSSION FLOW:
+1. Present the portfolio findings in context
+2. Connect findings to client's stated goals and risk tolerance
+3. Discuss potential solutions (explore together, don't push)
+4. Confirm next steps and timeline
+5. Set expectations for follow-up
+
+HANDLING OBJECTIONS:
+• If concerned about market timing: "That's a valid point. What we focus on is keeping your portfolio aligned with your goals, not predicting market moves."
+• If wants to wait: "I understand. Let's schedule a follow-up to revisit this in 2-3 weeks."
+• If asks about costs: "Good question. Let's discuss the potential benefit versus the cost of any adjustments."
+
+CLOSING:
+"Thanks so much for discussing this with me. I'll send you a detailed summary of our conversation. Take a few days to review it, and then we can reconnect to finalize any decisions. Does that work for you?"
+
+[Confirm timing and set next meeting]"""
+
+        return CallScriptContent(
+            script=script,
+            key_talking_points=key_talking_points
+        )
+
+    def generate_email_draft(self, email_context: Dict) -> EmailDraftContent:
+        """Generate a deterministic email draft from context.
+
+        Uses client name, segment, risk profile, days since contact,
+        and alert details to build a professional outreach email.
+        """
+        client_name = str(email_context.get("client_name", "Client")).strip()
+        segment = str(email_context.get("segment", "")).strip()
+        risk_profile = str(email_context.get("risk_profile", "balanced")).strip()
+        days_since_contact = int(email_context.get("days_since_contact", 30))
+
+        alert_summaries = email_context.get("alert_summaries", [])
+
+        if alert_summaries:
+            subject = "Important Portfolio Review"
+            alert_details = "\n".join([f"• {s}" for s in alert_summaries[:3]])
+
+            body = f"""Hi {client_name},
+
+I hope you're doing well. I wanted to reach out because our recent portfolio analysis has identified some important items that would benefit from our discussion.
+
+**Your Portfolio & Current Positioning:**
+
+Based on our comprehensive review of your holdings and allocation, we've identified the following considerations:
+
+{alert_details}
+
+**Why This Matters:**
+
+Your portfolio's current composition is an important factor in your long-term financial success. Market conditions, your life circumstances, and your financial goals can all influence whether adjustments might be beneficial. Our role is to ensure your portfolio remains optimized for your situation.
+
+**What I'd Like to Discuss:**
+
+During a brief call, I'd like to walk through:
+1. A detailed analysis of what's driving these observations
+2. How your current allocation aligns with your long-term objectives
+3. Potential adjustments that could better position your portfolio
+4. Any tax-efficient strategies we should consider
+5. A timeline and action plan moving forward
+
+**Next Steps:**
+
+I'd value the opportunity to connect with you soon. Could you share a few times that work best for you this week or early next week? A 30-minute call should give us plenty of time to cover everything.
+
+I look forward to connecting with you.
+
+Best regards,
+Your Wealth Advisor"""
+
+            key_points = [
+                f"{s.split(':')[0].strip()}" if ':' in s else s
+                for s in alert_summaries[:3]
+            ]
+        else:
+            subject = "Quarterly Portfolio Check-in"
+
+            body = f"""Hi {client_name},
+
+I hope this message finds you well. As part of our ongoing commitment to managing your wealth effectively, I wanted to reach out for a brief check-in on your {risk_profile} portfolio.
+
+It's been about {days_since_contact} days since we last connected, and I think it's a good time to ensure your investment strategy continues to align with your objectives and the current market environment.
+
+**What We'll Cover:**
+
+• Your portfolio performance and current positioning
+• Any changes in your financial situation, income, or goals
+• Alignment of your allocation with your risk tolerance
+• Market outlook and positioning strategy
+• Opportunities for optimization
+
+**Why This Matters:**
+
+Regular portfolio reviews help ensure your investments remain aligned with your long-term goals. Changes in the market environment or your personal situation may suggest adjustments that could improve your financial outcomes.
+
+**Let's Connect:**
+
+I'd welcome the chance to schedule a brief call at your convenience. Please let me know what times work best for you this week or next. Even a 20-30 minute conversation can be very valuable.
+
+Best regards,
+Your Wealth Advisor"""
+
+            key_points = [
+                "Routine portfolio review",
+                "Goal alignment verification",
+                "Market positioning check"
+            ]
+
+        return EmailDraftContent(
+            subject=subject,
+            body=body,
+            key_points=key_points
+        )

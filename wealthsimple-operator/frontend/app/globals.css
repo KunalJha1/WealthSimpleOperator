@@ -170,3 +170,13 @@ body {
   animation: page-enter 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: opacity, transform;
 }
+
+/* Hide Next.js dev indicator */
+[data-testid="next-dev-indicator"] {
+  display: none !important;
+}
+
+/* Alternative: hide by element ID/class */
+#__next-dev-indicator {
+  display: none !important;
+}

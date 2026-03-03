@@ -84,7 +84,7 @@ export default function ContactSchedulerPage() {
             setClientAlerts(response.items);
           }
         } catch (err) {
-          console.error("Failed to load alerts:", err);
+          // Silently fail if endpoint doesn't exist - alerts are optional
           if (isMounted) {
             setClientAlerts([]);
           }
@@ -646,167 +646,6 @@ export default function ContactSchedulerPage() {
                 </div>
               </div>
 
-              {/* Call Script Modal */}
-              {callScriptDraft && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 flex items-center justify-between shrink-0">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/20 rounded-lg">
-                          <Phone size={20} className="text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-lg font-semibold text-white">Call Script</h2>
-                          <p className="text-sm text-blue-100">{callScriptDraft.client_name}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setCallScriptDraft(null)}
-                        className="p-2 hover:bg-white/20 rounded-lg transition"
-                      >
-                        <X size={20} className="text-white" />
-                      </button>
-                    </div>
-
-                    <div className="overflow-y-auto flex-1 p-6 space-y-6">
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                          <Zap size={14} className="text-blue-600" />
-                          Key Talking Points
-                        </h3>
-                        <ul className="space-y-2">
-                          {callScriptDraft.key_talking_points.map((point, i) => (
-                            <li key={i} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition">
-                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-700 shrink-0 mt-0.5">{i + 1}</span>
-                              <span className="text-sm text-gray-700">{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Suggested Script</h3>
-                        <div className="bg-gray-900 p-4 rounded-lg border border-gray-700 text-sm text-gray-100 whitespace-pre-wrap max-h-48 overflow-y-auto font-mono leading-relaxed">
-                          {callScriptDraft.script}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-gray-200 p-6 bg-gray-50 flex gap-3 shrink-0">
-                      <button
-                        onClick={() => setCallScriptDraft(null)}
-                        className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleApproveCall}
-                        disabled={approvalLoading}
-                        className="flex-1 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                      >
-                        {approvalLoading ? (
-                          <>
-                            <Activity size={18} className="animate-spin" />
-                            Scheduling...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 size={18} />
-                            Approve & Schedule
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Email Draft Modal */}
-              {emailDraft && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-                    <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6 flex items-center justify-between shrink-0">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/20 rounded-lg">
-                          <Mail size={20} className="text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-lg font-semibold text-white">Email Draft</h2>
-                          <p className="text-sm text-indigo-100">{emailDraft.client_name}</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setEmailDraft(null)}
-                        className="p-2 hover:bg-white/20 rounded-lg transition"
-                      >
-                        <X size={20} className="text-white" />
-                      </button>
-                    </div>
-
-                    <div className="overflow-y-auto flex-1 p-6 space-y-6">
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                          <Zap size={14} className="text-indigo-600" />
-                          Key Points
-                        </h3>
-                        <ul className="space-y-2">
-                          {emailDraft.key_points.map((point, i) => (
-                            <li key={i} className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition">
-                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-200 text-xs font-bold text-indigo-700 shrink-0 mt-0.5">{i + 1}</span>
-                              <span className="text-sm text-gray-700">{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Email Preview</h3>
-                        <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-5 flex flex-col space-y-4">
-                          <div className="pb-4 border-b border-gray-300">
-                            <p className="text-xs text-gray-600 font-semibold mb-2 uppercase tracking-wider">Subject</p>
-                            <p className="text-sm font-semibold text-gray-900">{emailDraft.subject}</p>
-                          </div>
-                          <div className="text-sm text-gray-700 whitespace-pre-wrap flex-1 leading-relaxed">
-                            {emailDraft.body}
-                          </div>
-                          <div className="mt-6 pt-4 border-t border-gray-200 text-xs text-gray-600">
-                            <p className="font-semibold mb-2">Wealthsimple</p>
-                            <p>Best regards,</p>
-                            <p>Your Financial Advisor</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-gray-200 p-6 bg-gray-50 flex gap-3 shrink-0">
-                      <button
-                        onClick={() => setEmailDraft(null)}
-                        className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleApproveEmail}
-                        disabled={approvalLoading}
-                        className="flex-1 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                      >
-                        {approvalLoading ? (
-                          <>
-                            <Activity size={18} className="animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 size={18} />
-                            Approve & Send
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Action Feedback */}
               {actionFeedback && (
                 <div className="card p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -824,6 +663,167 @@ export default function ContactSchedulerPage() {
           )}
         </div>
       </div>
+
+      {/* Call Script Modal - Moved outside .card context for full-page positioning */}
+      {callScriptDraft && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Phone size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Call Script</h2>
+                  <p className="text-sm text-blue-100">{callScriptDraft.client_name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCallScriptDraft(null)}
+                className="p-2 hover:bg-white/20 rounded-lg transition"
+              >
+                <X size={20} className="text-white" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-6 space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Zap size={14} className="text-blue-600" />
+                  Key Talking Points
+                </h3>
+                <ul className="space-y-2">
+                  {callScriptDraft.key_talking_points.map((point, i) => (
+                    <li key={i} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs font-bold text-blue-700 shrink-0 mt-0.5">{i + 1}</span>
+                      <span className="text-sm text-gray-700">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Suggested Script</h3>
+                <div className="bg-gray-900 p-4 rounded-lg border border-gray-700 text-sm text-gray-100 whitespace-pre-wrap max-h-48 overflow-y-auto font-mono leading-relaxed">
+                  {callScriptDraft.script}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 p-6 bg-gray-50 flex gap-3 shrink-0">
+              <button
+                onClick={() => setCallScriptDraft(null)}
+                className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApproveCall}
+                disabled={approvalLoading}
+                className="flex-1 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              >
+                {approvalLoading ? (
+                  <>
+                    <Activity size={18} className="animate-spin" />
+                    Scheduling...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={18} />
+                    Approve & Schedule
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Draft Modal - Moved outside .card context for full-page positioning */}
+      {emailDraft && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-6 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Mail size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Email Draft</h2>
+                  <p className="text-sm text-indigo-100">{emailDraft.client_name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEmailDraft(null)}
+                className="p-2 hover:bg-white/20 rounded-lg transition"
+              >
+                <X size={20} className="text-white" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-6 space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Zap size={14} className="text-indigo-600" />
+                  Key Points
+                </h3>
+                <ul className="space-y-2">
+                  {emailDraft.key_points.map((point, i) => (
+                    <li key={i} className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200 hover:bg-indigo-100 transition">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-200 text-xs font-bold text-indigo-700 shrink-0 mt-0.5">{i + 1}</span>
+                      <span className="text-sm text-gray-700">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">Email Preview</h3>
+                <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-5 flex flex-col space-y-4">
+                  <div className="pb-4 border-b border-gray-300">
+                    <p className="text-xs text-gray-600 font-semibold mb-2 uppercase tracking-wider">Subject</p>
+                    <p className="text-sm font-semibold text-gray-900">{emailDraft.subject}</p>
+                  </div>
+                  <div className="text-sm text-gray-700 whitespace-pre-wrap flex-1 leading-relaxed">
+                    {emailDraft.body}
+                  </div>
+                  <div className="mt-6 pt-4 border-t border-gray-200 text-xs text-gray-600">
+                    <p className="font-semibold mb-2">Wealthsimple</p>
+                    <p>Best regards,</p>
+                    <p>Your Financial Advisor</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 p-6 bg-gray-50 flex gap-3 shrink-0">
+              <button
+                onClick={() => setEmailDraft(null)}
+                className="flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApproveEmail}
+                disabled={approvalLoading}
+                className="flex-1 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              >
+                {approvalLoading ? (
+                  <>
+                    <Activity size={18} className="animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={18} />
+                    Approve & Send
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

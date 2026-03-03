@@ -398,6 +398,17 @@ class FollowUpDraftContent(BaseModel):
     body: str
 
 
+class CallScriptContent(BaseModel):
+    script: str
+    key_talking_points: List[str]
+
+
+class EmailDraftContent(BaseModel):
+    subject: str
+    body: str
+    key_points: List[str]
+
+
 class FollowUpDraftView(BaseModel):
     id: int
     alert_id: int

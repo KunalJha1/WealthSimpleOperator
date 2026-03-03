@@ -143,7 +143,8 @@ cd wealthsimple-operator/frontend
 npm install
 
 cp .env.example .env.local
-# NEXT_PUBLIC_API_BASE_URL is pre-filled with http://localhost:8000
+# NEXT_PUBLIC_API_BASE_URL is pre-filled with /api
+# Next.js rewrites /api/* to OPERATOR_BACKEND_ORIGIN (default http://127.0.0.1:8001)
 
 npm run dev            # starts Next.js on http://localhost:3000
 ```
