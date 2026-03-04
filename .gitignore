@@ -13,3 +13,5 @@ node_modules
 !wealthsimple-operator/backend/.env.example
 !wealthsimple-operator/frontend/.env.example
 __pycache__/*
+__pycache__/
+*.pyc

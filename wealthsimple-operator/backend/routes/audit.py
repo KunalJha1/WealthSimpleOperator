@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
@@ -24,6 +24,56 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 class AuditListResponse(BaseModel):
     items: List[AuditEventEntry]
     total: int
+
+
+class AuditActivityRequest(BaseModel):
+    event_type: str
+    actor: Optional[str] = None
+    page: Optional[str] = None
+    details: Optional[dict] = None
+
+
+class AuditActivityResponse(BaseModel):
+    success: bool
+    event_id: int
+    message: str
+
+
+@router.post("/activity", response_model=AuditActivityResponse)
+def log_audit_activity(
+    payload: AuditActivityRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> AuditActivityResponse:
+    actor = (payload.actor or "").strip() or "operator"
+    event_type = payload.event_type.strip().upper()
+    if not event_type:
+        event_type = "OPERATOR_ACTIVITY"
+
+    incoming_details = payload.details if isinstance(payload.details, dict) else {}
+    details = {
+        **incoming_details,
+        "page": payload.page,
+        "user_agent": request.headers.get("user-agent"),
+        "ip": request.client.host if request.client else None,
+    }
+
+    event = AuditEvent(
+        event_type=event_type,
+        actor=actor,
+        alert_id=None,
+        run_id=None,
+        details=details,
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+
+    return AuditActivityResponse(
+        success=True,
+        event_id=event.id,
+        message=f"Audit activity logged as {event_type}",
+    )
 
 
 @router.get("", response_model=AuditListResponse)
