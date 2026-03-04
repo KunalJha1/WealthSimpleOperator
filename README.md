@@ -1,6 +1,10 @@
 # Wealthsimple Operator
 
-**Live Demo:** https://operator.dailyiq.me
+<p align="center">
+  <a href="https://operator.dailyiq.me">
+    <img src="https://img.shields.io/badge/Live%20Demo-operator.dailyiq.me-black?style=for-the-badge" />
+  </a>
+</p>
 
 AI-assisted portfolio operations console built to explore how AI can help advisors monitor portfolios, triage alerts, and document decisions more efficiently.
 
