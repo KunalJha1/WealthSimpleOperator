@@ -8,26 +8,26 @@ This project is a local/demo environment and is not intended for direct trading 
 
 Add your screenshots at these paths (or rename and update the README links):
 
-- `docs/images/operator-overview.png`
-- `docs/images/alert-detail.png`
-- `docs/images/meeting-notes.png`
-- `docs/images/monitoring-universe.png`
-- `docs/images/scenario-lab.png`
+- `wealthsimple-operator/docs/images/operator-overview.png`
+- `wealthsimple-operator/docs/images/alert-detail.png`
+- `wealthsimple-operator/docs/images/meeting-notes.png`
+- `wealthsimple-operator/docs/images/monitoring-universe.png`
+- `wealthsimple-operator/docs/images/scenario-lab.png`
 
 ### Operator Overview
-![Operator Overview](docs/images/operator-overview.png)
+![Operator Overview](wealthsimple-operator/docs/images/operator-overview.png)
 
 ### Alert Detail
-![Alert Detail](docs/images/alert-detail.png)
+![Alert Detail](wealthsimple-operator/docs/images/alert-detail.png)
 
 ### Meeting Notes
-![Meeting Notes](docs/images/meeting-notes.png)
+![Meeting Notes](wealthsimple-operator/docs/images/meeting-notes.png)
 
 ### Monitoring Universe
-![Monitoring Universe](docs/images/monitoring-universe.png)
+![Monitoring Universe](wealthsimple-operator/docs/images/monitoring-universe.png)
 
 ### Scenario Lab
-![Scenario Lab](docs/images/scenario-lab.png)
+![Scenario Lab](wealthsimple-operator/docs/images/scenario-lab.png)
 
 ## Tech Stack
 
