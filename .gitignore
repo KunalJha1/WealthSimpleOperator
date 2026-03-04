@@ -1,12 +1,16 @@
 .env
 .venv/*
 *.db
+*.db-wal
+*.db-shm
+*.log
 
 .next/*
 .env.local
 .next
 venv/*
 venv
+**/venv/*
 node_modules/*
 node_modules
 *.env.example
@@ -14,8 +18,15 @@ node_modules
 !wealthsimple-operator/frontend/.env.example
 __pycache__/*
 __pycache__/
+**/__pycache__/
 *.pyc
-AGENTS.MD
-CLAUDE.MD
+*.pyo
+*.pyd
+*.tsbuildinfo
+AGENTS.md
+CLAUDE.md
 .env.example
 .claude/*
+wealthsimple-operator/backend/.simulation_cache.json
+wealthsimple-operator/backend/.reallocation_cache.json
+wealthsimple-operator/backend/server.log
