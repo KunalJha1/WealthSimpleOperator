@@ -1,8 +1,10 @@
 # Wealthsimple Operator
 
+**Live Demo:** https://operator.dailyiq.me
+
 AI-assisted portfolio operations console built to explore how AI can help advisors monitor portfolios, triage alerts, and document decisions more efficiently.
 
-This project was created for the **Wealthsimple AI Builders Challenge at the University of Waterloo**. The goal was to prototype how modern AI tooling could be integrated into **existing portfolio operations workflows** — not to replace advisors, but to **reduce manual monitoring and surface the most important signals faster**.
+This project was created for the **Wealthsimple AI Builders Challenge**. The goal was to prototype how modern AI tooling could be integrated into **legacy workflows** to **reduce manual monitoring and surface the most important signals faster**.
 
 In many financial workflows today, advisors still spend significant time switching between dashboards, reviewing alerts, and manually documenting actions. This project explores what an **AI-native operations console** could look like if those workflows were redesigned with AI in mind.
 
